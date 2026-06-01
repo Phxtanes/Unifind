@@ -1,0 +1,55 @@
+version: '3.8'
+services:
+  mysql_db:
+    image: mysql:8.0
+    container_name: lost_found_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./Unifind_Back
+    container_name: lost_found_backend
+    restart: always
+    ports:
+      - "9001:9001"
+    environment:
+      - DB_HOST=mysql_db
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - JWT_SECRET=${JWT_SECRET}
+      - PORT=9001
+    depends_on:
+      - mysql_db
+    volumes:
+      - ./Unifind_Back:/usr/src/app
+      - /usr/src/app/node_modules
+      - ./Unifind_Back/uploads:/usr/src/app/uploads
+
+  frontend:
+    build:
+      context: ./Unifind_Front
+    container_name: lost_found_frontend
+    restart: always
+    ports:
+      - "9000:9000"
+    environment:
+      - NUXT_PUBLIC_API_BASE_URL=http://localhost:9001/api
+      - NUXT_PORT=9000
+      - NUXT_HOST=0.0.0.0
+    depends_on:
+      - backend
+    volumes:
+      - ./Unifind_Front:/usr/src/app
+      - /usr/src/app/node_modules
+      - /usr/src/app/.nuxt
+
+volumes:
+  db_data:
