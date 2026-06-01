@@ -14,7 +14,7 @@ services:
 
   backend:
     build:
-      context: ./Unifind_Back
+      context: ./backend
     container_name: lost_found_backend
     restart: always
     ports:
@@ -29,13 +29,13 @@ services:
     depends_on:
       - mysql_db
     volumes:
-      - ./Unifind_Back:/usr/src/app
+      - ./backend:/usr/src/app
       - /usr/src/app/node_modules
-      - ./Unifind_Back/uploads:/usr/src/app/uploads
+      - ./backend/uploads:/usr/src/app/uploads
 
   frontend:
     build:
-      context: ./Unifind_Front
+      context: ./frontend
     container_name: lost_found_frontend
     restart: always
     ports:
@@ -47,7 +47,7 @@ services:
     depends_on:
       - backend
     volumes:
-      - ./Unifind_Front:/usr/src/app
+      - ./frontend:/usr/src/app
       - /usr/src/app/node_modules
       - /usr/src/app/.nuxt
 
