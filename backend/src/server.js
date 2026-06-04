@@ -7,6 +7,7 @@ const sequelize = require('./config/database');
 const User = require('./models/User');
 const authRoutes = require('./routes/authRoutes');
 const lostItemRoutes = require('./routes/lostItemRoutes');
+const lineRoutes = require('./routes/lineRoutes');
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use('/uploads', express.static('uploads'));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/lost-items', lostItemRoutes);
+app.use('/api/line', lineRoutes);
 
 const PORT = process.env.PORT || 9001;
 
