@@ -207,15 +207,6 @@ const handleCreateSubmit = async (formData: any, imageFile: any) => {
       headers: { Authorization: `Bearer ${authStore.token}` }
     })
 
-    const newItemId = response.data.id
-    if (imageFile && newItemId) {
-      const imgData = new FormData()
-      imgData.append('image', imageFile)
-      await axios.post(`${config.public.apiBaseUrl}/lost-items/${newItemId}/upload-image`, imgData, {
-        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${authStore.token}` }
-      })
-    }
-
     await itemsStore.fetchItems()
     showCreateModal.value = false
     alert('บันทึกข้อมูลเรียบร้อยแล้ว!')
@@ -240,15 +231,6 @@ const handleLostSubmit = async (formData: any, imageFile: any) => {
     const response = await axios.post(`${config.public.apiBaseUrl}/lost-items`, formData, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     })
-
-    const newItemId = response.data.id
-    if (imageFile && newItemId) {
-      const imgData = new FormData()
-      imgData.append('image', imageFile)
-      await axios.post(`${config.public.apiBaseUrl}/lost-items/${newItemId}/upload-image`, imgData, {
-        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${authStore.token}` }
-      })
-    }
 
     await itemsStore.fetchItems()
     showLostModal.value = false

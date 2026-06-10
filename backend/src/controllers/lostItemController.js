@@ -124,7 +124,8 @@ exports.createLostItem = async (req, res) => {
       finder_studentId,
       finder_universityEmail,
       namereport,
-      staffName
+      staffName,
+      picture
     } = req.body;
 
     const { data, error } = await supabase
@@ -143,7 +144,8 @@ exports.createLostItem = async (req, res) => {
         finder_universityemail: finder_universityEmail,
         namereport,
         staffname: staffName,
-        user_id: req.userId
+        user_id: req.userId,
+        picture
       })
       .select()
       .single();

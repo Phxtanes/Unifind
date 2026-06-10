@@ -77,7 +77,8 @@
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">เบอร์โทรศัพท์ติดต่อ <span class="text-red-500">*</span></label>
-              <input v-model="form.finder_phoneNumber" type="tel" required placeholder="เช่น 081-234-5678"
+              <input v-model="form.finder_phoneNumber" type="tel" required placeholder="เช่น 0812345678"
+                maxlength="10" @input="form.finder_phoneNumber = form.finder_phoneNumber.replace(/[^0-9]/g, '')"
                 class="w-full px-4 py-2.5 bg-white border border-slate-250 rounded-xl focus:border-slate-800 focus:ring-0 outline-none text-sm transition" />
             </div>
           </div>
@@ -88,6 +89,7 @@
               <div>
                 <label class="block text-xs font-semibold text-slate-600 mb-1">เลขทะเบียนนักศึกษา <span class="text-red-500">*</span></label>
                 <input v-model="form.finder_studentId" type="text" required placeholder="เช่น 64010123456"
+                  maxlength="13" @input="form.finder_studentId = form.finder_studentId.replace(/[^0-9]/g, '')"
                   class="w-full px-4 py-2.5 bg-white border border-slate-250 rounded-xl focus:border-slate-800 focus:ring-0 outline-none text-sm transition" />
               </div>
               <div>
@@ -164,7 +166,8 @@ const form = ref({
   finder_studentId: '',
   finder_universityEmail: '',
   namereport: props.username,
-  staffName: props.username
+  staffName: props.username,
+  picture: ''
 })
 
 const imageFile = ref(null)
@@ -185,7 +188,8 @@ watch(() => props.show, (newVal) => {
       finder_studentId: '',
       finder_universityEmail: '',
       namereport: props.username,
-      staffName: props.username
+      staffName: props.username,
+      picture: ''
     }
     imageFile.value = null
     previewUrl.value = ''
@@ -197,8 +201,14 @@ const handleFileUpload = (event) => {
   imageFile.value = file
   if (file) {
     previewUrl.value = URL.createObjectURL(file)
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      form.value.picture = e.target.result
+    }
+    reader.readAsDataURL(file)
   } else {
     previewUrl.value = ''
+    form.value.picture = ''
   }
 }
 
