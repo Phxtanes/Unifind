@@ -14,6 +14,10 @@ type HydrationStrategies = {
 type LazyComponent<T> = DefineComponent<HydrationStrategies, {}, {}, {}, {}, {}, {}, { hydrated: () => void }> & T
 
 
+export const CreateItemModal: typeof import("../components/CreateItemModal.vue")['default']
+export const ItemCard: typeof import("../components/ItemCard.vue")['default']
+export const ReportLostItemModal: typeof import("../components/ReportLostItemModal.vue")['default']
+export const Sidebar: typeof import("../components/Sidebar.vue")['default']
 export const NuxtWelcome: typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']
 export const NuxtLayout: typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']
 export const NuxtErrorBoundary: typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary.vue")['default']
@@ -37,6 +41,10 @@ export const Head: typeof import("../node_modules/nuxt/dist/head/runtime/compone
 export const Html: typeof import("../node_modules/nuxt/dist/head/runtime/components")['Html']
 export const Body: typeof import("../node_modules/nuxt/dist/head/runtime/components")['Body']
 export const NuxtIsland: typeof import("../node_modules/nuxt/dist/app/components/nuxt-island")['default']
+export const LazyCreateItemModal: LazyComponent<typeof import("../components/CreateItemModal.vue")['default']>
+export const LazyItemCard: LazyComponent<typeof import("../components/ItemCard.vue")['default']>
+export const LazyReportLostItemModal: LazyComponent<typeof import("../components/ReportLostItemModal.vue")['default']>
+export const LazySidebar: LazyComponent<typeof import("../components/Sidebar.vue")['default']>
 export const LazyNuxtWelcome: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/welcome.vue")['default']>
 export const LazyNuxtLayout: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-layout")['default']>
 export const LazyNuxtErrorBoundary: LazyComponent<typeof import("../node_modules/nuxt/dist/app/components/nuxt-error-boundary.vue")['default']>

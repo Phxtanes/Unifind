@@ -3,11 +3,12 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
-const sequelize = require('./config/database');
-const User = require('./models/User');
+const supabase = require('./config/supabase');
+
 const authRoutes = require('./routes/authRoutes');
 const lostItemRoutes = require('./routes/lostItemRoutes');
 const lineRoutes = require('./routes/lineRoutes');
+const claimRoutes = require('./routes/claimRoutes');
 
 const app = express();
 
@@ -23,34 +24,51 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/auth', authRoutes);
 app.use('/api/lost-items', lostItemRoutes);
 app.use('/api/line', lineRoutes);
+app.use('/api/claims', claimRoutes);
 
 const PORT = process.env.PORT || 9001;
 
-// Sync database and seed default Administrator
-sequelize.sync({ alter: true }).then(async () => {
-  console.log('✅ Database synced successfully');
-  
+// Seed default Administrator on startup if not present
+const seedAdmin = async () => {
   try {
-    const adminCount = await User.count({ where: { role: 'admin' } });
-    if (adminCount === 0) {
-      const hashedPassword = await bcrypt.hash('admin1234', 8);
-      await User.create({
-        username: 'admin',
-        email: 'admin@utcc.ac.th',
-        password: hashedPassword,
-        role: 'admin',
-        isApproved: true,
-        isActive: true
-      });
-      console.log('👑 Default Admin seeded successfully: admin / admin1234');
-    }
-  } catch (seedError) {
-    console.error('⚠️ Seeding error:', seedError);
-  }
+    const { count, error } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'admin');
 
-  app.listen(PORT, () => {
-    console.log(`🚀 Server is running on port ${PORT}`);
-  });
-}).catch(err => {
-  console.error('❌ Unable to connect to the database:', err);
+    if (error) {
+      console.error('⚠️ Error checking admin count in Supabase:', error.message);
+      return;
+    }
+
+    if (count === 0) {
+      const hashedPassword = await bcrypt.hash('admin1234', 8);
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          username: 'admin',
+          email: 'admin@utcc.ac.th',
+          password: hashedPassword,
+          role: 'admin',
+          is_approved: true,
+          is_active: true
+        });
+
+      if (insertError) {
+        console.error('⚠️ Seeding admin error:', insertError.message);
+      } else {
+        console.log('👑 Default Admin seeded successfully in Supabase: admin / admin1234');
+      }
+    } else {
+      console.log('✅ Admin user already exists in Supabase');
+    }
+  } catch (err) {
+    console.error('⚠️ Unexpected seeding error:', err);
+  }
+};
+
+// Start Server
+app.listen(PORT, async () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
+  await seedAdmin();
 });

@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { Op, fn, col } = require('sequelize'); 
 const { GoogleGenAI, Type } = require('@google/genai'); 
-const LostItem = require('../models/LostItem'); 
-const User = require('../models/User');         
+const supabase = require('../config/supabase');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -77,18 +75,19 @@ router.post('/webhook', async (req, res) => {
             console.log(`📸 ระบบได้รับข้อความรูปภาพ ID: ${messageId}`);
 
             try {
-                // ดึงข้อมูลรายการของหายทั้งหมดในตาราง MySQL ขึ้นมาเตรียมเทียบ
-                const allItems = await LostItem.findAll({
-                    attributes: ['id', 'name', 'category', 'place', 'description', 'status'],
-                    where: { status: 'สูญหาย' }, // ค้นหาเฉพาะชิ้นที่ยังมีสถานะสูญหาย
-                    raw: true
-                });
+                // ดึงข้อมูลรายการของหายทั้งหมดในตาราง Supabase ขึ้นมาเตรียมเทียบ
+                const { data: allItems, error: itemsError } = await supabase
+                    .from('items')
+                    .select('id, name, category, place, description, status')
+                    .in('status', ['lost', 'stored', 'สูญหาย']); // ดึงรายการที่ยังหาไม่เจอ
+
+                if (itemsError) throw itemsError;
 
                 // ดาวน์โหลดรูปภาพแปลงเป็น Base64
                 const imagePart = await getLineImageBuffer(messageId);
 
                 // หากไม่มีข้อมูลของหายในระบบเลย ให้แจ้งกลับทันที
-                if (allItems.length === 0) {
+                if (!allItems || allItems.length === 0) {
                     await replyToLine(replyToken, [{
                         type: 'text',
                         text: `🔍 [ระบบรับรูปภาพเรียบร้อย]\n\nจากการวิเคราะห์รูปภาพเบื้องต้นและตรวจสอบฐานข้อมูลส่วนกลาง ปัจจุบันยังไม่มีรายงานสิ่งของคงค้างในระบบที่สอดคล้องกันครับ ทางระบบแนะนำให้ท่านโพสต์รายละเอียดขึ้นสู่เว็บไซต์หลักก่อนครับ`
@@ -98,7 +97,7 @@ router.post('/webhook', async (req, res) => {
 
                 // ส่งรูปภาพพร้อมคลังข้อมูลทั้งหมดไปให้ Gemini ช่วย Match ค้นหาหาความเชื่อมโยง
                 const imageAnalysisPrompt = `คุณคือ AI ตรวจสอบภาพของหายในระบบ Unifind
-                จงดูรูปภาพสิ่งของที่ผู้ใช้ส่งมานี้อย่างละเอียด วิเคราะห์ว่ามันคืออะไร สีอะไร ลักษณะอย่างไร จากนั้นเปรียบเทียบกับรายการสิ่งของในฐานข้อมูล MySQL ด้านล่างนี้:
+                จงดูรูปภาพสิ่งของที่ผู้ใช้ส่งมานี้อย่างละเอียด วิเคราะห์ว่ามันคืออะไร สีอะไร ลักษณะอย่างไร จากนั้นเปรียบเทียบกับรายการสิ่งของในฐานข้อมูลด้านล่างนี้:
                 
                 รายการข้อมูลในฐานข้อมูล:
                 ${JSON.stringify(allItems, null, 2)}
@@ -123,7 +122,12 @@ router.post('/webhook', async (req, res) => {
 
                 // เคสที่ 1: AI ตรวจพบว่ารูปภาพ "ตรงกับข้อมูลในระบบ"
                 if (resultData.match && resultData.itemId) {
-                    const matchedItem = await LostItem.findByPk(resultData.itemId);
+                    const { data: matchedItem } = await supabase
+                        .from('items')
+                        .select('name')
+                        .eq('id', resultData.itemId)
+                        .maybeSingle();
+
                     await replyToLine(replyToken, [{
                         type: 'text',
                         text: `🔍 [ระบบ Unifind ตรวจพบข้อมูลจากรูปภาพ!]\n\n🎉 แจ้งผลสำเร็จ: จากการตรวจสอบเชิงลึกด้วยระบบวิเคราะห์ภาพปัญญาประดิษฐ์ (AI) พบว่ารูปภาพที่ท่านส่งมา มีลักษณะสอดคล้องกับสิ่งของในระบบรหัสรายการ #${resultData.itemId} (${matchedItem ? matchedItem.name : ''}) ครับ\n\n📝 เหตุผลสนับสนุน: ${resultData.reason}\n\n📌 ขั้นตอนถัดไป:\nแนะนำให้ท่านนำหลักฐานการแสดงตน พร้อมรายละเอียดความเป็นเจ้าของ เข้าติดต่อประสานงานรับสิ่งของคืน ณ จุดบริการของมหาวิทยาลัยได้เลยครับ`
@@ -155,7 +159,11 @@ router.post('/webhook', async (req, res) => {
             // ฟีเจอร์ผูกบัญชี
             if (userMessage.startsWith('ผูกบัญชี:')) {
                 const email = userMessage.split('ผูกบัญชี:')[1].trim();
-                const user = await User.findOne({ where: { email: email } });
+                const { data: user, error: userError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', email)
+                    .maybeSingle();
                 
                 if (user) {
                     const bindSuccessPatterns = [
@@ -214,21 +222,27 @@ router.post('/webhook', async (req, res) => {
 
                 // เคสสรุปรายงานสถิติตามหมวดหมู่ (SUMMARY)
                 if (intentData.intent === 'SUMMARY') {
-                    const categorySummary = await LostItem.findAll({
-                        attributes: ['category', [fn('COUNT', col('category')), 'itemCount']],
-                        group: ['category'],
-                        raw: true
-                    });
+                    const { data: allItemsForSummary, error: summaryError } = await supabase
+                        .from('items')
+                        .select('category');
 
-                    if (categorySummary.length === 0) {
+                    if (summaryError) throw summaryError;
+
+                    if (!allItemsForSummary || allItemsForSummary.length === 0) {
                         await replyToLine(replyToken, [{ type: 'text', text: `📢 [รายงานสถานะระบบ]\n\nปัจจุบันยังไม่มีรายงานสิ่งของสูญหายหรือสิ่งของคงค้างภายในระบบ Unifind ครับ` }]);
                         continue;
                     }
 
+                    // จัดกลุ่มสถิติหมวดหมู่ด้วย JavaScript
+                    const countMap = {};
+                    allItemsForSummary.forEach((item) => {
+                        const cat = item.category || 'อื่นๆ / ไม่ระบุหมวดหมู่';
+                        countMap[cat] = (countMap[cat] || 0) + 1;
+                    });
+
                     let summaryReply = `📊 [รายงานสรุปสถิติตัวเลขสิ่งของคงค้างในระบบ Unifind]\n\nจากการตรวจสอบฐานข้อมูลส่วนกลาง พบสิ่งของที่ลงทะเบียนแยกตามหมวดหมู่ดังต่อไปนี้ครับ:\n`;
-                    categorySummary.forEach((cat) => {
-                        const categoryName = cat.category || 'อื่นๆ / ไม่ระบุหมวดหมู่';
-                        summaryReply += `\n📦 หมวดหมู่: ${categoryName}\n🔹 จำนวนสิ่งของในระบบ: ${cat.itemCount} รายการ\n────────────────`;
+                    Object.keys(countMap).forEach((categoryName) => {
+                        summaryReply += `\n📦 หมวดหมู่: ${categoryName}\n🔹 จำนวนสิ่งของในระบบ: ${countMap[categoryName]} รายการ\n────────────────`;
                     });
                     summaryReply += `\n\n📌 คำแนะนำในการดำเนินการต่อ:\nหากท่านคาดว่ามีสิ่งของของท่านอยู่ กรุณาพิมพ์ระบุรายละเอียดเชิงลึก หรือเข้าตรวจสอบที่หน้าเว็บไซต์ Unifind ครับ`;
 
@@ -259,16 +273,20 @@ router.post('/webhook', async (req, res) => {
 
                     const searchData = JSON.parse(aiResponse.text.trim());
 
-                    let searchConditions = {
-                        [Op.or]: [
-                            { name: { [Op.like]: `%${searchData.keyword}%` } },
-                            { description: { [Op.like]: `%${searchData.keyword}%` } }
-                        ]
-                    };
-                    if (searchData.place) searchConditions.place = { [Op.like]: `%${searchData.place}%` };
+                    let query = supabase.from('items').select('*');
+                    
+                    // ทำ OR filter ใน Supabase ค้นหาจากชื่อและคำอธิบาย
+                    const orFilter = `name.ilike.%${searchData.keyword}%,description.ilike.%${searchData.keyword}%`;
+                    query = query.or(orFilter);
 
-                    const candidateItems = await LostItem.findAll({ where: searchConditions });
-                    let isMatched = candidateItems.length > 0;
+                    if (searchData.place) {
+                        query = query.ilike('place', `%${searchData.place}%`);
+                    }
+
+                    const { data: candidateItems, error: searchError } = await query;
+                    if (searchError) throw searchError;
+
+                    let isMatched = candidateItems && candidateItems.length > 0;
 
                     if (isMatched) {
                         await replyToLine(replyToken, [{ 

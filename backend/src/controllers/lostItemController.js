@@ -1,19 +1,45 @@
-const LostItem = require('../models/LostItem');
-const User = require('../models/User');
+const supabase = require('../config/supabase');
 const fs = require('fs');
 const path = require('path');
+
+// Helper to map Supabase lowercase fields to camelCase for frontend compatibility
+const formatItem = (item) => {
+  if (!item) return null;
+  const { users, finder_phonenumber, finder_studentid, finder_universityemail, staffname, ...rest } = item;
+  return {
+    ...rest,
+    finder_phoneNumber: finder_phonenumber,
+    finder_studentId: finder_studentid,
+    finder_universityEmail: finder_universityemail,
+    staffName: staffname,
+    recorder: users ? { username: users.username } : null
+  };
+};
 
 // GET /api/lost-items (All items not soft deleted/deleted)
 exports.getLostItems = async (req, res) => {
   try {
-    const items = await LostItem.findAll({
-      where: {
-        status: ['stored', 'removed'] // Exclude 'deleted'
-      },
-      include: { model: User, as: 'recorder', attributes: ['username'] },
-      order: [['createdAt', 'DESC']]
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+
+    const { data, count, error } = await supabase
+      .from('items')
+      .select('*, users:user_id(username)', { count: 'exact' })
+      .in('status', ['stored', 'removed', 'lost', 'found', 'claimed'])
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (error) throw error;
+
+    const formattedRows = (data || []).map(formatItem);
+
+    res.status(200).json({
+      totalItems: count || 0,
+      totalPages: Math.ceil((count || 0) / limit),
+      currentPage: page,
+      items: formattedRows
     });
-    res.status(200).json(items);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -22,12 +48,16 @@ exports.getLostItems = async (req, res) => {
 // GET /api/lost-items/status/stored (Only items currently stored)
 exports.getStoredItems = async (req, res) => {
   try {
-    const items = await LostItem.findAll({
-      where: { status: 'stored' },
-      include: { model: User, as: 'recorder', attributes: ['username'] },
-      order: [['createdAt', 'DESC']]
-    });
-    res.status(200).json(items);
+    const { data, error } = await supabase
+      .from('items')
+      .select('*, users:user_id(username)')
+      .eq('status', 'stored')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const formattedRows = (data || []).map(formatItem);
+    res.status(200).json(formattedRows);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -36,12 +66,16 @@ exports.getStoredItems = async (req, res) => {
 // GET /api/lost-items/status/removed (History of returned/removed items)
 exports.getRemovedItems = async (req, res) => {
   try {
-    const items = await LostItem.findAll({
-      where: { status: 'removed' },
-      include: { model: User, as: 'recorder', attributes: ['username'] },
-      order: [['createdAt', 'DESC']]
-    });
-    res.status(200).json(items);
+    const { data, error } = await supabase
+      .from('items')
+      .select('*, users:user_id(username)')
+      .eq('status', 'removed')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const formattedRows = (data || []).map(formatItem);
+    res.status(200).json(formattedRows);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -51,13 +85,24 @@ exports.getRemovedItems = async (req, res) => {
 exports.getLostItemById = async (req, res) => {
   try {
     const { id } = req.params;
-    const item = await LostItem.findByPk(id, {
-      include: { model: User, as: 'recorder', attributes: ['username'] }
-    });
-    if (!item || item.status === 'deleted') {
+    const { data, error } = await supabase
+      .from('items')
+      .select('*, users:user_id(username)')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ message: 'Lost item not found' });
+      }
+      throw error;
+    }
+
+    if (data.status === 'deleted') {
       return res.status(404).json({ message: 'Lost item not found' });
     }
-    res.status(200).json(item);
+
+    res.status(200).json(formatItem(data));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -82,24 +127,30 @@ exports.createLostItem = async (req, res) => {
       staffName
     } = req.body;
 
-    const item = await LostItem.create({
-      name,
-      category,
-      place,
-      date,
-      description,
-      status: status || 'stored',
-      locker,
-      finder_type,
-      finder_phoneNumber,
-      finder_studentId,
-      finder_universityEmail,
-      namereport,
-      staffName,
-      user_id: req.userId // Recorded by this staff/admin
-    });
+    const { data, error } = await supabase
+      .from('items')
+      .insert({
+        name,
+        category,
+        place,
+        date: date || new Date().toISOString(),
+        description,
+        status: status || 'stored',
+        locker,
+        finder_type,
+        finder_phonenumber: finder_phoneNumber,
+        finder_studentid: finder_studentId,
+        finder_universityemail: finder_universityEmail,
+        namereport,
+        staffname: staffName,
+        user_id: req.userId
+      })
+      .select()
+      .single();
 
-    res.status(201).json(item);
+    if (error) throw error;
+
+    res.status(201).json(formatItem(data));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -109,8 +160,14 @@ exports.createLostItem = async (req, res) => {
 exports.uploadLostItemImage = async (req, res) => {
   try {
     const { id } = req.params;
-    const item = await LostItem.findByPk(id);
-    if (!item) {
+
+    const { data: item, error: findError } = await supabase
+      .from('items')
+      .select()
+      .eq('id', id)
+      .single();
+
+    if (findError || !item) {
       return res.status(404).json({ message: 'Lost item not found' });
     }
 
@@ -118,7 +175,6 @@ exports.uploadLostItemImage = async (req, res) => {
       return res.status(400).json({ message: 'No image file uploaded' });
     }
 
-    // Delete old picture if it exists
     if (item.picture) {
       const oldPath = path.join(__dirname, '../../', item.picture);
       if (fs.existsSync(oldPath)) {
@@ -127,9 +183,17 @@ exports.uploadLostItemImage = async (req, res) => {
     }
 
     const picturePath = `/uploads/${req.file.filename}`;
-    await item.update({ picture: picturePath });
 
-    res.status(200).json({ message: 'Image uploaded successfully', picture: picturePath, item });
+    const { data: updatedItem, error: updateError } = await supabase
+      .from('items')
+      .update({ picture: picturePath })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    res.status(200).json({ message: 'Image uploaded successfully', picture: picturePath, item: formatItem(updatedItem) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -139,8 +203,13 @@ exports.uploadLostItemImage = async (req, res) => {
 exports.getLostItemImage = async (req, res) => {
   try {
     const { id } = req.params;
-    const item = await LostItem.findByPk(id);
-    if (!item || !item.picture) {
+    const { data: item, error } = await supabase
+      .from('items')
+      .select('picture')
+      .eq('id', id)
+      .single();
+
+    if (error || !item || !item.picture) {
       return res.status(404).json({ message: 'Image not found' });
     }
 
@@ -159,11 +228,6 @@ exports.getLostItemImage = async (req, res) => {
 exports.updateLostItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const item = await LostItem.findByPk(id);
-    if (!item) {
-      return res.status(404).json({ message: 'Lost item not found' });
-    }
-
     const {
       name,
       category,
@@ -177,28 +241,42 @@ exports.updateLostItem = async (req, res) => {
       finder_studentId,
       finder_universityEmail,
       namereport,
+      picture,
       receiver,
       staffName
     } = req.body;
 
-    await item.update({
-      name,
-      category,
-      place,
-      date,
-      description,
-      status,
-      locker,
-      finder_type,
-      finder_phoneNumber,
-      finder_studentId,
-      finder_universityEmail,
-      namereport,
-      receiver,
-      staffName
-    });
+    const { data: updatedItem, error } = await supabase
+      .from('items')
+      .update({
+        name,
+        category,
+        place,
+        date,
+        description,
+        status,
+        locker,
+        finder_type,
+        finder_phonenumber: finder_phoneNumber,
+        finder_studentid: finder_studentId,
+        finder_universityemail: finder_universityEmail,
+        namereport,
+        picture,
+        receiver,
+        staffname: staffName
+      })
+      .eq('id', id)
+      .select()
+      .single();
 
-    res.status(200).json({ message: 'Lost item updated successfully', item });
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ message: 'Lost item not found' });
+      }
+      throw error;
+    }
+
+    res.status(200).json({ message: 'Lost item updated successfully', item: formatItem(updatedItem) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -210,17 +288,24 @@ exports.returnLostItem = async (req, res) => {
     const { id } = req.params;
     const { receiver } = req.body;
 
-    const item = await LostItem.findByPk(id);
-    if (!item) {
-      return res.status(404).json({ message: 'Lost item not found' });
+    const { data: updatedItem, error } = await supabase
+      .from('items')
+      .update({
+        status: 'removed',
+        receiver: receiver || 'Anonymous Claimer'
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return res.status(404).json({ message: 'Lost item not found' });
+      }
+      throw error;
     }
 
-    await item.update({
-      status: 'removed',
-      receiver: receiver || 'Anonymous Claimer'
-    });
-
-    res.status(200).json({ message: 'Item marked as returned successfully', item });
+    res.status(200).json({ message: 'Item marked as returned successfully', item: formatItem(updatedItem) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -230,12 +315,17 @@ exports.returnLostItem = async (req, res) => {
 exports.deleteLostItem = async (req, res) => {
   try {
     const { id } = req.params;
-    const item = await LostItem.findByPk(id);
-    if (!item) {
+
+    const { data: item, error: findError } = await supabase
+      .from('items')
+      .select('picture')
+      .eq('id', id)
+      .single();
+
+    if (findError || !item) {
       return res.status(404).json({ message: 'Lost item not found' });
     }
 
-    // Delete associated image file from disk
     if (item.picture) {
       const imagePath = path.join(__dirname, '../../', item.picture);
       if (fs.existsSync(imagePath)) {
@@ -243,7 +333,13 @@ exports.deleteLostItem = async (req, res) => {
       }
     }
 
-    await item.destroy();
+    const { error: deleteError } = await supabase
+      .from('items')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) throw deleteError;
+
     res.status(200).json({ message: 'Lost item deleted permanently from database' });
   } catch (error) {
     res.status(500).json({ message: error.message });

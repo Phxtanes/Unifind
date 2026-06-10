@@ -22,3 +22,10 @@ exports.isAdmin = (req, res, next) => {
   }
   next();
 };
+
+exports.isStaffOrAdmin = (req, res, next) => {
+  if (req.userRole !== 'staff' && req.userRole !== 'admin') {
+    return res.status(403).json({ message: 'สิทธิ์การเข้าใช้งานนี้เฉพาะเจ้าหน้าที่ (Staff/Admin) เท่านั้น' });
+  }
+  next();
+};

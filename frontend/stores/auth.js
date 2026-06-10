@@ -34,11 +34,7 @@ export const useAuthStore = defineStore('auth', {
         };
       }
     },
-    bypassLogin() {
-      this.token = 'bypass-token-12345';
-      this.user = { id: 999, username: 'BypassUser' };
-      if (process.client) localStorage.setItem('token', this.token);
-    },
+
     logout() {
       this.user = null;
       this.token = null;
@@ -49,6 +45,11 @@ export const useAuthStore = defineStore('auth', {
         const token = localStorage.getItem('token');
         if (token) this.token = token;
       }
+    },
+    bypassLogin() {
+      this.token = 'mock-token';
+      this.user = { id: '00000000-0000-0000-0000-000000000000', username: 'Test Staff' };
+      if (process.client) localStorage.setItem('token', this.token);
     }
   },
   getters: {

@@ -17,6 +17,10 @@ import { NuxtModule, ModuleDependencyMeta } from '@nuxt/schema'
   }
   interface SharedPublicRuntimeConfig {
    apiBaseUrl: string,
+
+   supabaseUrl: string,
+
+   supabaseAnonKey: string,
   }
 declare module '@nuxt/schema' {
   interface ModuleDependencies {
