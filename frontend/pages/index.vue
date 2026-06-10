@@ -45,8 +45,8 @@
           <button type="submit" class="login-button font-semibold" :disabled="loading" :class="{ loading }">
             {{ loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบเจ้าหน้าที่' }}
           </button>
-          
-          <button type="button" class="bypass-button" @click="handleBypass">
+
+           <button type="button" class="bypass-button" @click="handleBypass">
             ⚡ Bypass Login (ทดสอบระบบ)
           </button>
         </form>

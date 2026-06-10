@@ -1,17 +1,5 @@
 version: '3.8'
 services:
-  mysql_db:
-    image: mysql:8.0
-    container_name: lost_found_db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-    ports:
-      - "3307:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-
   backend:
     build:
       context: ./backend
@@ -19,15 +7,10 @@ services:
     restart: always
     ports:
       - "9001:9001"
+    env_file:
+      - ./backend/.env
     environment:
-      - DB_HOST=mysql_db
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-      - JWT_SECRET=${JWT_SECRET}
       - PORT=9001
-    depends_on:
-      - mysql_db
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
@@ -40,8 +23,9 @@ services:
     restart: always
     ports:
       - "9000:9000"
+    env_file:
+      - ./frontend/.env
     environment:
-      - NUXT_PUBLIC_API_BASE_URL=http://localhost:9001/api
       - NUXT_PORT=9000
       - NUXT_HOST=0.0.0.0
     depends_on:
@@ -50,6 +34,3 @@ services:
       - ./frontend:/usr/src/app
       - /usr/src/app/node_modules
       - /usr/src/app/.nuxt
-
-volumes:
-  db_data:

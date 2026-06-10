@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { Op, fn, col } = require('sequelize'); 
 const { GoogleGenAI, Type } = require('@google/genai'); 
-const LostItem = require('../models/LostItem'); 
-const User = require('../models/User');         
+const supabase = require('../config/supabase');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -69,7 +67,7 @@ router.post('/webhook', async (req, res) => {
             continue;
         }
 
-        // 🖼️ 2. ดักจับเมื่อผู้ใช้ส่ง "รูปภาพ" เข้ามา (Image Message Event)
+        // 🖼️ 2. [ฟีเจอร์เพิ่มใหม่] ดักจับเมื่อผู้ใช้ส่ง "รูปภาพ" เข้ามา (Image Message Event)
         if (event.type === 'message' && event.message.type === 'image') {
             const replyToken = event.replyToken;
             const messageId = event.message.id;
@@ -77,15 +75,19 @@ router.post('/webhook', async (req, res) => {
             console.log(`📸 ระบบได้รับข้อความรูปภาพ ID: ${messageId}`);
 
             try {
-                const allItems = await LostItem.findAll({
-                    attributes: ['id', 'name', 'category', 'place', 'description', 'status'],
-                    where: { status: 'stored' }, 
-                    raw: true
-                });
+                // ดึงข้อมูลรายการของหายทั้งหมดในตาราง Supabase ขึ้นมาเตรียมเทียบ
+                const { data: allItems, error: itemsError } = await supabase
+                    .from('items')
+                    .select('id, name, category, place, description, status')
+                    .in('status', ['lost', 'stored', 'สูญหาย']); // ดึงรายการที่ยังหาไม่เจอ
 
+                if (itemsError) throw itemsError;
+
+                // ดาวน์โหลดรูปภาพแปลงเป็น Base64
                 const imagePart = await getLineImageBuffer(messageId);
 
-                if (allItems.length === 0) {
+                // หากไม่มีข้อมูลของหายในระบบเลย ให้แจ้งกลับทันที
+                if (!allItems || allItems.length === 0) {
                     await replyToLine(replyToken, [{
                         type: 'text',
                         text: `🔍 [ระบบรับรูปภาพเรียบร้อย]\n\nจากการวิเคราะห์รูปภาพเบื้องต้นและตรวจสอบฐานข้อมูลส่วนกลาง ปัจจุบันยังไม่มีรายงานสิ่งของคงค้างในระบบที่สอดคล้องกันครับ ทางระบบแนะนำให้ท่านโพสต์รายละเอียดขึ้นสู่เว็บไซต์หลักก่อนครับ`
@@ -93,18 +95,19 @@ router.post('/webhook', async (req, res) => {
                     continue;
                 }
 
+                // ส่งรูปภาพพร้อมคลังข้อมูลทั้งหมดไปให้ Gemini ช่วย Match ค้นหาหาความเชื่อมโยง
                 const imageAnalysisPrompt = `คุณคือ AI ตรวจสอบภาพของหายในระบบ Unifind
-                จงดูรูปภาพสิ่งของที่ผู้ใช้ส่งมานี้อย่างละเอียด วิเคราะห์ว่ามันคืออะไร สีอะไร ลักษณะอย่างไร จากนั้นเปรียบเทียบกับรายการสิ่งของในฐานข้อมูล MySQL ด้านล่างนี้:
+                จงดูรูปภาพสิ่งของที่ผู้ใช้ส่งมานี้อย่างละเอียด วิเคราะห์ว่ามันคืออะไร สีอะไร ลักษณะอย่างไร จากนั้นเปรียบเทียบกับรายการสิ่งของในฐานข้อมูลด้านล่างนี้:
                 
                 รายการข้อมูลในฐานข้อมูล:
                 ${JSON.stringify(allItems, null, 2)}
                 
                 หน้าที่ของคุณ:
                 1. ตรวจสอบว่าในภาพ มีสิ่งของชิ้นใดที่ "ตรงกัน หรือใกล้เคียงมากที่สุด" กับสิ่งของในข้อมูลหรือไม่
-                2. หากพบข้อมูลที่สอดคล้องกัน ให้ตอบกลับเป็น JSON ในรูปแบบนี้เท่านั้น:
-                   { "match": true, "itemId": [ใส่ ID ของชิ้นที่เจอใน DB], "reason": "อธิบายสั้นๆ" }
+                2. หากพบข้อมูลที่สอดคล้องกัน (เช่น ในรูปเป็นกระเป๋าตังค์สีน้ำตาล และใน DB มีกระเป๋าตังค์สีน้ำตาลระบุไว้) ให้ตอบกลับเป็น JSON ในรูปแบบนี้เท่านั้น:
+                   { "match": true, "itemId": [ใส่ ID ของชิ้นที่เจอใน DB], "reason": "อธิบายเหตุผลเป็นภาษาไทยว่าทำไมถึงแมตช์กันอย่างสุภาพและเป็นทางการ" }
                 3. หากตรวจสอบแล้วไม่พบสิ่งของใดในคลังข้อมูลที่ตรงกับรูปภาพนี้เลย ให้ตอบกลับเป็น JSON รูปแบบนี้:
-                   { "match": false, "itemId": null, "reason": "อธิบายสั้นๆ" }
+                   { "match": false, "itemId": null, "reason": "อธิบายสั้นๆ ว่าวิเคราะห์แล้วภาพนี้คืออะไร แต่ไม่ตรงกับระบบ" }
                 
                 ตอบกลับเป็น JSON รูปแบบที่กำหนดเท่านั้น ห้ามพิมพ์ข้อความอื่นนอกเหนือจาก JSON`;
 
@@ -117,17 +120,23 @@ router.post('/webhook', async (req, res) => {
                 const resultData = JSON.parse(aiImageResult.text.trim());
                 console.log('🤖 ผลวิเคราะห์รูปภาพจาก AI:', resultData);
 
+                // เคสที่ 1: AI ตรวจพบว่ารูปภาพ "ตรงกับข้อมูลในระบบ"
                 if (resultData.match && resultData.itemId) {
-                    const matchedItem = await LostItem.findByPk(resultData.itemId);
-                    const finalPlace = matchedItem ? matchedItem.place : 'สถานที่ระบุ';
+                    const { data: matchedItem } = await supabase
+                        .from('items')
+                        .select('name')
+                        .eq('id', resultData.itemId)
+                        .maybeSingle();
+
                     await replyToLine(replyToken, [{
                         type: 'text',
-                        text: `🔍 [ระบบ Unifind ตรวจพบข้อมูลจากรูปภาพ!]\n\n🎉 แจ้งผลสำเร็จ: จากการตรวจสอบเชิงลึกด้วยระบบวิเคราะห์ภาพปัญญาประดิษฐ์ (AI) พบว่าในคลังระบบส่วนกลางมีสิ่งของที่มีลักษณะตรงกับที่คุณกำลังตามหาอยู่ ถูกพบเจอที่ ${finalPlace} ครับ\n\n📌 ขั้นตอนการดำเนินการต่อ:\nแนะนำให้ท่านเตรียมบัตรประจำตัวนักศึกษา เข้าติดต่อยืนยันตัวตน ณ อาคารสำนักกิจการนักศึกษา เพื่อให้ข้อมูลและอธิบายลักษณะเฉพาะของสิ่งของแก่เจ้าหน้าที่ในการตรวจสอบรับของคืนครับ`
+                        text: `🔍 [ระบบ Unifind ตรวจพบข้อมูลจากรูปภาพ!]\n\n🎉 แจ้งผลสำเร็จ: จากการตรวจสอบเชิงลึกด้วยระบบวิเคราะห์ภาพปัญญาประดิษฐ์ (AI) พบว่ารูปภาพที่ท่านส่งมา มีลักษณะสอดคล้องกับสิ่งของในระบบรหัสรายการ #${resultData.itemId} (${matchedItem ? matchedItem.name : ''}) ครับ\n\n📝 เหตุผลสนับสนุน: ${resultData.reason}\n\n📌 ขั้นตอนถัดไป:\nแนะนำให้ท่านนำหลักฐานการแสดงตน พร้อมรายละเอียดความเป็นเจ้าของ เข้าติดต่อประสานงานรับสิ่งของคืน ณ จุดบริการของมหาวิทยาลัยได้เลยครับ`
                     }]);
                 } else {
+                    // เคสที่ 2: วิเคราะห์แล้วไม่เจอของที่ตรงกัน
                     await replyToLine(replyToken, [{
                         type: 'text',
-                        text: `🔍 [ผลการวิเคราะห์รูปภาพเสร็จสิ้น]\n\nทางระบบวิเคราะห์รูปภาพของท่านเรียบร้อยแล้ว ปัจจุบัน "ยังไม่พบ" รายการสิ่งของสูญหายที่มีลักษณะทางกายภาพ สี หรือประเภทที่สอดคล้องกับภาพนี้ในคลังฐานข้อมูลคอมมูนิตี้ส่วนกลางครับ\n\n📌 คำแนะนำเพิ่มเติม:\nท่านสามารถพิมพ์ระบุสถานที่หรือเวลาเพิ่มเติม หรือเข้าลงทะเบียนติดตามสิ่งของต่อได้ที่หน้าเว็บไซต์ Unifind ครับ`
+                        text: `🔍 [ผลการวิเคราะห์รูปภาพเสร็จสิ้น]\n\nทางระบบวิเคราะห์รูปภาพของท่านแล้วพบว่าคือประเภท "${resultData.reason}" อย่างไรก็ตาม ปัจจุบัน "ยังไม่พบ" รายการสิ่งของสูญหายที่มีลักษณะทางกายภาพ สี หรือประเภทที่สอดคล้องกับภาพนี้ในคลังฐานข้อมูลคอมมูนิตี้ครับ\n\n📌 คำแนะนำเพิ่มเติม:\nท่านสามารถพิมพ์ระบุสถานที่หรือเวลาเพิ่มเติม หรือเข้าลงทะเบียนติดตามสิ่งของต่อได้ที่หน้าเว็บไซต์ Unifind ครับ`
                     }]);
                 }
                 continue;
@@ -150,7 +159,11 @@ router.post('/webhook', async (req, res) => {
             // ฟีเจอร์ผูกบัญชี
             if (userMessage.startsWith('ผูกบัญชี:')) {
                 const email = userMessage.split('ผูกบัญชี:')[1].trim();
-                const user = await User.findOne({ where: { email: email } });
+                const { data: user, error: userError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('email', email)
+                    .maybeSingle();
                 
                 if (user) {
                     const bindSuccessPatterns = [
@@ -209,21 +222,27 @@ router.post('/webhook', async (req, res) => {
 
                 // เคสสรุปรายงานสถิติตามหมวดหมู่ (SUMMARY)
                 if (intentData.intent === 'SUMMARY') {
-                    const categorySummary = await LostItem.findAll({
-                        attributes: ['category', [fn('COUNT', col('category')), 'itemCount']],
-                        group: ['category'],
-                        raw: true
-                    });
+                    const { data: allItemsForSummary, error: summaryError } = await supabase
+                        .from('items')
+                        .select('category');
 
-                    if (categorySummary.length === 0) {
+                    if (summaryError) throw summaryError;
+
+                    if (!allItemsForSummary || allItemsForSummary.length === 0) {
                         await replyToLine(replyToken, [{ type: 'text', text: `📢 [รายงานสถานะระบบ]\n\nปัจจุบันยังไม่มีรายงานสิ่งของสูญหายหรือสิ่งของคงค้างภายในระบบ Unifind ครับ` }]);
                         continue;
                     }
 
+                    // จัดกลุ่มสถิติหมวดหมู่ด้วย JavaScript
+                    const countMap = {};
+                    allItemsForSummary.forEach((item) => {
+                        const cat = item.category || 'อื่นๆ / ไม่ระบุหมวดหมู่';
+                        countMap[cat] = (countMap[cat] || 0) + 1;
+                    });
+
                     let summaryReply = `📊 [รายงานสรุปสถิติตัวเลขสิ่งของคงค้างในระบบ Unifind]\n\nจากการตรวจสอบฐานข้อมูลส่วนกลาง พบสิ่งของที่ลงทะเบียนแยกตามหมวดหมู่ดังต่อไปนี้ครับ:\n`;
-                    categorySummary.forEach((cat) => {
-                        const categoryName = cat.category || 'อื่นๆ / ไม่ระบุหมวดหมู่';
-                        summaryReply += `\n📦 หมวดหมู่: ${categoryName}\n🔹 จำนวนสิ่งของ inระบบ: ${cat.itemCount} รายการ\n────────────────`;
+                    Object.keys(countMap).forEach((categoryName) => {
+                        summaryReply += `\n📦 หมวดหมู่: ${categoryName}\n🔹 จำนวนสิ่งของในระบบ: ${countMap[categoryName]} รายการ\n────────────────`;
                     });
                     summaryReply += `\n\n📌 คำแนะนำในการดำเนินการต่อ:\nหากท่านคาดว่ามีสิ่งของของท่านอยู่ กรุณาพิมพ์ระบุรายละเอียดเชิงลึก หรือเข้าตรวจสอบที่หน้าเว็บไซต์ Unifind ครับ`;
 
@@ -231,7 +250,7 @@ router.post('/webhook', async (req, res) => {
                     continue;
                 }
 
-                // 🛡️ เคสค้นหารายชิ้นสภาวะปกติ (SEARCH) - เรียงลำดับคิว ID ล่าสุดเพื่อดึงสถานที่แมตช์จริง
+                // เคสปกติ: ค้นหาเจาะจงรายชิ้นด้วย Text (SEARCH)
                 if (intentData.intent === 'SEARCH') {
                     const extractionPrompt = `วิเคราะห์ข้อความแจ้งของหายต่อไปนี้ แล้วสกัดเอาคีย์เวิร์ด ชื่อสิ่งของ, สถานที่ และ เวลา ออกมาในรูปแบบ JSON ตามโครงสร้างที่กำหนดเท่านั้น ข้อความผู้ใช้: "${userMessage}"`;
 
@@ -254,32 +273,31 @@ router.post('/webhook', async (req, res) => {
 
                     const searchData = JSON.parse(aiResponse.text.trim());
 
-                    let searchConditions = {
-                        status: 'stored', 
-                        [Op.or]: [
-                            { name: { [Op.like]: `%${searchData.keyword}%` } },
-                            { description: { [Op.like]: `%${searchData.keyword}%` } }
-                        ]
-                    };
-                    if (searchData.place) searchConditions.place = { [Op.like]: `%${searchData.place}%` };
-
-                    // 🟢 ปรับฟังก์ชันให้ Order ตัวล่าสุดขึ้นมาก่อนเพื่อป้องกันดึงตึกเก่ามามั่ว
-                    const candidateItems = await LostItem.findAll({ 
-                        where: searchConditions,
-                        order: [['id', 'DESC']]
-                    });
+                    let query = supabase.from('items').select('*');
                     
-                    if (candidateItems.length > 0) {
-                        const matchPlace = candidateItems[0].place || "สถานที่ระบุ";
-                        let secureMatchedReply = `🔍 [ระบบ Unifind - ตรวจสอบฐานข้อมูลส่วนกลาง]\n\n📢 แจ้งผลการตรวจสอบฐานข้อมูล: ตรวจพบว่าในระบบคลังส่วนกลางมีสิ่งของที่มีลักษณะตรงกับที่คุณกำลังตามหาอยู่ ถูกพบเจอที่ ${matchPlace} ครับ\n\n📌 ขั้นตอนการดำเนินการต่อ:\nแนะนำให้ท่านเตรียมบัตรประจำตัวนักศึกษา เข้าติดต่อยืนยันตัวตน ณ อาคารสำนักกิจการนักศึกษา เพื่อให้ข้อมูลและอธิบายลักษณะเฉพาะของสิ่งของแก่เจ้าหน้าที่ในการตรวจสอบรับของคืนครับ`;
-                        await replyToLine(replyToken, [{ type: 'text', text: secureMatchedReply }]);
-                        continue;
-                    } else {
-                        await replyToLine(replyToken, [{ type: 'text', text: `🔍 [ระบบตรวจสอบเสร็จสิ้น]\n\nจากการตรวจสอบฐานข้อมูลสำหรับคำค้นหา "${searchData.keyword}" ปัจจุบันทางเรา "ยังไม่พบ" ประวัติสิ่งของคงค้างที่ตรงกันในระบบครับ แนะนำให้ท่านเข้าประกาศตรวจสอบเพิ่มเติมได้ที่หน้าเว็บไซต์หลัก Unifind ครับ` }]);
+                    // ทำ OR filter ใน Supabase ค้นหาจากชื่อและคำอธิบาย
+                    const orFilter = `name.ilike.%${searchData.keyword}%,description.ilike.%${searchData.keyword}%`;
+                    query = query.or(orFilter);
+
+                    if (searchData.place) {
+                        query = query.ilike('place', `%${searchData.place}%`);
+                    }
+
+                    const { data: candidateItems, error: searchError } = await query;
+                    if (searchError) throw searchError;
+
+                    let isMatched = candidateItems && candidateItems.length > 0;
+
+                    if (isMatched) {
+                        await replyToLine(replyToken, [{ 
+                            type: 'text', 
+                            text: `🔍 [ระบบตรวจสอบข้อมูลสำเร็จ]\n\n🎉 แจ้งผลการตรวจสอบ: ตรวจพบข้อมูลสิ่งของเกี่ยวกับ "${searchData.keyword}" ที่มีรายละเอียด สอดคล้องกับที่ท่านระบุไว้ในฐานข้อมูลกลางครับ\n\n📌 ขั้นตอนการรับสิ่งของคืน:\nกรุณาเตรียมหลักฐานความเป็นเจ้าของเข้าติดต่อยืนยันตัวตน ณ จุดบริการส่วนกลางของมหาวิทยาลัยเพื่อรับของคืนได้ทันทีครับ` 
+                        }]);
                         continue;
                     }
                 }
 
+                // เคสชวนคุยอื่น ๆ
                 const chatbotPrompt = `คุณคือระบบปัญญาประดิษฐ์ช่วยเหลือส่วนกลางของแพลตฟอร์ม Unifind ประจำมหาวิทยาลัยหอการค้าไทย (UTCC) ตอบกลับให้สุภาพ เป็นทางการ ใช้คำแทนตัวว่าระบบ และลงท้ายด้วยครับเสมอ ข้อความผู้ใช้: "${userMessage}"`;
                 const aiChatResponse = await ai.models.generateContent({
                     model: 'gemini-2.5-flash',
@@ -290,76 +308,8 @@ router.post('/webhook', async (req, res) => {
                 await replyToLine(replyToken, [{ type: 'text', text: aiChatResponse.text.trim() }]);
 
             } catch (error) {
-                // 🔴 บล็อกดักพังสำรอง (Fallback): เพิ่มระบบคำนวณน้ำหนัก Scoring แยกแยะความถูกต้องเชิงลึกระดับรายฟิลด์
-                console.error('⚠️ [Fallback Activation] Hybrid AI System ขัดข้อง (503):', error.message);
-
-                try {
-                    // 1. หั่นประโยคแชทของผู้ใช้ออกเป็นชิ้นคำค้นหาหลัก
-                    const words = userMessage.split(/[\s,./?!:;()""'']+/);
-                    const cleanWords = [];
-                    const skipWords = ['ตามหา', 'มี', 'ไหม', 'ครับ', 'ค่ะ', 'ลืมไว้', 'ตกไว้', 'ทำหาย', 'ระบุ', 'น่าจะ', 'ตรง', 'ยี่ห้อ', 'ที่', 'ผม', 'ฉัน', 'ยี่ห้อ', 'สี'];
-                    
-                    words.forEach(w => {
-                        const trimmed = w.trim();
-                        // เก็บคำค้นหาที่มีความยาวตั้งแต่ 2 ตัวอักษรขึ้นไป และไม่ใช่คำเชื่อมทั่วไป
-                        if (trimmed.length >= 2 && !skipWords.includes(trimmed)) {
-                            cleanWords.push(trimmed.toLowerCase());
-                        }
-                    });
-
-                    // 2. ดึงไอเทมทั้งหมดที่สถานะเป็น 'stored' ขึ้นมาเพื่อวิเคราะห์เปรียบเทียบความตรงกัน
-                    const dbItems = await LostItem.findAll({
-                        where: { status: 'stored' },
-                        raw: true
-                    });
-
-                    let bestMatchItem = null;
-                    let highestScore = 0;
-
-                    // 3. ลูปคำนวณคะแนนตรวจสอบความละเอียด (Detailed Scoring Algorithm)
-                    if (dbItems && dbItems.length > 0 && cleanWords.length > 0) {
-                        for (let item of dbItems) {
-                            let currentScore = 0;
-                            const nameText = (item.name || "").toLowerCase();
-                            const descText = (item.description || "").toLowerCase();
-                            const placeText = (item.place || "").toLowerCase();
-                            const catText = (item.category || "").toLowerCase();
-
-                            // วิ่งสแกนตรวจคำทีละคำ ชิ้นไหนพบคำตรงในฟิลด์สำคัญเยอะ คะแนนจะยิ่งพุ่งสูง
-                            cleanWords.forEach(word => {
-                                if (nameText.includes(word)) currentScore += 10;       // ตรงกับชื่อสิ่งของ (น้ำหนักเยอะสุด)
-                                if (descText.includes(word)) currentScore += 5;        // ตรงกับรายละเอียดข้างใน
-                                if (placeText.includes(word)) currentScore += 8;       // ตรงกับสถานที่ลืมไว้
-                                if (catText.includes(word)) currentScore += 3;         // ตรงกับหมวดหมู่
-                            });
-
-                            // ถ้าคะแนนวิเคราะห์รวมของชิ้นนี้ ชนะค่าสูงสุดก่อนหน้า ให้บันทึกเป็นตัวเลือกที่ดีที่สุดแทน
-                            if (currentScore > highestScore) {
-                                highestScore = currentScore;
-                                bestMatchItem = item;
-                            }
-                        }
-                    }
-
-                    // 🔒 ตรวจสอบผลลัพธ์: ถ้ามีไอเทมที่คะแนนผ่านสเปก ให้พ่นข้อมูลสถานที่ของไอเทมชิ้นนั้นออกมาตรง ๆ
-                    if (highestScore > 0 && bestMatchItem) {
-                        const targetPlace = bestMatchItem.place || "สถานที่ระบุ";
-                        
-                        let secureFallbackReply = `🔍 [ระบบ Unifind - ตรวจสอบฐานข้อมูลส่วนกลาง]\n\n`;
-                        secureFallbackReply += `📢 แจ้งผลการตรวจสอบฐานข้อมูล: ตรวจพบว่าในระบบคลังส่วนกลางมีสิ่งของที่มีลักษณะตรงกับที่คุณกำลังตามหาอยู่ ถูกพบเจอที่บริเวณ ${targetPlace} จริงครับ\n\n`;
-                        secureFallbackReply += `📌 ขั้นตอนการดำเนินการต่อ:\nแนะนำให้ท่านเตรียมบัตรประจำตัวนักศึกษา เข้าติดต่อยืนยันตัวตน ณ อาคารสำนักกิจการนักศึกษา เพื่อให้ข้อมูลและอธิบายลักษณะเฉพาะของสิ่งของแก่เจ้าหน้าที่ในการตรวจสอบรับของคืนครับ`;
-                        
-                        await replyToLine(replyToken, [{ type: 'text', text: secureFallbackReply }]);
-                    } else {
-                        await replyToLine(replyToken, [{ 
-                            type: 'text', 
-                            text: `🔍 [ระบบสืบค้น Unifind]\n\n⚠️ ขณะนี้ระบบ AI หลักของ Google ขัดข้องชั่วคราว และระบบคลังสำรองได้สแกนตรวจสอบคำค้นหาในตารางฐานข้อมูลจริงเรียบร้อยแล้ว ปัจจุบัน "ยังไม่พบ" รายการสิ่งของที่แมตช์ตรงกันในขณะนี้ครับ` 
-                        }]);
-                    }
-                } catch (dbFallbackError) {
-                    console.error('❌ ระบบคลังสำรองขั้นสุดท้ายขัดข้อง:', dbFallbackError);
-                    await replyToLine(replyToken, [{ type: 'text', text: welcomeAndGuideMessage }]);
-                }
+                console.error('❌ Hybrid AI System Error:', error);
+                await replyToLine(replyToken, [{ type: 'text', text: welcomeAndGuideMessage }]);
             }
         }
     }
