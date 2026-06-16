@@ -3,7 +3,7 @@ services:
   backend:
     build:
       context: ./backend
-    container_name: lost_found_backend
+    container_name: unifind_backend
     restart: always
     ports:
       - "9001:9001"
