@@ -1,4 +1,19 @@
 const supabase = require('../config/supabase');
+const claimsDb = require('../config/claimsDb');
+const lineBindings = require('../config/lineBindings');
+const matchingService = require('../services/matchingService');
+
+// Helper to get category name by ID
+const getCategoryName = (categoryId) => {
+  const mapping = {
+    1: 'เอกสาร',
+    2: 'กระเป๋า',
+    3: 'โทรศัพท์',
+    4: 'กุญแจ',
+    5: 'เครื่องประดับ'
+  };
+  return mapping[categoryId] || 'อื่นๆ';
+};
 
 // POST /api/claims (Submit a claim)
 exports.createClaim = async (req, res) => {
@@ -11,32 +26,33 @@ exports.createClaim = async (req, res) => {
 
     // Check if item exists and is active/stored
     const { data: item, error: findError } = await supabase
-      .from('items')
+      .from('FoundItem')
       .select('status')
-      .eq('id', item_id)
+      .eq('found_item_id', item_id)
       .maybeSingle();
 
     if (findError || !item) {
       return res.status(404).json({ message: 'Item not found' });
     }
 
-    if (item.status === 'claimed' || item.status === 'removed' || item.status === 'deleted') {
+    if (item.status === 'CLAIMED') {
       return res.status(400).json({ message: 'Item is already claimed or unavailable' });
     }
 
-    const { data: claim, error } = await supabase
-      .from('claims')
-      .insert({
-        item_id,
-        user_id: req.userId, // From auth token
-        status: 'pending',
-        proof_description,
-        proof_image_url
-      })
-      .select()
+    // Fetch claimer's username from supabase User table
+    const { data: claimant } = await supabase
+      .from('User')
+      .select('username')
+      .eq('user_id', req.userId)
       .single();
 
-    if (error) throw error;
+    const claim = claimsDb.createClaim({
+      found_item_id: item_id,
+      claimer_id: req.userId,
+      claimer_username: claimant ? claimant.username : 'Registered User',
+      proof_description,
+      proof_image_url
+    });
 
     res.status(201).json({ message: 'Claim request submitted successfully', claim });
   } catch (error) {
@@ -49,19 +65,52 @@ exports.getClaims = async (req, res) => {
   try {
     const { status } = req.query;
 
-    let query = supabase
-      .from('claims')
-      .select('*, items:item_id(name, category, place), users:user_id(username, email)')
-      .order('created_at', { ascending: false });
+    const localClaims = claimsDb.getClaims();
+    // Filter status if query provided
+    const filtered = status ? localClaims.filter(c => c.status === status) : localClaims;
 
-    if (status) {
-      query = query.eq('status', status);
+    // Fetch found items and users referenced in filtered claims
+    const foundItemIds = [...new Set(filtered.map(c => c.found_item_id))];
+    const userIds = [...new Set(filtered.map(c => c.claimer_id))];
+
+    let items = [];
+    if (foundItemIds.length > 0) {
+      const { data } = await supabase
+        .from('FoundItem')
+        .select('found_item_id, item_name, category_id, location_id')
+        .in('found_item_id', foundItemIds);
+      items = data || [];
     }
 
-    const { data: claims, error } = await query;
-    if (error) throw error;
+    let users = [];
+    if (userIds.length > 0) {
+      const { data } = await supabase
+        .from('User')
+        .select('user_id, username, email')
+        .in('user_id', userIds);
+      users = data || [];
+    }
 
-    res.status(200).json(claims);
+    // Populate data for frontend expected keys
+    const populated = filtered.map(c => {
+      const item = items.find(i => i.found_item_id === c.found_item_id);
+      const user = users.find(u => u.user_id === c.claimer_id);
+      return {
+        id: c.claim_id,
+        claim_id: c.claim_id,
+        item_id: c.found_item_id,
+        user_id: c.claimer_id,
+        status: c.status,
+        proof_description: c.proof_description,
+        proof_image_url: c.proof_image_url,
+        claim_date: c.claim_date,
+        reject_reason: c.reject_reason,
+        items: item ? { name: item.item_name, category: getCategoryName(item.category_id), place: '' } : null,
+        users: user ? { username: user.username, email: user.email } : null
+      };
+    });
+
+    res.status(200).json(populated);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -72,14 +121,8 @@ exports.approveClaim = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get claim details to find associated item and claimer
-    const { data: claim, error: claimError } = await supabase
-      .from('claims')
-      .select('*, users:user_id(username)')
-      .eq('id', id)
-      .single();
-
-    if (claimError || !claim) {
+    const claim = claimsDb.getClaimById(id);
+    if (!claim) {
       return res.status(404).json({ message: 'Claim request not found' });
     }
 
@@ -87,32 +130,45 @@ exports.approveClaim = async (req, res) => {
       return res.status(400).json({ message: `Claim is already ${claim.status}` });
     }
 
-    // 1. Update the claim status to approved
-    const { error: approveError } = await supabase
-      .from('claims')
-      .update({ status: 'approved' })
-      .eq('id', id);
+    // 1. Update the claim status to approved locally
+    claimsDb.updateClaimStatus(id, 'approved');
 
-    if (approveError) throw approveError;
-
-    // 2. Update the item status to claimed and record receiver details
-    const receiverName = claim.users ? claim.users.username : 'Registered User';
+    // 2. Update the item status to CLAIMED in Supabase
     const { error: itemUpdateError } = await supabase
-      .from('items')
+      .from('FoundItem')
       .update({
-        status: 'claimed',
-        receiver: receiverName
+        status: 'CLAIMED'
       })
-      .eq('id', claim.item_id);
+      .eq('found_item_id', claim.found_item_id);
 
     if (itemUpdateError) throw itemUpdateError;
 
-    // 3. Reject other pending claims for the same item automatically
-    await supabase
-      .from('claims')
-      .update({ status: 'rejected' })
-      .eq('item_id', claim.item_id)
-      .eq('status', 'pending');
+    // 3. Reject other pending claims for the same item automatically locally
+    claimsDb.rejectOtherPendingClaims(claim.found_item_id, id);
+
+    // 4. Send LINE push notification to the claimant
+    const { data: user } = await supabase
+      .from('User')
+      .select('email')
+      .eq('user_id', claim.claimer_id)
+      .single();
+
+    if (user) {
+      const lineUserId = lineBindings.getLineUserId(user.email);
+      if (lineUserId) {
+        const { data: item } = await supabase
+          .from('FoundItem')
+          .select('item_name')
+          .eq('found_item_id', claim.found_item_id)
+          .single();
+
+        const itemName = item ? item.item_name : 'สิ่งของสูญหาย';
+        const msg = `[ระบบ Unifind] 🎉 คำร้องขอรับคืนสิ่งของสำหรับ "${itemName}" ของท่านได้รับการอนุมัติเรียบร้อยแล้ว!
+
+ท่านสามารถติดต่อประสานงานเพื่อรับสิ่งของคืนได้ ณ จุดบริการรับของหายของมหาวิทยาลัยได้เลยครับ`;
+        await matchingService.sendPushToLine(lineUserId, msg);
+      }
+    }
 
     res.status(200).json({ message: 'Claim approved successfully and item marked as claimed!' });
   } catch (error) {
@@ -124,14 +180,10 @@ exports.approveClaim = async (req, res) => {
 exports.rejectClaim = async (req, res) => {
   try {
     const { id } = req.params;
+    const { reject_reason } = req.body;
 
-    const { data: claim, error: claimError } = await supabase
-      .from('claims')
-      .select('status')
-      .eq('id', id)
-      .single();
-
-    if (claimError || !claim) {
+    const claim = claimsDb.getClaimById(id);
+    if (!claim) {
       return res.status(404).json({ message: 'Claim request not found' });
     }
 
@@ -139,12 +191,33 @@ exports.rejectClaim = async (req, res) => {
       return res.status(400).json({ message: `Claim is already ${claim.status}` });
     }
 
-    const { error } = await supabase
-      .from('claims')
-      .update({ status: 'rejected' })
-      .eq('id', id);
+    // Update claim status to rejected locally
+    claimsDb.updateClaimStatus(id, 'rejected', reject_reason || 'เอกสารหลักฐานไม่เพียงพอ');
 
-    if (error) throw error;
+    // Send LINE push notification to the claimant
+    const { data: user } = await supabase
+      .from('User')
+      .select('email')
+      .eq('user_id', claim.claimer_id)
+      .single();
+
+    if (user) {
+      const lineUserId = lineBindings.getLineUserId(user.email);
+      if (lineUserId) {
+        const { data: item } = await supabase
+          .from('FoundItem')
+          .select('item_name')
+          .eq('found_item_id', claim.found_item_id)
+          .single();
+
+        const itemName = item ? item.item_name : 'สิ่งของสูญหาย';
+        const msg = `[ระบบ Unifind] ⚠️ คำร้องขอรับคืนสิ่งของสำหรับ "${itemName}" ของท่านไม่ผ่านการอนุมัติ
+
+เหตุผลหลัก: ${reject_reason || 'หลักฐานยืนยันตัวตนหรือความเชื่อมโยงกับสิ่งของไม่ชัดเจน'}
+แนะนำให้ยื่นคำร้องเข้ามาใหม่อีกครั้งพร้อมรูปถ่ายหลักฐานที่ชัดเจนมากขึ้นครับ`;
+        await matchingService.sendPushToLine(lineUserId, msg);
+      }
+    }
 
     res.status(200).json({ message: 'Claim request rejected successfully.' });
   } catch (error) {
