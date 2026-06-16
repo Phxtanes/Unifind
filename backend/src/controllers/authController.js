@@ -2,14 +2,17 @@ const supabase = require('../config/supabase');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Helper to format Supabase user response (convert snake_case to camelCase)
+// Helper to format Supabase user response (convert DB schema to frontend expected formats)
 const formatUser = (user) => {
   if (!user) return null;
-  const { is_active, is_approved, ...rest } = user;
   return {
-    ...rest,
-    isActive: is_active,
-    isApproved: is_approved
+    id: user.user_id,
+    username: user.username,
+    email: user.email,
+    role: user.role ? user.role.toLowerCase() : 'member', // frontend expects: 'admin', 'staff', 'member'
+    isActive: user.status === 'Active',
+    isApproved: user.status === 'Active' || user.role === 'ADMIN' || user.role === 'STAFF',
+    createdAt: user.created_at
   };
 };
 
@@ -19,9 +22,9 @@ exports.register = async (req, res) => {
     const { username, email, password } = req.body;
 
     // Check if username already exists
-    const { data: existingUser, error: userError } = await supabase
-      .from('users')
-      .select('id')
+    const { data: existingUser } = await supabase
+      .from('User')
+      .select('user_id')
       .eq('username', username)
       .maybeSingle();
 
@@ -30,9 +33,9 @@ exports.register = async (req, res) => {
     }
 
     // Check if email already exists
-    const { data: existingEmail, error: emailError } = await supabase
-      .from('users')
-      .select('id')
+    const { data: existingEmail } = await supabase
+      .from('User')
+      .select('user_id')
       .eq('email', email)
       .maybeSingle();
 
@@ -43,14 +46,14 @@ exports.register = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 8);
     
     const { error: insertError } = await supabase
-      .from('users')
+      .from('User')
       .insert({
         username,
         email,
-        password: hashedPassword,
-        role: 'member',
-        is_approved: false,
-        is_active: true
+        password_hash: hashedPassword,
+        full_name: username,
+        role: 'MEMBER',
+        status: 'Pending'
       });
 
     if (insertError) throw insertError;
@@ -66,8 +69,8 @@ exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    const { data: user, error } = await supabase
-      .from('users')
+    const { data: user } = await supabase
+      .from('User')
       .select('*')
       .eq('username', username)
       .maybeSingle();
@@ -76,35 +79,30 @@ exports.login = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Check if account is active
-    if (!user.is_active) {
+    // Check if account is active/suspended
+    if (user.status === 'Suspended') {
       return res.status(403).json({ message: 'บัญชีนี้ถูกระงับการใช้งานชั่วคราว' });
     }
 
-    // For staff, check if approved by Admin
-    if (user.role === 'staff' && !user.is_approved) {
-      return res.status(403).json({ message: 'บัญชีนี้ยังไม่ได้รับการอนุมัติจากผู้ดูแลระบบ' });
-    }
-
-    // For member who hasn't been approved yet
-    if (user.role === 'member') {
+    // For member who hasn't been approved to staff yet
+    if (user.role === 'MEMBER' && user.status === 'Pending') {
       return res.status(403).json({ message: 'บัญชีของคุณยังอยู่ระหว่างรออนุมัติสิทธิ์เข้าใช้งาน' });
     }
 
-    const passwordIsValid = await bcrypt.compare(password, user.password);
+    const passwordIsValid = await bcrypt.compare(password, user.password_hash);
     if (!passwordIsValid) {
       return res.status(401).json({ message: 'Invalid Password!' });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, {
+    const token = jwt.sign({ id: user.user_id, role: user.role.toLowerCase() }, process.env.JWT_SECRET, {
       expiresIn: 86400 // 24 hours
     });
 
     res.status(200).json({
-      id: user.id,
+      id: user.user_id,
       username: user.username,
       email: user.email,
-      role: user.role,
+      role: user.role.toLowerCase(),
       accessToken: token
     });
   } catch (error) {
@@ -118,9 +116,9 @@ exports.login = async (req, res) => {
 exports.getUsers = async (req, res) => {
   try {
     const { data: users, error } = await supabase
-      .from('users')
-      .select('id, username, email, role, is_active, is_approved, created_at')
-      .in('role', ['admin', 'staff']);
+      .from('User')
+      .select('user_id, username, email, role, status, created_at')
+      .in('role', ['ADMIN', 'STAFF']);
 
     if (error) throw error;
 
@@ -135,10 +133,10 @@ exports.getUsers = async (req, res) => {
 exports.getPendingUsers = async (req, res) => {
   try {
     const { data: pendingUsers, error } = await supabase
-      .from('users')
-      .select('id, username, email, role, is_active, is_approved, created_at')
-      .eq('role', 'member')
-      .eq('is_approved', false);
+      .from('User')
+      .select('user_id, username, email, role, status, created_at')
+      .eq('role', 'MEMBER')
+      .eq('status', 'Pending');
 
     if (error) throw error;
 
@@ -155,13 +153,12 @@ exports.approveUser = async (req, res) => {
     const { userId } = req.params;
 
     const { data: user, error } = await supabase
-      .from('users')
+      .from('User')
       .update({
-        role: 'staff',
-        is_approved: true,
-        is_active: true
+        role: 'STAFF',
+        status: 'Active'
       })
-      .eq('id', userId)
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -184,9 +181,9 @@ exports.rejectUser = async (req, res) => {
     const { userId } = req.params;
 
     const { error } = await supabase
-      .from('users')
+      .from('User')
       .delete()
-      .eq('id', userId);
+      .eq('user_id', userId);
 
     if (error) throw error;
 
@@ -202,9 +199,9 @@ exports.activateUser = async (req, res) => {
     const { userId } = req.params;
 
     const { data: user, error } = await supabase
-      .from('users')
-      .update({ is_active: true })
-      .eq('id', userId)
+      .from('User')
+      .update({ status: 'Active' })
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -227,9 +224,9 @@ exports.deactivateUser = async (req, res) => {
     const { userId } = req.params;
 
     const { data: user, error } = await supabase
-      .from('users')
-      .update({ is_active: false })
-      .eq('id', userId)
+      .from('User')
+      .update({ status: 'Suspended' })
+      .eq('user_id', userId)
       .select()
       .single();
 
@@ -252,9 +249,9 @@ exports.deleteUser = async (req, res) => {
     const { userId } = req.params;
 
     const { error } = await supabase
-      .from('users')
+      .from('User')
       .delete()
-      .eq('id', userId);
+      .eq('user_id', userId);
 
     if (error) throw error;
 
@@ -263,3 +260,43 @@ exports.deleteUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Bind LINE account to user email
+exports.bindLine = async (req, res) => {
+  try {
+    const { lineUserId } = req.body;
+    if (!lineUserId) {
+      return res.status(400).json({ message: 'lineUserId is required' });
+    }
+
+    const { data: user, error } = await supabase
+      .from('User')
+      .select('email, username')
+      .eq('user_id', req.userId)
+      .single();
+
+    if (error || !user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const lineBindings = require('../config/lineBindings');
+    const matchingService = require('../services/matchingService');
+
+    // Perform binding
+    lineBindings.bind(user.email, lineUserId);
+
+    // Send a confirmation LINE Push Notification
+    const confirmationText = `[ระบบ Unifind] 🎉 ยินดีด้วย! 
+
+บัญชีไลน์นี้ได้รับการผูกเชื่อมโยงเข้ากับระบบ Unifind ของเจ้าหน้าที่ "${user.username}" (อีเมล: ${user.email}) เรียบร้อยแล้วครับ!
+
+นับจากนี้ท่านจะได้รับการแจ้งเตือนด่วนทันทีหากระบบตรวจพบคู่ของหายที่ตรงกันครับ`;
+
+    await matchingService.sendPushToLine(lineUserId, confirmationText);
+
+    res.status(200).json({ message: 'LINE account bound successfully', email: user.email });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
