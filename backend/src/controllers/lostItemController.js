@@ -312,14 +312,15 @@ exports.getLostItemById = async (req, res) => {
   }
 };
 
-// POST /api/lost-items (Create new record)
+// POST /api/lost-items
 exports.createLostItem = async (req, res) => {
   try {
     const {
-      name,
-      category,
-      place,
-      date,
+      item_name,
+      category_id,
+      location_id,
+      floor,
+      lost_datetime,
       description,
       status,
       locker,
@@ -502,15 +503,16 @@ exports.getLostItemImage = async (req, res) => {
   }
 };
 
-// PUT /api/lost-items/:id (Edit item details)
+// PUT /api/lost-items/:id
 exports.updateLostItem = async (req, res) => {
   try {
     const { id } = req.params;
     const {
-      name,
-      category,
-      place,
-      date,
+      item_name,
+      category_id,
+      location_id,
+      floor,
+      lost_datetime,
       description,
       status,
       locker,
@@ -609,7 +611,6 @@ exports.returnLostItem = async (req, res) => {
       if (error.code === 'PGRST116') {
         return res.status(404).json({ message: 'Lost item not found' });
       }
-      throw error;
     }
 
     res.status(200).json({ message: 'Item marked as returned successfully', item: formatFoundItem(updatedItem, []) });
@@ -618,7 +619,7 @@ exports.returnLostItem = async (req, res) => {
   }
 };
 
-// DELETE /api/lost-items/delete/:id (Delete record permanently)
+// DELETE /api/lost-items/:id
 exports.deleteLostItem = async (req, res) => {
   try {
     const { id } = req.params;

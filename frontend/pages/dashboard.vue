@@ -139,41 +139,49 @@
           <NuxtLink to="/items" class="text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline">ดูทั้งหมด →</NuxtLink>
         </div>
         
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse">
+        <div class="overflow-x-auto -mx-6">
+          <table class="w-full text-left border-collapse min-w-[500px]">
             <thead>
-              <tr class="border-b border-slate-100 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
-                <th class="pb-3">รายการ</th>
-                <th class="pb-3">สถานที่</th>
-                <th class="pb-3">ตู้ล็อกเกอร์</th>
-                <th class="pb-3">วันที่</th>
-                <th class="pb-3 text-right">สถานะ</th>
+              <tr class="border-b border-slate-150 text-[10px] font-extrabold text-slate-550 uppercase tracking-wider bg-slate-50/75">
+                <th class="py-3 px-6 font-bold">รายการ</th>
+                <th class="py-3 px-6 font-bold">สถานที่</th>
+                <th class="py-3 px-6 font-bold">ตู้ล็อกเกอร์</th>
+                <th class="py-3 px-6 font-bold">วันที่</th>
+                <th class="py-3 px-6 font-bold text-right">สถานะ</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-50 text-xs">
-              <tr v-for="item in itemsStore.items.slice(0, 4)" :key="item.id" class="hover:bg-slate-50/30">
-                <td class="py-3 font-semibold text-slate-800 flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-lg overflow-hidden bg-slate-100 flex-shrink-0 flex items-center justify-center border border-slate-200">
+            <tbody class="divide-y divide-slate-100 text-xs">
+              <tr v-for="item in itemsStore.items.slice(0, 4)" :key="item.id" class="hover:bg-slate-50/50 transition duration-150">
+                <td class="py-3 px-6 font-semibold text-slate-800 flex items-center gap-2">
+                  <div class="w-8 h-8 rounded-lg overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center border border-slate-150 shadow-sm">
                     <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="w-full h-full object-cover" />
-                    <span v-else class="text-lg">{{ item.status === 'lost' ? '👜' : '🧩' }}</span>
+                    <span v-else class="text-sm">{{ item.status === 'lost' ? '👜' : '🧩' }}</span>
                   </div>
                   <span class="truncate max-w-[150px]" :title="item.name">{{ item.name }}</span>
                 </td>
-                <td class="py-3 text-slate-500 truncate max-w-[120px]" :title="item.place">{{ item.place }}</td>
-                <td class="py-3 font-mono text-slate-600">{{ item.locker || '-' }}</td>
-                <td class="py-3 text-slate-450">{{ formatDate(item.date) }}</td>
-                <td class="py-3 text-right">
+                <td class="py-3 px-6 text-slate-600 font-medium truncate max-w-[120px]" :title="item.place">{{ item.place }}</td>
+                <td class="py-3 px-6 font-mono text-slate-650 font-medium">{{ item.locker || '-' }}</td>
+                <td class="py-3 px-6 text-slate-450 font-medium">{{ formatDate(item.date) }}</td>
+                <td class="py-3 px-6 text-right">
                   <span :class="{
-                    'bg-rose-50 text-rose-700 border-rose-100': item.status === 'lost',
-                    'bg-emerald-50 text-emerald-700 border-emerald-100': item.status === 'found' || item.status === 'stored',
-                    'bg-slate-100 text-slate-700 border-slate-200': item.status === 'claimed' || item.status === 'removed'
-                  }" class="px-2 py-0.5 text-[9px] font-bold rounded border uppercase">
+                    'bg-rose-50/70 text-rose-700 border-rose-100/80': item.status === 'lost',
+                    'bg-emerald-50/70 text-emerald-700 border-emerald-100/80': item.status === 'found' || item.status === 'stored',
+                    'bg-slate-150/50 text-slate-700 border-slate-200/80': item.status === 'claimed' || item.status === 'removed'
+                  }" class="inline-flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold rounded-full border uppercase">
+                    <span :class="{
+                      'bg-rose-500': item.status === 'lost',
+                      'bg-emerald-500': item.status === 'found' || item.status === 'stored',
+                      'bg-slate-500': item.status === 'claimed' || item.status === 'removed'
+                    }" class="w-1 h-1 rounded-full"></span>
                     {{ item.status === 'lost' ? 'ของหาย' : (item.status === 'found' || item.status === 'stored') ? 'พร้อมคืน' : 'คืนแล้ว' }}
                   </span>
                 </td>
               </tr>
               <tr v-if="itemsStore.items.length === 0">
-                <td colspan="5" class="py-12 text-center text-slate-400">ไม่มีรายการประวัติสิ่งของล่าสุด</td>
+                <td colspan="5" class="py-12 text-center text-slate-450">
+                  <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-lg mx-auto shadow-sm">🔎</div>
+                  <p class="text-xs mt-3 font-semibold text-slate-700">ไม่มีรายการประวัติสิ่งของล่าสุด</p>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -227,7 +235,7 @@ import { useRuntimeConfig } from '#app'
 import axios from 'axios'
 import dayjs from 'dayjs'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', title: 'แดชบอร์ดระบบ', icon: 'house' })
 
 const itemsStore = useItemsStore()
 const { formatDate, getItemImageSrc } = useItemHelpers()

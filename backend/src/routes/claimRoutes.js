@@ -1,14 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/claimController');
-const { verifyToken, isStaffOrAdmin } = require('../middleware/authMiddleware');
+const { verifyToken } = require('../middleware/authMiddleware');
 
-// User claims endpoints
+router.get('/', verifyToken, controller.getClaims);
 router.post('/', verifyToken, controller.createClaim);
-
-// Staff/Admin claims management endpoints
-router.get('/', verifyToken, isStaffOrAdmin, controller.getClaims);
-router.put('/:id/approve', verifyToken, isStaffOrAdmin, controller.approveClaim);
-router.put('/:id/reject', verifyToken, isStaffOrAdmin, controller.rejectClaim);
+router.put('/:id/return', verifyToken, controller.markAsReturned);
+router.put('/:id/cancel', verifyToken, controller.cancelClaim);
 
 module.exports = router;

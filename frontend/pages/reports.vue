@@ -1,10 +1,6 @@
 <template>
   <div class="space-y-6">
 
-    <div>
-      <h2 class="text-lg font-bold text-slate-900">📊 รายงานสถิติ (Reports)</h2>
-      <p class="text-xs text-slate-400 mt-0.5">ภาพรวมและการวิเคราะห์ข้อมูลสิ่งของในระบบ</p>
-    </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Return Rate Card -->
@@ -80,7 +76,7 @@ import { computed } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', title: 'รายงานสถิติ (Reports)', icon: 'chart-pie' })
 
 const itemsStore = useItemsStore()
 const { translateCategory } = useItemHelpers()

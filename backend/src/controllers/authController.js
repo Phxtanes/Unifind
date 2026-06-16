@@ -16,10 +16,10 @@ const formatUser = (user) => {
   };
 };
 
-// Register a member requesting to be staff
+// Register a new staff user (defaults to Inactive, waiting for Admin approval)
 exports.register = async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, full_name } = req.body;
 
     // Check if username already exists
     const { data: existingUser } = await supabase
@@ -112,7 +112,7 @@ exports.login = async (req, res) => {
 
 /* --- Admin User Management Methods --- */
 
-// Get all admins and staff
+// Get all users
 exports.getUsers = async (req, res) => {
   try {
     const { data: users, error } = await supabase
@@ -122,14 +122,13 @@ exports.getUsers = async (req, res) => {
 
     if (error) throw error;
 
-    const formattedUsers = (users || []).map(formatUser);
-    res.status(200).json(formattedUsers);
+    res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Get pending staff requests (members)
+// Get pending staff requests (Inactive status)
 exports.getPendingUsers = async (req, res) => {
   try {
     const { data: pendingUsers, error } = await supabase
@@ -187,13 +186,13 @@ exports.rejectUser = async (req, res) => {
 
     if (error) throw error;
 
-    res.status(200).json({ message: 'Rejected and deleted staff request successfully.' });
+    res.status(200).json(pendingUsers);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Activate user
+// Approve/Activate user
 exports.activateUser = async (req, res) => {
   try {
     const { userId } = req.params;
