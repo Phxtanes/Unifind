@@ -7,6 +7,9 @@ const { verifyToken, isAdmin } = require('../middleware/authMiddleware');
 router.post('/register', controller.register);
 router.post('/login', controller.login);
 
+// Authenticated user endpoints
+router.post('/bind-line', verifyToken, controller.bindLine);
+
 // Admin-only User Management endpoints
 router.get('/users', verifyToken, isAdmin, controller.getUsers);
 router.get('/users/pending', verifyToken, isAdmin, controller.getPendingUsers);

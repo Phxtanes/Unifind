@@ -58,14 +58,23 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
+import { useRoute } from 'vue-router'
 
 definePageMeta({
-  layout: 'auth',
+  layout: false,
 })
 
 const auth = useAuthStore()
+const route = useRoute()
 
 onMounted(() => {
+  // บันทึก lineUserId หากมีแนบมาในลิงก์เว็บ
+  const lineUserId = route.query.lineUserId as string
+  if (lineUserId) {
+    localStorage.setItem('pendingLineUserId', lineUserId)
+    console.log('Saved pending lineUserId:', lineUserId)
+  }
+
   auth.initAuth()
   if (auth.isAuthenticated) {
     navigateTo('/dashboard')

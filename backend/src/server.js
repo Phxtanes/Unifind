@@ -5,7 +5,6 @@ const cors = require('cors');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const supabase = require('./config/supabase');
-
 const authRoutes = require('./routes/authRoutes');
 const lostItemRoutes = require('./routes/lostItemRoutes');
 const foundItemRoutes = require('./routes/foundItemRoutes');

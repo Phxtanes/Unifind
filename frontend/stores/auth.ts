@@ -1,0 +1,63 @@
+import { defineStore } from 'pinia';
+import axios from 'axios';
+
+interface User {
+  id: string;
+  username: string;
+}
+
+export const useAuthStore = defineStore('auth', {
+  state: () => ({
+    user: null as User | null,
+    token: null as string | null,
+  }),
+  actions: {
+    async login(username: string, password: string) {
+      const config = useRuntimeConfig();
+      try {
+        const response = await axios.post(`${config.public.apiBaseUrl}/auth/login`, { username, password });
+        this.token = response.data.accessToken;
+        this.user = { id: response.data.id, username: response.data.username };
+        if (process.client && this.token) localStorage.setItem('token', this.token);
+        return { success: true };
+      } catch (error: any) {
+        return { 
+          success: false, 
+          message: error.response?.data?.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' 
+        };
+      }
+    },
+    async register(username: string, email: string, password: string) {
+      const config = useRuntimeConfig();
+      try {
+        await axios.post(`${config.public.apiBaseUrl}/auth/register`, { username, email, password });
+        return { success: true, message: 'สมัครสมาชิกสำเร็จ!' };
+      } catch (error: any) {
+        return { 
+          success: false, 
+          message: error.response?.data?.message || 'การสมัครสมาชิกล้มเหลว' 
+        };
+      }
+    },
+
+    logout() {
+      this.user = null;
+      this.token = null;
+      if (process.client) localStorage.removeItem('token');
+    },
+    initAuth() {
+      if (process.client) {
+        const token = localStorage.getItem('token');
+        if (token) this.token = token;
+      }
+    },
+    bypassLogin() {
+      this.token = 'mock-token';
+      this.user = { id: '00000000-0000-0000-0000-000000000000', username: 'Test Staff' };
+      if (process.client && this.token) localStorage.setItem('token', this.token);
+    }
+  },
+  getters: {
+    isAuthenticated: (state) => !!state.token
+  }
+});
