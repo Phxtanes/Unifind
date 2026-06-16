@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
@@ -7,8 +8,10 @@ const supabase = require('./config/supabase');
 
 const authRoutes = require('./routes/authRoutes');
 const lostItemRoutes = require('./routes/lostItemRoutes');
+const foundItemRoutes = require('./routes/foundItemRoutes');
 const lineRoutes = require('./routes/lineRoutes');
 const claimRoutes = require('./routes/claimRoutes');
+const masterDataRoutes = require('./routes/masterDataRoutes');
 
 const app = express();
 
@@ -23,8 +26,10 @@ app.use('/uploads', express.static('uploads'));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/lost-items', lostItemRoutes);
+app.use('/api/found-items', foundItemRoutes);
 app.use('/api/line', lineRoutes);
 app.use('/api/claims', claimRoutes);
+app.use('/api/master', masterDataRoutes);
 
 const PORT = process.env.PORT || 9001;
 
@@ -32,9 +37,9 @@ const PORT = process.env.PORT || 9001;
 const seedAdmin = async () => {
   try {
     const { count, error } = await supabase
-      .from('users')
+      .from('User')
       .select('*', { count: 'exact', head: true })
-      .eq('role', 'admin');
+      .eq('role', 'ADMIN');
 
     if (error) {
       console.error('⚠️ Error checking admin count in Supabase:', error.message);
@@ -44,14 +49,14 @@ const seedAdmin = async () => {
     if (count === 0) {
       const hashedPassword = await bcrypt.hash('admin1234', 8);
       const { error: insertError } = await supabase
-        .from('users')
+        .from('User')
         .insert({
           username: 'admin',
+          full_name: 'System Admin',
           email: 'admin@utcc.ac.th',
-          password: hashedPassword,
-          role: 'admin',
-          is_approved: true,
-          is_active: true
+          password_hash: hashedPassword,
+          role: 'ADMIN',
+          status: 'Active'
         });
 
       if (insertError) {

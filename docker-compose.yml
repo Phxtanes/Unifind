@@ -19,7 +19,7 @@ services:
   frontend:
     build:
       context: ./frontend
-    container_name: lost_found_frontend
+    container_name: unifind_frontend
     restart: always
     ports:
       - "9000:9000"

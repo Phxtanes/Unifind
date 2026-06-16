@@ -67,7 +67,7 @@ router.post('/webhook', async (req, res) => {
             continue;
         }
 
-        // 🖼️ 2. [ฟีเจอร์เพิ่มใหม่] ดักจับเมื่อผู้ใช้ส่ง "รูปภาพ" เข้ามา (Image Message Event)
+        // 🖼️ 2. ดักจับเมื่อผู้ใช้ส่ง "รูปภาพ" เข้ามา (Image Message Event)
         if (event.type === 'message' && event.message.type === 'image') {
             const replyToken = event.replyToken;
             const messageId = event.message.id;
@@ -76,12 +76,23 @@ router.post('/webhook', async (req, res) => {
 
             try {
                 // ดึงข้อมูลรายการของหายทั้งหมดในตาราง Supabase ขึ้นมาเตรียมเทียบ
-                const { data: allItems, error: itemsError } = await supabase
-                    .from('items')
-                    .select('id, name, category, place, description, status')
-                    .in('status', ['lost', 'stored', 'สูญหาย']); // ดึงรายการที่ยังหาไม่เจอ
+                // หมายเหตุ: Schema ใหม่ ให้หาของในตาราง FoundItem (ของที่คนเก็บได้และอยู่ที่ส่วนกลาง)
+                const { data: allItemsRaw, error: itemsError } = await supabase
+                    .from('FoundItem')
+                    .select('found_item_id, item_name, description, status, Category(category_name), Location(location_name)')
+                    .in('status', ['RECEIVED', 'STORED']); 
 
                 if (itemsError) throw itemsError;
+
+                // แปลงข้อมูลให้อ่านง่ายสำหรับ AI
+                const allItems = allItemsRaw?.map(item => ({
+                    id: item.found_item_id,
+                    name: item.item_name,
+                    category: item.Category?.category_name,
+                    place: item.Location?.location_name,
+                    description: item.description,
+                    status: item.status
+                }));
 
                 // ดาวน์โหลดรูปภาพแปลงเป็น Base64
                 const imagePart = await getLineImageBuffer(messageId);
@@ -123,14 +134,14 @@ router.post('/webhook', async (req, res) => {
                 // เคสที่ 1: AI ตรวจพบว่ารูปภาพ "ตรงกับข้อมูลในระบบ"
                 if (resultData.match && resultData.itemId) {
                     const { data: matchedItem } = await supabase
-                        .from('items')
-                        .select('name')
-                        .eq('id', resultData.itemId)
+                        .from('FoundItem')
+                        .select('item_name')
+                        .eq('found_item_id', resultData.itemId)
                         .maybeSingle();
 
                     await replyToLine(replyToken, [{
                         type: 'text',
-                        text: `🔍 [ระบบ Unifind ตรวจพบข้อมูลจากรูปภาพ!]\n\n🎉 แจ้งผลสำเร็จ: จากการตรวจสอบเชิงลึกด้วยระบบวิเคราะห์ภาพปัญญาประดิษฐ์ (AI) พบว่ารูปภาพที่ท่านส่งมา มีลักษณะสอดคล้องกับสิ่งของในระบบรหัสรายการ #${resultData.itemId} (${matchedItem ? matchedItem.name : ''}) ครับ\n\n📝 เหตุผลสนับสนุน: ${resultData.reason}\n\n📌 ขั้นตอนถัดไป:\nแนะนำให้ท่านนำหลักฐานการแสดงตน พร้อมรายละเอียดความเป็นเจ้าของ เข้าติดต่อประสานงานรับสิ่งของคืน ณ จุดบริการของมหาวิทยาลัยได้เลยครับ`
+                        text: `🔍 [ระบบ Unifind ตรวจพบข้อมูลจากรูปภาพ!]\n\n🎉 แจ้งผลสำเร็จ: จากการตรวจสอบเชิงลึกด้วยระบบวิเคราะห์ภาพปัญญาประดิษฐ์ (AI) พบว่ารูปภาพที่ท่านส่งมา มีลักษณะสอดคล้องกับสิ่งของในระบบรหัสรายการ #${resultData.itemId} (${matchedItem ? matchedItem.item_name : ''}) ครับ\n\n📝 เหตุผลสนับสนุน: ${resultData.reason}\n\n📌 ขั้นตอนถัดไป:\nแนะนำให้ท่านนำหลักฐานการแสดงตน พร้อมรายละเอียดความเป็นเจ้าของ เข้าติดต่อประสานงานรับสิ่งของคืน ณ จุดบริการของมหาวิทยาลัยได้เลยครับ`
                     }]);
                 } else {
                     // เคสที่ 2: วิเคราะห์แล้วไม่เจอของที่ตรงกัน
@@ -156,23 +167,23 @@ router.post('/webhook', async (req, res) => {
 
             console.log(`💬 LINE บอทได้รับข้อความ: ${userMessage} จาก UID: ${lineUserId}`);
 
-            // ฟีเจอร์ผูกบัญชี
+            // ฟีเจอร์ผูกบัญชี (Schema ใหม่ ผู้ใช้ทั่วไปอยู่ในตาราง Person)
             if (userMessage.startsWith('ผูกบัญชี:')) {
                 const email = userMessage.split('ผูกบัญชี:')[1].trim();
-                const { data: user, error: userError } = await supabase
-                    .from('users')
+                const { data: person, error: personError } = await supabase
+                    .from('Person')
                     .select('*')
                     .eq('email', email)
                     .maybeSingle();
                 
-                if (user) {
+                if (person) {
                     const bindSuccessPatterns = [
                         `✅ [ระบบ Unifind] ดำเนินการผูกบัญชีผู้ใช้งานกับอีเมล ${email} เสร็จสิ้น บัญชีของท่านพร้อมรับการแจ้งเตือนด่วนเมื่อมีคนพบของหายชิ้นใหม่แล้วครับ`,
                         `✅ [การเชื่อมต่อสำเร็จ] ระบบได้ทำการเชื่อมโยงสิทธิ์บัญชี LINE ของท่านเข้ากับอีเมลระบบคอมมูนิตี้ ${email} เรียบร้อยแล้วครับ หากมีสิ่งของใหม่ถูกอัปเดตเข้ามา ระบบจะส่งข้อความแจ้งเตือนทันที`
                     ];
                     await replyToLine(replyToken, [{ type: 'text', text: getRandomResponse(bindSuccessPatterns) }]);
                 } else {
-                    await replyToLine(replyToken, [{ type: 'text', text: `❌ [ระบบปฏิเสธคำขอ] ไม่พบข้อมูลอีเมล ${email} ในระบบคอมมูนิตี้ Unifind กรุณาตรวจสอบอีกครั้งครับ` }]);
+                    await replyToLine(replyToken, [{ type: 'text', text: `❌ [ระบบปฏิเสธคำขอ] ไม่พบข้อมูลอีเมล ${email} ในระบบ Person ของ Unifind กรุณาตรวจสอบอีกครั้งครับ` }]);
                 }
                 continue;
             }
@@ -223,8 +234,9 @@ router.post('/webhook', async (req, res) => {
                 // เคสสรุปรายงานสถิติตามหมวดหมู่ (SUMMARY)
                 if (intentData.intent === 'SUMMARY') {
                     const { data: allItemsForSummary, error: summaryError } = await supabase
-                        .from('items')
-                        .select('category');
+                        .from('FoundItem')
+                        .select('Category(category_name)')
+                        .in('status', ['STORED', 'RECEIVED']);
 
                     if (summaryError) throw summaryError;
 
@@ -236,7 +248,7 @@ router.post('/webhook', async (req, res) => {
                     // จัดกลุ่มสถิติหมวดหมู่ด้วย JavaScript
                     const countMap = {};
                     allItemsForSummary.forEach((item) => {
-                        const cat = item.category || 'อื่นๆ / ไม่ระบุหมวดหมู่';
+                        const cat = item.Category?.category_name || 'อื่นๆ / ไม่ระบุหมวดหมู่';
                         countMap[cat] = (countMap[cat] || 0) + 1;
                     });
 
@@ -265,33 +277,44 @@ router.post('/webhook', async (req, res) => {
                                     keyword: { type: Type.STRING },
                                     place: { type: Type.STRING },
                                     time: { type: Type.STRING }
-                                },
-                                required: ["keyword", "place", "time"]
+                                }
                             }
                         }
                     });
 
                     const searchData = JSON.parse(aiResponse.text.trim());
 
-                    let query = supabase.from('items').select('*');
+                    let query = supabase.from('FoundItem').select('*, Location(location_name)').in('status', ['STORED', 'RECEIVED']);
                     
                     // ทำ OR filter ใน Supabase ค้นหาจากชื่อและคำอธิบาย
-                    const orFilter = `name.ilike.%${searchData.keyword}%,description.ilike.%${searchData.keyword}%`;
-                    query = query.or(orFilter);
-
-                    if (searchData.place) {
-                        query = query.ilike('place', `%${searchData.place}%`);
+                    if (searchData.keyword) {
+                        const orFilter = `item_name.ilike.%${searchData.keyword}%,description.ilike.%${searchData.keyword}%`;
+                        query = query.or(orFilter);
                     }
 
                     const { data: candidateItems, error: searchError } = await query;
                     if (searchError) throw searchError;
 
-                    let isMatched = candidateItems && candidateItems.length > 0;
+                    // Filter place in JS due to Supabase join syntax complexity
+                    let filteredItems = candidateItems || [];
+                    if (searchData.place && searchData.place !== "") {
+                        filteredItems = filteredItems.filter(item => 
+                            item.Location?.location_name?.toLowerCase().includes(searchData.place.toLowerCase())
+                        );
+                    }
+
+                    let isMatched = filteredItems.length > 0;
 
                     if (isMatched) {
                         await replyToLine(replyToken, [{ 
                             type: 'text', 
                             text: `🔍 [ระบบตรวจสอบข้อมูลสำเร็จ]\n\n🎉 แจ้งผลการตรวจสอบ: ตรวจพบข้อมูลสิ่งของเกี่ยวกับ "${searchData.keyword}" ที่มีรายละเอียด สอดคล้องกับที่ท่านระบุไว้ในฐานข้อมูลกลางครับ\n\n📌 ขั้นตอนการรับสิ่งของคืน:\nกรุณาเตรียมหลักฐานความเป็นเจ้าของเข้าติดต่อยืนยันตัวตน ณ จุดบริการส่วนกลางของมหาวิทยาลัยเพื่อรับของคืนได้ทันทีครับ` 
+                        }]);
+                        continue;
+                    } else {
+                        await replyToLine(replyToken, [{ 
+                            type: 'text', 
+                            text: `🔍 [ผลการค้นหา]\n\nทางระบบยังไม่พบสิ่งของที่ตรงกับ "${searchData.keyword || 'ที่ท่านระบุ'}" ในคลังข้อมูลปัจจุบันครับ ระบบจะทำการบันทึกประวัติการค้นหานี้ไว้ครับ` 
                         }]);
                         continue;
                     }
