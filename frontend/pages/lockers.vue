@@ -1,10 +1,6 @@
 <template>
   <div class="space-y-6">
 
-    <div>
-      <h2 class="text-lg font-bold text-slate-900">🗄️ ตู้เก็บของ (Lockers)</h2>
-      <p class="text-xs text-slate-400 mt-0.5">ผังการจัดเก็บตู้ล็อกเกอร์ (Locker Room Map) อาคาร 24</p>
-    </div>
 
     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
       <div class="mb-6">
@@ -68,7 +64,7 @@ import { computed } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', title: 'ตู้เก็บของ (Lockers)', icon: 'database' })
 
 const itemsStore = useItemsStore()
 const { formatDate } = useItemHelpers()

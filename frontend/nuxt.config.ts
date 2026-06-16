@@ -13,7 +13,8 @@ export default defineNuxtConfig({
     '@pinia/nuxt'
   ],
   css: [
-    '~/assets/css/main.css'
+    '~/assets/css/main.css',
+    '@fortawesome/fontawesome-svg-core/styles.css'
   ],
   runtimeConfig: {
     public: {
