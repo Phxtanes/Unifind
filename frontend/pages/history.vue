@@ -1,15 +1,11 @@
 <template>
   <div class="space-y-6">
 
-    <div>
-      <h2 class="text-lg font-bold text-slate-900">📜 ประวัติการดำเนินการ (System Logs)</h2>
-      <p class="text-xs text-slate-400 mt-0.5">แสดงประวัติความเคลื่อนไหวของการนำเข้า แก้ไข และลบสิ่งของในระบบ</p>
-    </div>
 
     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
 
       <!-- Audit Timeline -->
-      <div class="relative border-l border-slate-200 ml-4 pl-6 space-y-6">
+      <div class="relative border-l border-slate-200 ml-4 pl-6 ">
         <div v-for="log in historyList" :key="log.id" class="relative">
           <!-- Dot Indicator -->
           <span :class="{
@@ -54,7 +50,7 @@ import { computed } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', title: 'ประวัติการดำเนินการ (System Logs)', icon: 'clock-rotate-left' })
 
 const itemsStore = useItemsStore()
 const { translateCategory, formatFullDate } = useItemHelpers()

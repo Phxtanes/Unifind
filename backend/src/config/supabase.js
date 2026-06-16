@@ -1,5 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 // Fix for Node.js < 22 lacking global WebSocket support required by Supabase Realtime
 if (typeof global.WebSocket === 'undefined') {

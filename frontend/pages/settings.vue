@@ -1,14 +1,10 @@
 <template>
   <div class="space-y-6">
 
-    <div>
-      <h2 class="text-lg font-bold text-slate-900">⚙️ การตั้งค่าระบบ (Settings)</h2>
-      <p class="text-xs text-slate-400 mt-0.5">รายละเอียดผู้ใช้งานและการกำหนดค่าระบบสำหรับการเชื่อมต่อเซิร์ฟเวอร์</p>
-    </div>
 
     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm max-w-2xl">
       
-      <div class="space-y-6 text-xs font-medium text-slate-650">
+      <div class=" text-xs font-medium text-slate-650">
         <!-- Profile -->
         <div class="border-b border-slate-100 pb-4">
           <h4 class="text-xs font-bold text-slate-800 mb-3 uppercase tracking-wider">ข้อมูลผู้ใช้งาน</h4>
@@ -72,7 +68,7 @@ import { useAuthStore } from '~/stores/auth'
 import { useRouter } from 'vue-router'
 import { useRuntimeConfig } from '#app'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', title: 'การตั้งค่าระบบ (Settings)', icon: 'gear' })
 
 const authStore = useAuthStore()
 const router = useRouter()

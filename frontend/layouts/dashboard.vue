@@ -1,51 +1,19 @@
 <template>
-  <div class="min-h-screen bg-[#F8FAFC] flex font-sans text-slate-800">
+  <div class="min-h-screen bg-white flex font-sans text-slate-800">
     
     <!-- Left Sidebar Navigation Component -->
-    <Sidebar 
-      :username="authStore.user?.username" 
-      @logout="handleLogout" 
-    />    
+    <Navbar />    
     
     <!-- Main Content Body -->
-    <main class="flex-1 overflow-y-auto h-screen p-4 lg:p-6 space-y-6 relative">
+    <div class="flex-1 flex flex-col min-w-0 h-screen">
+      <!-- Top Navbar Component -->
+      <TopNavbar :title="pageTitle" :icon="pageIcon" :no-margin="true" class="bg-white/95 sticky top-0 z-30 px-6 border-b border-slate-200 shadow-sm" />
 
-      <!-- Top Header / Navbar -->
-      <header class="bg-white rounded-2xl p-4 md:px-6 border border-slate-200/80 shadow-sm flex items-center justify-between sticky top-0 z-30 bg-white/90">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shadow-sm">
-            🎓
-          </div>
-          <div>
-            <h1 class="text-sm font-bold text-slate-800 tracking-tight">UTCC Unifind</h1>
-            <p class="text-[10px] text-slate-400 font-medium uppercase tracking-wider">ระบบติดตามสิ่งของสูญหาย</p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-4">
-          <!-- Date / Time -->
-          <div class="hidden sm:block text-right">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ formattedDate }}</p>
-            <p class="text-xs font-semibold text-slate-700">{{ currentTime }}</p>
-          </div>
-          
-          <!-- User Profile Mini -->
-          <div class="pl-4 border-l border-slate-100 flex items-center gap-3">
-            <div class="text-right hidden md:block">
-              <p class="text-xs font-bold text-slate-800">{{ authStore.user?.username || 'เจ้าหน้าที่' }}</p>
-              <p class="text-[10px] text-indigo-500 font-medium">แอดมินระบบ</p>
-            </div>
-            <div class="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden">
-              <span class="text-sm">👤</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <!-- Page Content Slot -->
-      <slot />
-      
-    </main>
+      <main class="flex-1 overflow-y-auto p-4 lg:p-6  relative">
+        <!-- Page Content Slot -->
+        <slot />
+      </main>
+    </div>
 
     <!-- Floating Action Buttons (FABs) on the bottom-right corner -->
     <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-40 select-none">
@@ -132,14 +100,19 @@ import { useAuthStore } from '~/stores/auth'
 import { useRuntimeConfig } from '#app'
 import { useItemsStore } from '~/stores/items'
 
-import Sidebar from '~/components/Sidebar.vue'
+import Navbar from '~/components/Navbar.vue'
+import TopNavbar from '~/components/TopNavbar.vue'
 import CreateItemModal from '~/components/CreateItemModal.vue'
 import ReportLostItemModal from '~/components/ReportLostItemModal.vue'
 
 const authStore = useAuthStore()
 const itemsStore = useItemsStore()
 const router = useRouter()
+const route = useRoute()
 const config = useRuntimeConfig()
+
+const pageTitle = computed(() => (route.meta.title as string) || 'UTCC Unifind')
+const pageIcon = computed(() => (route.meta.icon as string) || '')
 
 // Modal Toggle States
 const showCreateModal = ref(false)
@@ -193,21 +166,10 @@ const openLostModal = () => { showLostModal.value = true }
 const closeLostModal = () => { showLostModal.value = false }
 const triggerQRScanner = () => { showQRModal.value = true }
 
-const handleCreateSubmit = async (formData: any, imageFile: any) => {
+const handleCreateSubmit = async (data: any, imageFile: any) => {
   isSubmitting.value = true
   try {
-    if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-      const newMockItem = { id: Date.now(), ...formData, image_url: null, staffName: authStore.user?.username || 'BypassAdmin' }
-      itemsStore.items.unshift(newMockItem)
-      showCreateModal.value = false
-      return
-    }
-
-    const response = await axios.post(`${config.public.apiBaseUrl}/lost-items`, formData, {
-      headers: { Authorization: `Bearer ${authStore.token}` }
-    })
-
-    await itemsStore.fetchItems()
+    await itemsStore.createFoundItem(data.itemData, data.finderData, imageFile)
     showCreateModal.value = false
     alert('บันทึกข้อมูลเรียบร้อยแล้ว!')
   } catch (error) {
@@ -218,21 +180,10 @@ const handleCreateSubmit = async (formData: any, imageFile: any) => {
   }
 }
 
-const handleLostSubmit = async (formData: any, imageFile: any) => {
+const handleLostSubmit = async (data: any, imageFile: any) => {
   isSubmitting.value = true
   try {
-    if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-      const newMockItem = { id: Date.now(), ...formData, image_url: null, staffName: authStore.user?.username || 'BypassAdmin' }
-      itemsStore.items.unshift(newMockItem)
-      showLostModal.value = false
-      return
-    }
-
-    const response = await axios.post(`${config.public.apiBaseUrl}/lost-items`, formData, {
-      headers: { Authorization: `Bearer ${authStore.token}` }
-    })
-
-    await itemsStore.fetchItems()
+    await itemsStore.createLostItem(data.itemData, data.reporterData, imageFile)
     showLostModal.value = false
     alert('บันทึกของหายเรียบร้อยแล้ว!')
   } catch (error) {

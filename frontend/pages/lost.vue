@@ -1,92 +1,113 @@
 <template>
   <div class="space-y-6">
 
-    <div>
-      <h2 class="text-lg font-bold text-slate-900">👜 รายการของหาย</h2>
-      <p class="text-xs text-slate-400 mt-0.5">สิ่งของที่แจ้งสูญหายและยังรอการติดต่อกลับ</p>
-    </div>
-
     <!-- Controls & Search Card -->
-    <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <div class="relative flex-1 max-w-md">
-        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400">🔎</span>
+    <div class="bg-white rounded-xl py-3 px-4 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div class="relative flex-1 max-w-xs">
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">🔎</span>
         <input v-model="searchQuery" type="text" id="search-lost"
-          placeholder="ค้นหาชื่อสิ่งของ, สถานที่ หรือรายละเอียด..." 
-          class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-slate-700 transition" />
+          placeholder="ค้นหา..." 
+          class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-1 focus:ring-rose-500 focus:border-rose-500 outline-none text-xs text-slate-700 transition" />
       </div>
-      <div class="flex items-center gap-3">
-        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">หมวดหมู่:</span>
-        <span class="bg-rose-50 text-rose-700 text-xs font-bold px-3 py-1.5 rounded-lg border border-rose-100 uppercase">ของหาย (Lost)</span>
+      <div class="flex items-center gap-2">
+        <span class="text-[10px] font-bold text-slate-455 uppercase tracking-wider">หมวดหมู่:</span>
+        <span class="bg-rose-50 text-rose-700 text-[10px] font-bold px-2 py-1 rounded-md border border-rose-100 uppercase">ของหาย (Lost)</span>
       </div>
     </div>
 
     <!-- Items Table Card -->
     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between min-h-[480px]">
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
+      <div class="overflow-x-auto -mx-6">
+        <table class="w-full text-left border-collapse min-w-[700px]">
           <thead>
-            <tr class="border-b border-slate-100 text-[10px] font-extrabold text-slate-450 uppercase tracking-wider bg-slate-50/50">
-              <th class="py-3 px-4">รายการ</th>
-              <th class="py-3 px-4">หมวดหมู่</th>
-              <th class="py-3 px-4">สถานะ</th>
-              <th class="py-3 px-4">สถานที่</th>
-              <th class="py-3 px-4">วันที่บันทึก</th>
-              <th class="py-3 px-4">ตู้ล็อกเกอร์</th>
-              <th class="py-3 px-4 text-center">จัดการ</th>
+            <tr class="border-b border-slate-150 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider bg-slate-50/75">
+              <th class="py-3.5 px-6 font-bold">รายการ</th>
+              <th class="py-3.5 px-6 font-bold">หมวดหมู่</th>
+              <th class="py-3.5 px-6 font-bold">สถานะ</th>
+              <th class="py-3.5 px-6 font-bold">สถานที่</th>
+              <th class="py-3.5 px-6 font-bold">วันที่บันทึก</th>
+              <th class="py-3.5 px-6 font-bold">ตู้ล็อกเกอร์</th>
+              <th class="py-3.5 px-6 font-bold text-center">จัดการ</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-50">
-            <tr v-for="item in paginatedItems" :key="item.id" class="hover:bg-slate-50/40 text-xs transition duration-100">
-              <td class="py-3 px-4 flex items-center gap-3">
-                <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="w-10 h-10 rounded-lg object-cover border border-slate-100" />
-                <div v-else class="w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center text-rose-400 border border-rose-100">👜</div>
+          <tbody class="divide-y divide-slate-100">
+            <tr v-for="item in paginatedItems" :key="item.id" 
+                @click="openItemDetail(item)"
+                class="hover:bg-slate-50/50 text-xs transition duration-150 cursor-pointer">
+              <td class="py-3 px-6 flex items-center gap-3">
+                <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="w-10 h-10 rounded-xl object-cover border border-slate-155 shadow-sm" />
+                <div v-else class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-400 border border-rose-100 shadow-sm">👜</div>
                 <div>
                   <h4 class="font-bold text-slate-800 truncate max-w-[180px]" :title="item.name">{{ item.name }}</h4>
-                  <p class="text-[9px] text-slate-400 font-medium">ID: {{ getMockCode(item) }}</p>
+                  <p class="text-[9px] text-slate-400 font-mono mt-0.5">ID: {{ getMockCode(item) }}</p>
                 </div>
               </td>
-              <td class="py-3 px-4 text-slate-600 font-medium">{{ translateCategory(item.category) }}</td>
-              <td class="py-3 px-4">
-                <span class="px-2.5 py-0.5 text-[9px] font-bold rounded border uppercase bg-rose-50 text-rose-700 border-rose-100">ตามหาเจ้าของ</span>
+              <td class="py-3 px-6 text-slate-600 font-medium">{{ translateCategory(item.category) }}</td>
+              <td class="py-3 px-6">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[9px] font-bold rounded-full border uppercase bg-rose-50/70 text-rose-700 border-rose-100/80">
+                  <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                  ตามหาเจ้าของ
+                </span>
               </td>
-              <td class="py-3 px-4 text-slate-600 font-medium truncate max-w-[140px]" :title="item.place">{{ item.place }}</td>
-              <td class="py-3 px-4 text-slate-450 font-medium" :title="formatFullDate(item.date)">{{ formatDateShort(item.date) }}</td>
-              <td class="py-3 px-4 text-slate-600 font-mono font-medium">{{ item.locker || '-' }}</td>
-              <td class="py-3 px-4">
+              <td class="py-3 px-6 text-slate-600 font-medium truncate max-w-[140px]" :title="item.place">{{ item.place }}</td>
+              <td class="py-3 px-6 text-slate-450 font-medium" :title="formatFullDate(item.date)">{{ formatDateShort(item.date) }}</td>
+              <td class="py-3 px-6 text-slate-600 font-mono font-medium">{{ item.locker || '-' }}</td>
+              <td class="py-3 px-6">
                 <div class="flex items-center justify-center gap-2">
                   <select value="lost"
-                    @change="changeStatus(item.id, ($event.target as HTMLSelectElement).value)" 
-                    class="bg-white border border-slate-200 text-[11px] font-semibold text-slate-600 py-1 px-1.5 rounded-lg outline-none focus:border-slate-800 transition">
+                    @click.stop
+                    @change.stop="changeStatus(item.id, ($event.target as HTMLSelectElement).value)" 
+                    class="bg-white border border-slate-200 hover:border-slate-300 text-[11px] font-semibold text-slate-600 py-1 px-2 rounded-lg outline-none focus:ring-1 focus:ring-rose-500 focus:border-rose-500 transition cursor-pointer shadow-sm">
                     <option value="lost">ของหาย (Lost)</option>
                     <option value="found">พบเจอ (Found)</option>
                     <option value="claimed">คืนแล้ว (Claimed)</option>
                   </select>
-                  <button @click="deleteItem(item.id)" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg border border-transparent hover:border-slate-100 hover:bg-slate-50 transition">
+                  <button @click.stop="openEditModal(item)" class="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-transparent hover:border-indigo-100/50 transition" title="แก้ไข">
+                    ✏️
+                  </button>
+                  <button @click.stop="deleteItem(item.id)" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg border border-transparent hover:border-rose-100/50 transition">
                     🗑️
                   </button>
                 </div>
               </td>
             </tr>
             <tr v-if="paginatedItems.length === 0">
-              <td colspan="7" class="text-center py-20 text-slate-450">
-                <p class="text-lg">👜</p>
-                <p class="text-xs mt-2 font-medium">ไม่มีรายการของหายในระบบ</p>
+              <td colspan="7" class="text-center py-20 text-slate-455">
+                <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-lg mx-auto shadow-sm">👜</div>
+                <p class="text-xs mt-3 font-semibold text-slate-700">ไม่มีรายการของหายในระบบ</p>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
       
-      <div v-if="totalPages > 1" class="mt-4 flex justify-between items-center text-xs font-medium text-slate-500 pt-3 border-t border-slate-50">
-        <span>แสดงหน้า {{ currentPage }} จากทั้งหมด {{ totalPages }} หน้า ({{ filteredItems.length }} รายการ)</span>
+      <!-- Pagination -->
+      <div v-if="totalPages > 1" class="mt-4 flex justify-between items-center text-xs font-medium text-slate-500 pt-4 border-t border-slate-100">
+        <span>แสดงหน้า <strong class="text-slate-800">{{ currentPage }}</strong> จากทั้งหมด <strong class="text-slate-800">{{ totalPages }}</strong> หน้า ({{ filteredItems.length }} รายการ)</span>
         <div class="flex gap-2">
           <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1"
-            class="px-3 py-2 bg-white border border-slate-250 hover:bg-slate-50 rounded-lg disabled:opacity-40 transition">ก่อนหน้า</button>
+            class="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-350 hover:bg-slate-50/50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm">ก่อนหน้า</button>
           <button @click="currentPage = Math.min(totalPages, currentPage + 1)" :disabled="currentPage === totalPages"
-            class="px-3 py-2 bg-white border border-slate-250 hover:bg-slate-50 rounded-lg disabled:opacity-40 transition">ถัดไป</button>
+            class="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-350 hover:bg-slate-50/50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm">ถัดไป</button>
         </div>
       </div>
     </div>
+
+    <!-- Item Detail Modal -->
+    <ItemDetailModal 
+      :show="showDetailModal" 
+      :item="selectedItem" 
+      @close="closeItemDetail" 
+    />
+
+    <!-- Edit Lost Item Modal -->
+    <ReportLostItemModal 
+      :show="showEditModal" 
+      :is-submitting="isSubmitting" 
+      :edit-item="editingItem"
+      @close="closeEditModal" 
+      @submit="handleEditSubmit" 
+    />
 
   </div>
 </template>
@@ -96,7 +117,10 @@ import { ref, computed, watch } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
 
-definePageMeta({ layout: 'dashboard' })
+import ItemDetailModal from '~/components/ItemDetailModal.vue'
+import ReportLostItemModal from '~/components/ReportLostItemModal.vue'
+
+definePageMeta({ layout: 'dashboard', title: 'รายการของหาย', icon: 'briefcase' })
 
 const itemsStore = useItemsStore()
 const { translateCategory, getMockCode, getItemImageSrc, formatDateShort, formatFullDate, changeStatus, deleteItem } = useItemHelpers()
@@ -104,6 +128,50 @@ const { translateCategory, getMockCode, getItemImageSrc, formatDateShort, format
 const searchQuery = ref('')
 const currentPage = ref(1)
 const limit = ref(8)
+
+const showDetailModal = ref(false)
+const selectedItem = ref<any>(null)
+
+const showEditModal = ref(false)
+const editingItem = ref<any>(null)
+const isSubmitting = ref(false)
+
+const openItemDetail = (item: any) => {
+  selectedItem.value = item
+  showDetailModal.value = true
+}
+
+const closeItemDetail = () => {
+  showDetailModal.value = false
+  setTimeout(() => { selectedItem.value = null }, 300)
+}
+
+const openEditModal = (item: any) => {
+  editingItem.value = item
+  showEditModal.value = true
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+  setTimeout(() => { editingItem.value = null }, 300)
+}
+
+const handleEditSubmit = async (data: any, imageFile: any) => {
+  isSubmitting.value = true
+  try {
+    if (editingItem.value) {
+      await itemsStore.updateLostItem(editingItem.value.id, data.itemData, data.reporterData, imageFile)
+      showEditModal.value = false
+      alert('บันทึกการแก้ไขเรียบร้อยแล้ว!')
+    }
+  } catch (error) {
+    console.error('Error updating lost item:', error)
+    alert('เกิดข้อผิดพลาดในการบันทึกการแก้ไข')
+  } finally {
+    isSubmitting.value = false
+    editingItem.value = null
+  }
+}
 
 watch(searchQuery, () => { currentPage.value = 1 })
 

@@ -40,21 +40,35 @@ export const useItemHelpers = () => {
 
   const changeStatus = async (id: number, newStatus: string) => {
     try {
-      const dbStatus = newStatus === 'found' ? 'stored' : newStatus === 'claimed' ? 'removed' : newStatus
+      const item = itemsStore.items.find(i => i.id === id)
+      if (!item) return
+
+      const isLost = item.type === 'lost'
+      const endpoint = isLost ? 'lost-items' : 'found-items'
+      
+      let dbStatus = ''
+      if (isLost) {
+        dbStatus = newStatus === 'lost' ? 'LOST' : 'CLOSED'
+      } else {
+        dbStatus = newStatus === 'lost' ? 'FOUND' : newStatus === 'found' ? 'STORED' : 'CLAIMED'
+      }
 
       if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-        const idx = itemsStore.items.findIndex(item => item.id === id)
-        if (idx !== -1) itemsStore.items[idx].status = dbStatus
+        if (isLost) {
+          const idx = itemsStore.lostItems.findIndex(i => i.lost_item_id === id)
+          if (idx !== -1) itemsStore.lostItems[idx].status = dbStatus
+        } else {
+          const idx = itemsStore.foundItems.findIndex(i => i.found_item_id === id)
+          if (idx !== -1) itemsStore.foundItems[idx].status = dbStatus
+        }
         return
       }
 
-      await axios.put(`${config.public.apiBaseUrl}/lost-items/${id}`, { status: dbStatus }, {
+      await axios.put(`${config.public.apiBaseUrl}/${endpoint}/${id}`, { status: dbStatus }, {
         headers: { Authorization: `Bearer ${authStore.token}` }
       })
 
-      const idx = itemsStore.items.findIndex(item => item.id === id)
-      if (idx !== -1) itemsStore.items[idx].status = dbStatus
-      itemsStore.fetchItems()
+      await itemsStore.fetchItems()
     } catch (error) {
       console.error('Error changing status:', error)
       alert('เกิดข้อผิดพลาดในการแก้ไขสถานะ')
@@ -65,16 +79,26 @@ export const useItemHelpers = () => {
     if (!confirm('คุณแน่ใจหรือไม่ที่จะลบรายการบันทึกนี้ออกจากระบบอย่างถาวร?')) return
 
     try {
+      const item = itemsStore.items.find(i => i.id === id)
+      if (!item) return
+
+      const isLost = item.type === 'lost'
+      const endpoint = isLost ? 'lost-items' : 'found-items'
+
       if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-        itemsStore.items = itemsStore.items.filter(item => item.id !== id)
+        if (isLost) {
+          itemsStore.lostItems = itemsStore.lostItems.filter(i => i.lost_item_id !== id)
+        } else {
+          itemsStore.foundItems = itemsStore.foundItems.filter(i => i.found_item_id !== id)
+        }
         return
       }
 
-      await axios.delete(`${config.public.apiBaseUrl}/lost-items/delete/${id}`, {
+      await axios.delete(`${config.public.apiBaseUrl}/${endpoint}/${id}`, {
         headers: { Authorization: `Bearer ${authStore.token}` }
       })
 
-      itemsStore.items = itemsStore.items.filter(item => item.id !== id)
+      await itemsStore.fetchItems()
     } catch (error) {
       console.error('Error deleting item:', error)
       alert('เกิดข้อผิดพลาดในการลบข้อมูล')
