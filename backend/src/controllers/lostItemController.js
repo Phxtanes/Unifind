@@ -188,9 +188,9 @@ exports.getLostItems = async (req, res) => {
       const user = users.find(u => u.user_id === item.finder_id);
       return formatFoundItem({ ...item, User: user }, photos || []);
     });
-    
+
     let allItems = [...lostFormatted, ...foundFormatted];
-    
+
     // Sort by date descending
     allItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -317,22 +317,30 @@ exports.createLostItem = async (req, res) => {
   try {
     const {
       item_name,
+      name,
       category_id,
+      category,
       location_id,
+      place,
       floor,
       lost_datetime,
+      date,
       description,
       status,
       locker,
       finder_type,
       finder_phoneNumber,
       finder_studentId,
-      finder_universityEmail
+      finder_universityEmail,
+      reporter_id,
+      finder_id
     } = req.body;
 
-    const categoryId = await getCategoryId(category);
-    const locationId = await getLocationId(place);
-    const floor = place && place.includes('ชั้น') ? place.split('ชั้น')[1].trim() : null;
+    const categoryId = category_id ? parseInt(category_id) : (category ? await getCategoryId(category) : null);
+    const locationId = location_id ? parseInt(location_id) : (place ? await getLocationId(place) : null);
+    const floorValue = floor !== undefined ? floor : (place && place.includes('ชั้น') ? place.split('ชั้น')[1].trim() : null);
+    const nameValue = item_name || name;
+    const dateValue = lost_datetime || date;
 
     const dbDescription = JSON.stringify({
       textDescription: description || '',
@@ -345,19 +353,19 @@ exports.createLostItem = async (req, res) => {
     // Fetch user username to format output
     const { data: user } = await supabase.from('User').select('username').eq('user_id', req.userId).maybeSingle();
 
-    if (status === 'lost') {
+    if (status === 'lost' || status === 'LOST') {
       // Create LostItem
       const { data, error } = await supabase
         .from('LostItem')
         .insert({
-          item_name: name,
+          item_name: nameValue,
           category_id: categoryId,
           location_id: locationId,
-          floor,
-          lost_datetime: date || new Date().toISOString(),
+          floor: floorValue,
+          lost_datetime: dateValue || new Date().toISOString(),
           description: dbDescription,
           status: 'LOST',
-          reporter_id: req.userId
+          reporter_id: reporter_id ? parseInt(reporter_id) : req.userId
         })
         .select()
         .single();
@@ -375,15 +383,15 @@ exports.createLostItem = async (req, res) => {
       const { data, error } = await supabase
         .from('FoundItem')
         .insert({
-          item_name: name,
+          item_name: nameValue,
           category_id: categoryId,
           location_id: locationId,
-          floor,
-          found_date: date ? date.split('T')[0] : new Date().toISOString().split('T')[0],
+          floor: floorValue,
+          found_date: dateValue ? dateValue.split('T')[0] : new Date().toISOString().split('T')[0],
           description: dbDescription,
-          status: status === 'claimed' ? 'CLAIMED' : 'STORED',
+          status: (status === 'claimed' || status === 'CLAIMED') ? 'CLAIMED' : 'STORED',
           locker_id: lockerId,
-          finder_id: req.userId
+          finder_id: finder_id ? parseInt(finder_id) : req.userId
         })
         .select()
         .single();
@@ -391,7 +399,7 @@ exports.createLostItem = async (req, res) => {
       if (error) throw error;
 
       // Trigger Matching asynchronously if not claimed
-      if (status !== 'claimed') {
+      if (status !== 'claimed' && status !== 'CLAIMED') {
         const matchingService = require('../services/matchingService');
         matchingService.checkFoundItemMatch(data);
       }
@@ -410,7 +418,7 @@ exports.uploadLostItemImage = async (req, res) => {
 
     let isLost = false;
     let { data: foundItem } = await supabase.from('FoundItem').select('found_item_id').eq('found_item_id', id).maybeSingle();
-    
+
     if (!foundItem) {
       let { data: lostItem } = await supabase.from('LostItem').select('lost_item_id').eq('lost_item_id', id).maybeSingle();
       if (!lostItem) {
@@ -471,7 +479,7 @@ exports.getLostItemImage = async (req, res) => {
     // Check if item exists in FoundItem or LostItem
     let isLost = false;
     let { data: foundItem } = await supabase.from('FoundItem').select('found_item_id').eq('found_item_id', id).maybeSingle();
-    
+
     if (!foundItem) {
       let { data: lostItem } = await supabase.from('LostItem').select('lost_item_id').eq('lost_item_id', id).maybeSingle();
       if (!lostItem) {
@@ -509,22 +517,30 @@ exports.updateLostItem = async (req, res) => {
     const { id } = req.params;
     const {
       item_name,
+      name,
       category_id,
+      category,
       location_id,
+      place,
       floor,
       lost_datetime,
+      date,
       description,
       status,
       locker,
       finder_type,
       finder_phoneNumber,
       finder_studentId,
-      finder_universityEmail
+      finder_universityEmail,
+      reporter_id,
+      finder_id
     } = req.body;
 
-    const categoryId = await getCategoryId(category);
-    const locationId = await getLocationId(place);
-    const floor = place && place.includes('ชั้น') ? place.split('ชั้น')[1].trim() : null;
+    const categoryId = category_id ? parseInt(category_id) : (category ? await getCategoryId(category) : null);
+    const locationId = location_id ? parseInt(location_id) : (place ? await getLocationId(place) : null);
+    const floorValue = floor !== undefined ? floor : (place && place.includes('ชั้น') ? place.split('ชั้น')[1].trim() : null);
+    const nameValue = item_name || name;
+    const dateValue = lost_datetime || date;
 
     const dbDescription = JSON.stringify({
       textDescription: description || '',
@@ -537,7 +553,7 @@ exports.updateLostItem = async (req, res) => {
     // Determine which table has this ID
     let isLost = false;
     let { data: foundItem } = await supabase.from('FoundItem').select('*').eq('found_item_id', id).maybeSingle();
-    
+
     if (!foundItem) {
       let { data: lostItem } = await supabase.from('LostItem').select('*').eq('lost_item_id', id).maybeSingle();
       if (!lostItem) {
@@ -553,13 +569,14 @@ exports.updateLostItem = async (req, res) => {
       const { data: updatedItem, error } = await supabase
         .from('LostItem')
         .update({
-          item_name: name,
+          item_name: nameValue,
           category_id: categoryId,
           location_id: locationId,
-          floor,
-          lost_datetime: date,
+          floor: floorValue,
+          lost_datetime: dateValue,
           description: dbDescription,
-          status: status === 'removed' || status === 'claimed' ? 'CLAIMED' : 'LOST'
+          status: (status === 'removed' || status === 'claimed' || status === 'CLAIMED') ? 'CLAIMED' : 'LOST',
+          reporter_id: reporter_id ? parseInt(reporter_id) : undefined
         })
         .eq('lost_item_id', id)
         .select()
@@ -572,14 +589,15 @@ exports.updateLostItem = async (req, res) => {
       const { data: updatedItem, error } = await supabase
         .from('FoundItem')
         .update({
-          item_name: name,
+          item_name: nameValue,
           category_id: categoryId,
           location_id: locationId,
-          floor,
-          found_date: date ? date.split('T')[0] : undefined,
+          floor: floorValue,
+          found_date: dateValue ? dateValue.split('T')[0] : undefined,
           description: dbDescription,
-          status: status === 'removed' || status === 'claimed' ? 'CLAIMED' : 'STORED',
-          locker_id: lockerId
+          status: (status === 'removed' || status === 'claimed' || status === 'CLAIMED') ? 'CLAIMED' : 'STORED',
+          locker_id: lockerId,
+          finder_id: finder_id ? parseInt(finder_id) : undefined
         })
         .eq('found_item_id', id)
         .select()
@@ -627,7 +645,7 @@ exports.deleteLostItem = async (req, res) => {
     // Check if it's FoundItem or LostItem
     let isLost = false;
     let { data: foundItem } = await supabase.from('FoundItem').select('found_item_id').eq('found_item_id', id).maybeSingle();
-    
+
     if (!foundItem) {
       let { data: lostItem } = await supabase.from('LostItem').select('lost_item_id').eq('lost_item_id', id).maybeSingle();
       if (!lostItem) {
