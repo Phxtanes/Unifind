@@ -222,6 +222,9 @@
 import { computed, ref, onMounted } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
+import { useAuthStore } from '~/stores/auth'
+import { useRuntimeConfig } from '#app'
+import axios from 'axios'
 import dayjs from 'dayjs'
 
 definePageMeta({ layout: 'dashboard' })
@@ -242,12 +245,29 @@ const updateLastUpdatedText = () => {
   }
 }
 
+const authStore = useAuthStore()
+const config = useRuntimeConfig()
+
 onMounted(async () => {
   if (itemsStore.items.length === 0) {
     await itemsStore.fetchItems()
   }
   lastUpdated.value = itemsStore.lastUpdated || new Date()
   updateLastUpdatedText()
+
+  // ตรวจสอบและเชื่อมโยงบัญชี LINE หากมี pendingLineUserId
+  const pendingLineUserId = localStorage.getItem('pendingLineUserId')
+  if (authStore.isAuthenticated && pendingLineUserId) {
+    try {
+      await axios.post(`${config.public.apiBaseUrl}/auth/bind-line`, { lineUserId: pendingLineUserId }, {
+        headers: { Authorization: `Bearer ${authStore.token}` }
+      })
+      localStorage.removeItem('pendingLineUserId')
+      alert('ผูกบัญชี LINE เข้ากับระบบ Unifind สำเร็จเรียบร้อยแล้ว!')
+    } catch (err) {
+      console.error('Failed to bind LINE account:', err)
+    }
+  }
 })
 
 const chartSegments = computed(() => {
