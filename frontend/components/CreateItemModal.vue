@@ -248,7 +248,10 @@
 
               <!-- ระบุตู้ล็อกเกอร์ที่จัดเก็บ -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">ตู้ล็อกเกอร์ที่จัดเก็บ <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-650 mb-1.5">
+                  ตู้ล็อกเกอร์ที่จัดเก็บ <span class="text-red-500">*</span> 
+                  <span class="text-[10px] text-indigo-500 font-bold ml-1">(เลือกตามเดือนเริ่มต้นอัตโนมัติ)</span>
+                </label>
                 <div class="relative">
                   <select v-model="form.locker_id" required class="w-full pl-4 pr-12 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
                     <option value="" disabled>เลือกตู้ล็อกเกอร์ที่จัดเก็บ</option>
