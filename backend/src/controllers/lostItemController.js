@@ -85,6 +85,12 @@ const parseDescription = (desc) => {
   };
 };
 
+const formatLockerName = (lockerCode) => {
+  if (!lockerCode) return null;
+  const digits = parseInt(lockerCode.replace(/\D/g, ''), 10);
+  return !isNaN(digits) ? `ล็อกเกอร์ ที่ - ${digits}` : lockerCode;
+};
+
 // Formatter for LostItem
 const formatLostItem = (item, photos) => {
   const photo = photos.find(p => p.item_type === 'LOST' && p.item_id === item.lost_item_id);
@@ -92,12 +98,13 @@ const formatLostItem = (item, photos) => {
   const floorName = item.floor ? ` ชั้น ${item.floor}` : '';
   const parsed = parseDescription(item.description);
   return {
+    // Unified keys
     id: item.lost_item_id,
     name: item.item_name,
     category: getCategoryName(item.category_id),
     place: locationName + floorName,
     date: item.lost_datetime,
-    description: parsed.textDescription,
+    description: item.description, // Keep raw description for store to parse
     status: 'lost',
     locker: null,
     finder_type: parsed.finder_type,
@@ -107,7 +114,19 @@ const formatLostItem = (item, photos) => {
     picture: photo ? photo.file_url : null,
     namereport: item.User ? item.User.username : null,
     receiver: null,
-    staffName: item.User ? item.User.username : null
+    staffName: item.User ? item.User.username : null,
+
+    // Original frontend expected database model keys
+    lost_item_id: item.lost_item_id,
+    item_name: item.item_name,
+    category_id: item.category_id,
+    categoryName: item.Category ? item.Category.category_name : getCategoryName(item.category_id),
+    location_id: item.location_id,
+    locationName: locationName + floorName,
+    floor: item.floor || '',
+    lost_datetime: item.lost_datetime,
+    image_url: photo ? photo.file_url : null,
+    Person: item.Person || null
   };
 };
 
@@ -125,7 +144,7 @@ const formatFoundItem = (item, photos) => {
     date: item.found_date,
     description: parsed.textDescription,
     status: item.status === 'CLAIMED' ? 'removed' : 'stored', // Map to frontend expected: 'stored' (found/stored) or 'removed' (claimed)
-    locker: item.Locker ? item.Locker.locker_code : null,
+    locker: formatLockerName(item.Locker ? item.Locker.locker_code : null),
     finder_type: parsed.finder_type || 'Staff',
     finder_phoneNumber: parsed.finder_phoneNumber,
     finder_studentId: parsed.finder_studentId,
@@ -137,8 +156,7 @@ const formatFoundItem = (item, photos) => {
   };
 };
 
-
-// GET /api/lost-items (All items merged and sorted)
+// GET /api/lost-items (Only lost items)
 exports.getLostItems = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -151,22 +169,14 @@ exports.getLostItems = async (req, res) => {
     // Fetch LostItems (without User join)
     const { data: lostData, error: lostError } = await supabase
       .from('LostItem')
-      .select('*, Location(*), Category(*)');
+      .select('*, Location(*), Category(*), Person!reporter_id(*)');
 
     if (lostError) throw lostError;
-
-    // Fetch FoundItems (without User join)
-    const { data: foundData, error: foundError } = await supabase
-      .from('FoundItem')
-      .select('*, Location(*), Category(*), Locker(*)');
-
-    if (foundError) throw foundError;
 
     // Fetch users separately
     const userIds = [
       ...new Set([
-        ...(lostData || []).map(d => d.reporter_id).filter(Boolean),
-        ...(foundData || []).map(d => d.finder_id).filter(Boolean)
+        ...(lostData || []).map(d => d.reporter_id).filter(Boolean)
       ])
     ];
 
@@ -184,22 +194,15 @@ exports.getLostItems = async (req, res) => {
       return formatLostItem({ ...item, User: user }, photos || []);
     });
 
-    const foundFormatted = (foundData || []).map(item => {
-      const user = users.find(u => u.user_id === item.finder_id);
-      return formatFoundItem({ ...item, User: user }, photos || []);
-    });
-
-    let allItems = [...lostFormatted, ...foundFormatted];
-
     // Sort by date descending
-    allItems.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    lostFormatted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // Paginate in memory
-    const paginatedItems = allItems.slice(offset, offset + limit);
+    const paginatedItems = lostFormatted.slice(offset, offset + limit);
 
     res.status(200).json({
-      totalItems: allItems.length,
-      totalPages: Math.ceil(allItems.length / limit),
+      totalItems: lostFormatted.length,
+      totalPages: Math.ceil(lostFormatted.length / limit),
       currentPage: page,
       items: paginatedItems
     });

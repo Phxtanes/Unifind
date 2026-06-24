@@ -2,6 +2,22 @@ const axios = require('axios');
 const { GoogleGenAI } = require('@google/genai');
 const supabase = require('../config/supabase');
 const lineBindings = require('../config/lineBindings');
+const fs = require('fs');
+const path = require('path');
+
+const localDbPath = path.resolve(__dirname, '../../uploads/local_db.json');
+
+function loadLocalDb() {
+  try {
+    if (fs.existsSync(localDbPath)) {
+      const data = fs.readFileSync(localDbPath, 'utf8');
+      return JSON.parse(data || '{}');
+    }
+  } catch (e) {
+    console.error('Error loading local DB in matchingService:', e);
+  }
+  return { LostItem: [], FoundItem: [] };
+}
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -33,7 +49,7 @@ function parseDescriptionText(desc) {
     if (parsed && typeof parsed === 'object' && ('textDescription' in parsed)) {
       return parsed.textDescription || 'ไม่มีระบุ';
     }
-  } catch (e) {}
+  } catch (e) { }
   return desc || 'ไม่มีระบุ';
 }
 
@@ -44,7 +60,7 @@ function parseDescriptionEmail(desc) {
     if (parsed && typeof parsed === 'object' && parsed.finder_universityEmail) {
       return parsed.finder_universityEmail;
     }
-  } catch (e) {}
+  } catch (e) { }
   return null;
 }
 
@@ -81,13 +97,24 @@ exports.checkFoundItemMatch = async (foundItem) => {
     console.log(`🔍 Checking matches for FoundItem: "${foundItem.item_name}" (ID: ${foundItem.found_item_id})`);
 
     // Fetch active LostItems in the same category
-    const { data: lostItems, error } = await supabase
-      .from('LostItem')
-      .select('*, User!reporter_id(*)')
-      .eq('category_id', foundItem.category_id)
-      .eq('status', 'LOST');
+    let lostItems = [];
+    try {
+      const { data, error } = await supabase
+        .from('LostItem')
+        .select('*, User!reporter_id(*)')
+        .eq('category_id', foundItem.category_id)
+        .eq('status', 'LOST');
+      if (error) throw error;
+      lostItems = data || [];
+    } catch (err) {
+      console.warn('Supabase offline in checkFoundItemMatch, using local JSON database fallback');
+      const db = loadLocalDb();
+      lostItems = (db.LostItem || []).filter(item => 
+        Number(item.category_id) === Number(foundItem.category_id) && 
+        item.status === 'LOST'
+      );
+    }
 
-    if (error) throw error;
     if (!lostItems || lostItems.length === 0) {
       console.log('ℹ️ No active lost items found in this category.');
       return;
@@ -137,7 +164,13 @@ ${JSON.stringify(candidates, null, 2)}
     console.log('🤖 AI Matching Result:', matchResult);
 
     if (matchResult.matched && matchResult.matchId) {
-      const matchedLost = lostItems.find(item => item.lost_item_id === matchResult.matchId);
+      let targetMatchId = matchResult.matchId;
+      if (Array.isArray(targetMatchId)) {
+        targetMatchId = targetMatchId[0];
+      }
+      const parsedMatchId = Number(targetMatchId);
+
+      const matchedLost = lostItems.find(item => Number(item.lost_item_id) === parsedMatchId);
       if (matchedLost) {
         const ownerEmail = parseDescriptionEmail(matchedLost.description) || (matchedLost.User ? matchedLost.User.email : null);
         if (ownerEmail) {
@@ -152,9 +185,9 @@ ${JSON.stringify(candidates, null, 2)}
 📍 สิ่งของที่พบใหม่: "${foundItem.item_name}"
 📝 รายละเอียดที่พบ: ${foundDesc}
 
-✨ เหตุผลการจับคู่ของบอท AI: ${matchResult.reason}
+✨ รายละเอียดที่ตรงกัน: ${matchResult.reason}
 
-👉 แนะนำให้ท่านแสดงตัวต่อเจ้าหน้าที่ ณ ตึกบริการของมหาวิทยาลัยเพื่อยืนยันความเป็นเจ้าของและรับสิ่งของคืนครับ!`;
+👉 แนะนำให้ท่านเตรียมหลักฐานยืนยันความเป็นเจ้าของ และแสดงตัวต่อเจ้าหน้าที่ ณ ตึกบริการของมหาวิทยาลัยเพื่อรับสิ่งของคืนครับ!`;
 
             await sendPushToLine(lineUserId, notificationMessage);
           } else {
@@ -177,13 +210,24 @@ exports.checkLostItemMatch = async (lostItem) => {
     console.log(`🔍 Checking matches for LostItem: "${lostItem.item_name}" (ID: ${lostItem.lost_item_id})`);
 
     // Fetch FoundItems that are currently stored/found
-    const { data: foundItems, error } = await supabase
-      .from('FoundItem')
-      .select('*')
-      .eq('category_id', lostItem.category_id)
-      .in('status', ['FOUND', 'STORED']);
+    let foundItems = [];
+    try {
+      const { data, error } = await supabase
+        .from('FoundItem')
+        .select('*')
+        .eq('category_id', lostItem.category_id)
+        .in('status', ['FOUND', 'STORED']);
+      if (error) throw error;
+      foundItems = data || [];
+    } catch (err) {
+      console.warn('Supabase offline in checkLostItemMatch, using local JSON database fallback');
+      const db = loadLocalDb();
+      foundItems = (db.FoundItem || []).filter(item => 
+        Number(item.category_id) === Number(lostItem.category_id) && 
+        ['FOUND', 'STORED'].includes(item.status)
+      );
+    }
 
-    if (error) throw error;
     if (!foundItems || foundItems.length === 0) {
       console.log('ℹ️ No matching stored items in database.');
       return;
@@ -234,24 +278,40 @@ ${JSON.stringify(candidates, null, 2)}
 
     if (matchResult.matched && matchResult.matchId) {
       let ownerEmail = parseDescriptionEmail(lostItem.description);
-      
+
       if (!ownerEmail) {
         // Find reporter email to notify
-        const { data: reporter, error: userError } = await supabase
-          .from('User')
-          .select('*')
-          .eq('user_id', lostItem.reporter_id)
-          .single();
+        try {
+          const { data: reporter, error: userError } = await supabase
+            .from('User')
+            .select('*')
+            .eq('user_id', lostItem.reporter_id)
+            .single();
 
-        if (reporter) {
-          ownerEmail = reporter.email;
+          if (userError) throw userError;
+          if (reporter) {
+            ownerEmail = reporter.email;
+          }
+        } catch (err) {
+          console.warn('Supabase offline or error fetching User in checkLostItemMatch, using local DB fallback');
+          const db = loadLocalDb();
+          const localPerson = (db.Person || []).find(p => p.person_id === lostItem.reporter_id);
+          if (localPerson) {
+            ownerEmail = localPerson.email;
+          }
         }
       }
 
       if (ownerEmail) {
         const lineUserId = lineBindings.getLineUserId(ownerEmail);
         if (lineUserId) {
-          const matchedFound = foundItems.find(item => item.found_item_id === matchResult.matchId);
+          let targetMatchId = matchResult.matchId;
+          if (Array.isArray(targetMatchId)) {
+            targetMatchId = targetMatchId[0];
+          }
+          const parsedMatchId = Number(targetMatchId);
+
+          const matchedFound = foundItems.find(item => Number(item.found_item_id) === parsedMatchId);
           if (matchedFound) {
             const foundDesc = parseDescriptionText(matchedFound.description);
             const notificationMessage = `[แจ้งเตือนด่วนจากระบบ Unifind] 🔍
@@ -262,9 +322,9 @@ ${JSON.stringify(candidates, null, 2)}
 📍 ของที่มีผู้เก็บได้ในคลัง: "${matchedFound.item_name}"
 📝 รายละเอียดที่พบ: ${foundDesc}
 
-✨ เหตุผลการจับคู่ของบอท AI: ${matchResult.reason}
+✨ รายละเอียดที่ตรงกัน: ${matchResult.reason}
 
-👉 แนะนำให้ท่านติดต่อขอรับของคืน ณ ตึกบริการของมหาวิทยาลัยได้เลยครับ!`;
+👉 แนะนำให้ท่านเตรียมหลักฐานยืนยันความเป็นเจ้าของ และติดต่อขอรับของคืน ณ ตึกบริการของมหาวิทยาลัยได้เลยครับ!`;
 
             await sendPushToLine(lineUserId, notificationMessage);
           }

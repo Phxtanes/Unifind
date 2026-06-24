@@ -1,5 +1,11 @@
 const supabase = require('../config/supabase');
 
+const formatLockerName = (lockerCode) => {
+  if (!lockerCode) return null;
+  const digits = parseInt(lockerCode.replace(/\D/g, ''), 10);
+  return !isNaN(digits) ? `ล็อกเกอร์ ที่ - ${digits}` : lockerCode;
+};
+
 // Helper to format Supabase response
 const formatItem = (item) => {
   if (!item) return null;
@@ -7,7 +13,7 @@ const formatItem = (item) => {
     ...item,
     categoryName: item.Category?.category_name,
     locationName: item.Location?.location_name,
-    lockerCode: item.Locker?.locker_code,
+    lockerCode: formatLockerName(item.Locker?.locker_code),
     finderName: item.Person?.full_name,
     finderPhone: item.Person?.phone
   };

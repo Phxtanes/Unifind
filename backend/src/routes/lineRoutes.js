@@ -4,8 +4,117 @@ const axios = require('axios');
 const { GoogleGenAI, Type } = require('@google/genai');
 const supabase = require('../config/supabase');
 const lineBindings = require('../config/lineBindings');
+const fs = require('fs');
+const path = require('path');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+// Local JSON DB file configuration
+const localDbPath = path.join(__dirname, '../../uploads/local_db.json');
+
+function loadLocalDb() {
+    try {
+        if (!fs.existsSync(localDbPath)) {
+            const initial = {
+                LostItem: [],
+                FoundItem: [
+                    {
+                        found_item_id: 1,
+                        item_name: 'กระเป๋าสตางค์หนังสีน้ำตาล',
+                        category_id: 2,
+                        location_id: 1,
+                        floor: '2',
+                        found_date: new Date().toISOString(),
+                        description: JSON.stringify({ textDescription: 'กระเป๋าหนังผู้ชาย มีบัตรนักศึกษา UTCC ข้างใน', finder_universityEmail: 'student@utcc.ac.th' }),
+                        status: 'STORED',
+                        finder_id: 1
+                    },
+                    {
+                        found_item_id: 2,
+                        item_name: 'iPad Pro พร้อม Apple Pencil',
+                        category_id: 3,
+                        location_id: 3,
+                        floor: '',
+                        found_date: new Date().toISOString(),
+                        description: JSON.stringify({ textDescription: 'ไอแพดมีเคสสีเขียวพาสเทล ลืมวางไว้ที่โรงอาหารหลัก', finder_universityEmail: 'student@utcc.ac.th' }),
+                        status: 'STORED',
+                        finder_id: 1
+                    }
+                ],
+                Person: [
+                    { person_id: 1, full_name: 'System User', email: 'student@utcc.ac.th' }
+                ]
+            };
+            if (!fs.existsSync(path.dirname(localDbPath))) {
+                fs.mkdirSync(path.dirname(localDbPath), { recursive: true });
+            }
+            fs.writeFileSync(localDbPath, JSON.stringify(initial, null, 2));
+            return initial;
+        }
+        const data = fs.readFileSync(localDbPath, 'utf8');
+        return JSON.parse(data || '{}');
+    } catch (e) {
+        console.error('Error loading local DB:', e);
+        return { LostItem: [], FoundItem: [], Person: [] };
+    }
+}
+
+function saveLocalDb(db) {
+    try {
+        if (!fs.existsSync(path.dirname(localDbPath))) {
+            fs.mkdirSync(path.dirname(localDbPath), { recursive: true });
+        }
+        fs.writeFileSync(localDbPath, JSON.stringify(db, null, 2));
+    } catch (e) {
+        console.error('Error saving local DB:', e);
+    }
+}
+
+function getLocalFoundItems() {
+    const db = loadLocalDb();
+    return db.FoundItem || [];
+}
+
+function getLocalLostItems() {
+    const db = loadLocalDb();
+    return db.LostItem || [];
+}
+
+function getOrCreateLocalPerson(email) {
+    const db = loadLocalDb();
+    const existing = db.Person.find(p => p.email.toLowerCase() === email.toLowerCase());
+    if (existing) return existing.person_id;
+    const newId = db.Person.length + 1;
+    db.Person.push({
+        person_id: newId,
+        full_name: email.split('@')[0],
+        email: email
+    });
+    saveLocalDb(db);
+    return newId;
+}
+
+function insertLocalLostItem(item) {
+    const db = loadLocalDb();
+    const newId = db.LostItem.length + 1;
+    const newItem = {
+        lost_item_id: newId,
+        ...item
+    };
+    db.LostItem.push(newItem);
+    saveLocalDb(db);
+    return newItem;
+}
+
+function getMockLocationName(locId) {
+    const names = {
+        1: 'อาคาร 24',
+        2: 'อาคาร 6',
+        3: 'โรงอาหาร',
+        4: 'ห้องสมุด'
+    };
+    return names[locId] || 'ไม่ระบุสถานที่';
+}
 
 // =========================================================================
 // 1. CONFIGURATION & HELPERS (การตั้งค่าและฟังก์ชันช่วยเหลือ)
@@ -42,7 +151,7 @@ const welcomeAndGuideMessage = `[คู่มือการใช้งาน�
 พิมพ์คำสำคัญ เช่น "สรุปรายการของหาย" หรือ "ตรวจสอบหมวดหมู่"
 
 3. การผูกบัญชีเพื่อรับการแจ้งเตือน
-พิมพ์ฟอร์แมต -> ผูกบัญชี: [อีเมลมหาวิทยาลัยของท่าน]`;
+พิมพ์ "อีเมลมหาวิทยาลัยของท่าน" เข้ามาในแชทได้โดยตรง (เช่น: student@utcc.ac.th)`;
 
 /**
  * ส่งข้อความตอบกลับไปยัง LINE OA API
@@ -238,48 +347,44 @@ async function handleTextEvent(event) {
 
     console.log(`LINE บอทได้รับข้อความ: ${userMessage} จาก UID: ${lineUserId}`);
 
-    // 1. ฟีเจอร์ผูกบัญชี
+    // 1. ฟีเจอร์ผูกบัญชี (รองรับพิมพ์อีเมลตรงๆ หรือพิมพ์คำว่า ผูกบัญชี)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    let emailToBind = null;
+
+    if (emailRegex.test(userMessage)) {
+        emailToBind = userMessage;
+    } else if (userMessage.startsWith('ผูกบัญชี:')) {
+        emailToBind = userMessage.substring(9).trim();
+    }
+
     if (userMessage === 'ผูกบัญชี') {
         await replyToLine(replyToken, [
             {
                 type: 'text',
-                text: `[ระบบผูกบัญชี Unifind] 👤
-
-ยินดีต้อนรับเข้าสู่ระบบติดตามแจ้งเตือนของหายครับ ท่านสามารถผูกบัญชี LINE เพื่อรับแจ้งเตือนเมื่อระบบตรวจพบของที่ตรงกับลักษณะของหายของคุณได้ทันทีครับ
-
-👉 วิธีการผูกบัญชี:
-กรุณาพิมพ์ข้อความส่งเข้ามาในแชทดังนี้:
-"ผูกบัญชี: อีเมลมหาวิทยาลัยของท่าน"
-(ตัวอย่างเช่น: ผูกบัญชี: student@utcc.ac.th)`
+                text: `[ระบบผูกบัญชี Unifind] 👤\n\nยินดีต้อนรับเข้าสู่ระบบติดตามแจ้งเตือนของหายครับ ท่านสามารถผูกบัญชี LINE เพื่อรับแจ้งเตือนเมื่อระบบตรวจพบของที่ตรงกับลักษณะของหายของคุณได้ทันทีครับ\n\n👉 วิธีการผูกบัญชี:\nกรุณาพิมพ์ "อีเมลมหาวิทยาลัยของท่าน" ส่งเข้ามาในแชทได้โดยตรงเลยครับ (ตัวอย่างเช่น: student@utcc.ac.th)`
             }
         ]);
         return;
     }
 
-    if (userMessage.startsWith('ผูกบัญชี:')) {
-        const email = userMessage.substring(9).trim();
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
+    if (emailToBind) {
+        if (!emailRegex.test(emailToBind)) {
             await replyToLine(replyToken, [
                 {
                     type: 'text',
-                    text: `⚠️ รูปแบบอีเมลไม่ถูกต้องครับ กรุณาพิมพ์ในรูปแบบตัวอย่างนี้นะครับ:\n\nผูกบัญชี: student@utcc.ac.th`
+                    text: `⚠️ รูปแบบอีเมลไม่ถูกต้องครับ กรุณาพิมพ์เป็นอีเมลของท่านโดยตรง เช่น: student@utcc.ac.th`
                 }
             ]);
             return;
         }
 
         // บันทึกการผูกบัญชีลงในไฟล์ bindings
-        lineBindings.bind(email, lineUserId);
+        lineBindings.bind(emailToBind, lineUserId);
 
         await replyToLine(replyToken, [
             {
                 type: 'text',
-                text: `[ผูกบัญชีเรียบร้อยแล้ว] 🎉
-                
-ระบบได้เชื่อมโยงบัญชี LINE นี้เข้ากับอีเมล "${email}" ในฐานข้อมูลเรียบร้อยแล้วครับ!
-
-นับจากนี้ เมื่อเจ้าหน้าที่บันทึกข้อมูลของหายที่ตรงกับข้อมูลของท่าน ระบบจะส่งข้อความแจ้งเตือนหาท่านผ่านช่องทางนี้ทันทีครับ ขอบคุณครับ`
+                text: `[ผูกบัญชีเรียบร้อยแล้ว] 🎉\n\nระบบได้เชื่อมโยงบัญชี LINE นี้เข้ากับอีเมล "${emailToBind}" ในฐานข้อมูลเรียบร้อยแล้วครับ!\n\nนับจากนี้ เมื่อมีผู้พบของหรือพนักงานบันทึกข้อมูลของตกหล่นที่ตรงกับท่าน ระบบจะส่งข้อความแจ้งเตือนมาหาคุณทาง LINE ทันทีครับ ขอบคุณครับ`
             }
         ]);
         return;
@@ -314,9 +419,10 @@ async function handleTextEvent(event) {
     // 4. ระบบ Hybrid AI + ค้นหา/สรุปในฐานข้อมูล
     try {
         const classificationPrompt = `วิเคราะห์ประโยคของผู้ใช้ภาษาไทยต่อไปนี้ว่ามีจุดประสงค์อะไรในระบบตามหาของหาย โดยเลือกข้อที่ถูกต้องที่สุดเพียงข้อเดียว:
-1. "SUMMARY" - หากผู้ใช้ถามภาพรวมกว้างๆ ว่าตอนนี้มีอะไรหายบ้าง, มีหมวดหมู่ไหนบ้าง, หรือมีสถิติอะไรบ้าง
-2. "SEARCH" - หากผู้ใช้พิมพ์ระบุชื่อสิ่งของชัดเจนเพื่อเจาะจงค้นหา เช่น มีโทรศัพท์หายไหม, กุญแจตก, ตามหากระเป๋า
-3. "CHITCHAT" - หากเป็นการพูดคุยทั่วไป ทักทาย บ่น หรือพิมพ์เล่นที่ไม่มีเรื่องสิ่งของมาเกี่ยวข้อง
+1. "SUMMARY" - หากผู้ใช้ถามภาพรวมกว้างๆ ว่าตอนนี้ในระบบมีของอะไรหายบ้าง, มีหมวดหมู่ไหนบ้าง, หรือมีสถิติอะไรบ้าง (เช่น "มีของตกหล่นอะไรบ้าง", "ขอดูกลุ่มของหายหน่อย")
+2. "SEARCH" - หากผู้ใช้ต้องการสอบถาม/สืบค้นว่าปัจจุบันมีคนเก็บสิ่งของชิ้นหนึ่งได้แล้วหรือยัง (เช่น "มีคนเก็บโทรศัพท์ได้ไหม", "ตามหาโทรศัพท์สีขาวที่หาย")
+3. "REPORT_LOST" - หากผู้ใช้แจ้งว่าตนทำของหายหรือลืมของไว้ และระบุประเภทของที่หายชัดเจนเพื่อต้องการบันทึกข้อมูลของหายใหม่เข้าระบบ (เช่น "แจ้งของหาย: ร่มสีดำ", "ทำพวงกุญแจตกหายครับ", "แจ้งของหายเป็นกระเป๋าสีแดง")
+4. "CHITCHAT" - หากเป็นการพูดคุยทั่วไป ทักทาย บ่น หรือพิมพ์เกริ่นสั้นๆ ว่าทำของหายเฉยๆ โดยที่ยังไม่ได้ระบุประเภท/ลักษณะสิ่งของที่สูญหายชัดเจน (เช่น "ทำของหายครับ", "ลืมของไว้ทำไงดี")
 
 ข้อความผู้ใช้: "${userMessage}"
 ตอบกลับเป็น JSON รูปแบบนี้เท่านั้น: { "intent": "ตัวเลือกที่เลือก" }`;
@@ -330,10 +436,23 @@ async function handleTextEvent(event) {
 
         // เคสที่ 4.1: สรุปภาพรวมสิ่งของสูญหาย (SUMMARY)
         if (intentData.intent === 'SUMMARY') {
-            const { data: lostItems } = await supabase.from('LostItem').select('category_id').eq('status', 'LOST');
-            const { data: foundItems } = await supabase.from('FoundItem').select('category_id').in('status', ['FOUND', 'STORED']);
+            let lostItems = [];
+            let foundItems = [];
+            try {
+                const { data: lItems, error: lError } = await supabase.from('LostItem').select('category_id').eq('status', 'LOST');
+                if (lError) throw lError;
+                lostItems = lItems || [];
 
-            const allItems = [...(lostItems || []), ...(foundItems || [])];
+                const { data: fItems, error: fError } = await supabase.from('FoundItem').select('category_id').in('status', ['FOUND', 'STORED']);
+                if (fError) throw fError;
+                foundItems = fItems || [];
+            } catch (err) {
+                console.warn('Supabase offline in SUMMARY case, using local JSON database fallback');
+                lostItems = getLocalLostItems();
+                foundItems = getLocalFoundItems();
+            }
+
+            const allItems = [...lostItems, ...foundItems];
 
             if (allItems.length === 0) {
                 await replyToLine(replyToken, [
@@ -386,21 +505,103 @@ async function handleTextEvent(event) {
             const searchData = JSON.parse(aiResponse.text.trim());
 
             // ค้นหาในคลัง FoundItem
-            let query = supabase.from('FoundItem').select('*, Location(*)').in('status', ['FOUND', 'STORED']);
-            const orFilter = `item_name.ilike.%${searchData.keyword}%,description.ilike.%${searchData.keyword}%`;
-            query = query.or(orFilter);
+            let candidateItems = [];
+            try {
+                let query = supabase.from('FoundItem').select('*, Location(*)').in('status', ['FOUND', 'STORED']);
+                const orFilter = `item_name.ilike.%${searchData.keyword}%,description.ilike.%${searchData.keyword}%`;
+                query = query.or(orFilter);
 
-            if (searchData.place) {
-                const { data: locs } = await supabase.from('Location').select('location_id').ilike('location_name', `%${searchData.place}%`);
-                if (locs && locs.length > 0) {
-                    query = query.in('location_id', locs.map(l => l.location_id));
+                if (searchData.place) {
+                    const { data: locs } = await supabase.from('Location').select('location_id').ilike('location_name', `%${searchData.place}%`);
+                    if (locs && locs.length > 0) {
+                        query = query.in('location_id', locs.map(l => l.location_id));
+                    }
                 }
+
+                const { data: cItems, error: searchError } = await query;
+                if (searchError) throw searchError;
+                candidateItems = cItems || [];
+            } catch (err) {
+                console.warn('Supabase offline in SEARCH case, using local JSON database fallback');
+                const localItems = getLocalFoundItems();
+                const kw = (searchData.keyword || '').toLowerCase();
+                const pl = (searchData.place || '').toLowerCase();
+
+                candidateItems = localItems.filter(item => {
+                    const statusMatch = ['FOUND', 'STORED'].includes(item.status);
+                    if (!statusMatch) return false;
+
+                    const nameMatch = (item.item_name || '').toLowerCase().includes(kw);
+
+                    let descText = '';
+                    try {
+                        const parsed = JSON.parse(item.description);
+                        descText = (parsed.textDescription || '').toLowerCase();
+                    } catch (e) {
+                        descText = (item.description || '').toLowerCase();
+                    }
+                    const descMatch = descText.includes(kw);
+
+                    let locMatch = true;
+                    if (pl) {
+                        const locName = getMockLocationName(item.location_id).toLowerCase();
+                        locMatch = locName.includes(pl) || pl.includes(locName);
+                    }
+
+                    return (nameMatch || descMatch) && locMatch;
+                });
             }
 
-            const { data: candidateItems, error: searchError } = await query;
-            if (searchError) throw searchError;
+            let isMatched = candidateItems && candidateItems.length > 0;
 
-            const isMatched = candidateItems && candidateItems.length > 0;
+            if (!isMatched) {
+                try {
+                    console.log('🔍 Running Gemini semantic search fallback...');
+                    const localItems = getLocalFoundItems();
+                    const candidatesForAi = localItems.map(item => ({
+                        id: item.found_item_id,
+                        name: item.item_name,
+                        description: item.description || ''
+                    }));
+
+                    const searchPrompt = `คุณคือ AI ระบบช่วยเหลือการค้นหาของหายของ Unifind
+เปรียบเทียบสิ่งที่ผู้ใช้กำลังตามหา (Search Query) กับสิ่งของที่มีเก็บอยู่ในคลัง (Stored Items)
+
+สิ่งที่ผู้ใช้ตามหา: "${userMessage}"
+
+รายการของที่มีเก็บอยู่ในคลัง:
+${JSON.stringify(candidatesForAi, null, 2)}
+
+หน้าที่ของคุณ:
+1. ตรวจสอบว่าในคลัง มีสิ่งของชิ้นใดที่ตรงหรือใกล้เคียงกับที่ผู้ใช้ตามหาหรือไม่ (วิเคราะห์ความหมายข้ามภาษา เช่น ไอแพด -> iPad หรือคำอธิบายใกล้เคียงกัน)
+2. หากพบสิ่งของในคลังที่ตรงกัน ให้ตอบกลับเป็น JSON รูปแบบนี้:
+   { "match": true, "itemId": [ใส่ ID ของชิ้นที่พบ] }
+3. หากไม่พบเลย ให้ตอบกลับเป็น JSON รูปแบบนี้:
+   { "match": false, "itemId": null }
+
+ตอบเป็น JSON เท่านั้น`;
+
+                    const aiSearchResponse = await generateContentWithFallback(ai, {
+                        contents: searchPrompt,
+                        config: { responseMimeType: 'application/json' }
+                    });
+
+                    const semanticResult = JSON.parse(aiSearchResponse.text.trim());
+                    if (semanticResult.match && semanticResult.itemId) {
+                        let targetItemId = semanticResult.itemId;
+                        if (Array.isArray(targetItemId)) {
+                            targetItemId = targetItemId[0];
+                        }
+                        const matchedItem = localItems.find(i => Number(i.found_item_id) === Number(targetItemId));
+                        if (matchedItem) {
+                            candidateItems = [matchedItem];
+                            isMatched = true;
+                        }
+                    }
+                } catch (aiErr) {
+                    console.error('Semantic search fallback failed:', aiErr);
+                }
+            }
 
             if (isMatched) {
                 const item = candidateItems[0];
@@ -422,7 +623,148 @@ async function handleTextEvent(event) {
             }
         }
 
-        // เคสที่ 4.3: แชทคุยทั่วไป (CHITCHAT)
+        // เคสที่ 4.3: แจ้งของหายผ่านแชท (REPORT_LOST)
+        if (intentData.intent === 'REPORT_LOST') {
+            const email = lineBindings.getEmailByLineUserId(lineUserId);
+            if (!email) {
+                await replyToLine(replyToken, [
+                    {
+                        type: 'text',
+                        text: `⚠️ ท่านยังไม่ได้ผูกบัญชี LINE กับระบบ Unifind ครับ\n\nกรุณาผูกบัญชีก่อนเพื่อความปลอดภัยในการยืนยันสิทธิ์ตัวตนในการแจ้งของหาย โดยพิมพ์รูปแบบด้านล่างส่งมาได้เลยครับ:\n\nผูกบัญชี: [อีเมลมหาวิทยาลัยของท่าน]\n(ตัวอย่าง: ผูกบัญชี: student@utcc.ac.th)`
+                    }
+                ]);
+                return;
+            }
+
+            const reportExtractionPrompt = `คุณคือ AI ระบบบันทึกแจ้งของหายของ Unifind
+จงวิเคราะห์ข้อความแจ้งของหายภาษาไทยด้านล่างนี้ แล้วสกัดโครงสร้างข้อมูลออกมาในรูปแบบ JSON เท่านั้น ห้ามมีข้อความนำหน้าหรือตามหลังเด็ดขาด:
+ข้อความผู้ใช้: "${userMessage}"
+
+โครงสร้าง JSON:
+{
+  "item_name": "ชื่อสิ่งของเด่นๆ สั้นๆ กระชับ (เช่น 'กุญแจรถ Toyota', 'โทรศัพท์ iPhone', 'ร่มสีฟ้า' - ห้ามเป็นคำกว้างๆ เช่น 'ของหาย')",
+  "category_id": [ใส่ตัวเลข ID หมวดหมู่ที่เหมาะสมที่สุด: 1 (เอกสาร/บัตร), 2 (กระเป๋า/เป้), 3 (โทรศัพท์/ไอแพด/อุปกรณ์ไอที), 4 (กุญแจ/พวงกุญแจ), 5 (เครื่องประดับ/อื่นๆ)],
+  "place": "ระบุสถานที่ทำหายสั้นๆ (เช่น 'อาคาร 24 ชั้น 2', 'โรงอาหารหลัก' - หากไม่ระบุเลยให้ใส่ 'ไม่ระบุ')",
+  "floor": "ระบุเฉพาะเลขชั้นเป็นสตริง เช่น '2', '3' (หากไม่ระบุชั้นให้เว้นว่างเป็น '')",
+  "description": "รายละเอียดเพิ่มเติม เช่น เคสสีชมพู, พวงกุญแจหมีน้อย (หากไม่มีระบุให้เป็น '')"
+}
+`;
+
+            const aiResponse = await generateContentWithFallback(ai, {
+                contents: reportExtractionPrompt,
+                config: { responseMimeType: 'application/json' }
+            });
+
+            const extractedData = JSON.parse(aiResponse.text.trim());
+
+            // 2. แมป Location ID
+            const getLocationId = (locationName) => {
+                if (!locationName) return 1;
+                const mapping = {
+                    '24': 1,
+                    'อาคาร 24': 1,
+                    'ตึก 24': 1,
+                    '6': 2,
+                    'อาคาร 6': 2,
+                    'ตึก 6': 2,
+                    'โรงอาหาร': 3,
+                    'ห้องสมุด': 4
+                };
+                for (const [key, val] of Object.entries(mapping)) {
+                    if (locationName.includes(key)) return val;
+                }
+                return 1; // Default to Location 1 (อาคาร 24)
+            };
+
+            const dbDescription = JSON.stringify({
+                textDescription: extractedData.description || '',
+                finder_type: 'STUDENT',
+                finder_phoneNumber: null,
+                finder_studentId: null,
+                finder_universityEmail: email
+            });
+
+            // 1. ค้นหาหรือสร้าง Person ในฐานข้อมูล และ 3. บันทึกลงตาราง LostItem
+            let personId;
+            let newLostItem;
+            try {
+                const { data: existingPerson } = await supabase
+                    .from('Person')
+                    .select('person_id')
+                    .eq('email', email)
+                    .maybeSingle();
+
+                if (existingPerson) {
+                    personId = existingPerson.person_id;
+                } else {
+                    const emailPrefix = email.split('@')[0];
+                    const numericId = emailPrefix.match(/\d+/);
+                    const studentId = numericId ? numericId[0] : '';
+
+                    const { data: newPerson, error: personInsertError } = await supabase
+                        .from('Person')
+                        .insert({
+                            person_type: 'STUDENT',
+                            full_name: emailPrefix,
+                            student_id: studentId,
+                            email: email,
+                            phone: null
+                        })
+                        .select()
+                        .single();
+
+                    if (personInsertError) throw personInsertError;
+                    personId = newPerson.person_id;
+                }
+
+                // 3. บันทึกลงตาราง LostItem
+                const { data: insertedItem, error: insertLostError } = await supabase
+                    .from('LostItem')
+                    .insert({
+                        item_name: extractedData.item_name,
+                        category_id: extractedData.category_id,
+                        location_id: getLocationId(extractedData.place),
+                        floor: extractedData.floor || '',
+                        lost_datetime: new Date().toISOString(),
+                        description: dbDescription,
+                        status: 'LOST',
+                        reporter_id: personId
+                    })
+                    .select()
+                    .single();
+
+                if (insertLostError) throw insertLostError;
+                newLostItem = insertedItem;
+            } catch (err) {
+                console.warn('Supabase offline in REPORT_LOST case, using local JSON database fallback');
+                personId = getOrCreateLocalPerson(email);
+
+                newLostItem = insertLocalLostItem({
+                    item_name: extractedData.item_name,
+                    category_id: extractedData.category_id,
+                    location_id: getLocationId(extractedData.place),
+                    floor: extractedData.floor || '',
+                    lost_datetime: new Date().toISOString(),
+                    description: dbDescription,
+                    status: 'LOST',
+                    reporter_id: personId
+                });
+            }
+
+            // 4. เรียกกระบวนการจับคู่ทันที
+            const matchingService = require('../services/matchingService');
+            matchingService.checkLostItemMatch(newLostItem);
+
+            await replyToLine(replyToken, [
+                {
+                    type: 'text',
+                    text: `[ระบบ Unifind บันทึกแจ้งของหายสำเร็จ] 📝\n\nระบบบันทึกของหายของท่านเข้าสู่ฐานข้อมูลส่วนกลางเรียบร้อยแล้วครับ!\n\n📋 รายละเอียดที่บันทึก:\n• สิ่งของ: ${extractedData.item_name}\n• สถานที่: ${extractedData.place}${extractedData.floor ? ' ชั้น ' + extractedData.floor : ''}\n• รายละเอียดเพิ่มเติม: ${extractedData.description || '-'}\n• อีเมลผู้แจ้ง: ${email}\n\n✨ ระบบได้เปิดทำการสแกนสืบค้นหาของหายในคลังให้อัตโนมัติ หากมีผู้นำส่งของพบคลังที่ตรงกัน ระบบจะส่งข้อความแจ้งเตือนด่วนหาท่านทันทีครับ`
+                }
+            ]);
+            return;
+        }
+
+        // เคสที่ 4.4: แชทคุยทั่วไป (CHITCHAT)
         const chatbotPrompt = `คุณคือระบบปัญญาประดิษฐ์ช่วยเหลือส่วนกลางของแพลตฟอร์ม Unifind ประจำมหาวิทยาลัยหอการค้าไทย (UTCC) ตอบกลับให้สุภาพ เป็นทางการ ใช้คำแทนตัวว่าระบบ และลงท้ายด้วยครับเสมอ ข้อความผู้ใช้: "${userMessage}"`;
         const aiChatResponse = await generateContentWithFallback(ai, {
             contents: chatbotPrompt,

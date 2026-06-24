@@ -1,32 +1,23 @@
-const { createClient } = require('@supabase/supabase-js');
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, './.env') });
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
-console.log('SUPABASE URL:', supabaseUrl);
-
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = require('./src/config/supabase');
+const bcrypt = require('bcryptjs');
 
 async function test() {
   try {
-    const { data: catData, error: catError } = await supabase
-      .from('Category')
-      .select('*');
-    console.log('Categories Error:', catError?.message || catError);
-    console.log('Categories Count:', catData?.length);
-
-    const { data: locData, error: locError } = await supabase
-      .from('Location')
-      .select('*');
-    console.log('Locations Error:', locError?.message || locError);
-    console.log('Locations Count:', locData?.length);
-    console.log('Location Example:', locData?.[0]);
-
-    const { data: lockData, error: lockError } = await supabase
-      .from('Locker')
-      .select('*, Location(location_name)');
-    console.log('Lockers Error:', lockError?.message || lockError);
-    console.log('Lockers Count:', lockData?.length);
-    console.log('Locker Example:', lockData?.[0]);
+    const hashedPassword = await bcrypt.hash('admin1234', 8);
+    const { data, error } = await supabase
+      .from('User')
+      .update({ password_hash: hashedPassword })
+      .eq('username', 'admin')
+      .select();
+    
+    if (error) {
+      console.error('Error updating admin password:', error.message);
+    } else {
+      console.log('Successfully updated admin password! Row details:', data);
+    }
   } catch (err) {
     console.error(err);
   }
