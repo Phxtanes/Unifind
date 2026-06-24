@@ -4,6 +4,9 @@ import axios from 'axios';
 interface User {
   id: string;
   username: string;
+  full_name?: string;
+  email?: string;
+  role?: string;
 }
 
 export const useAuthStore = defineStore('auth', {
@@ -17,8 +20,17 @@ export const useAuthStore = defineStore('auth', {
       try {
         const response = await axios.post(`${config.public.apiBaseUrl}/auth/login`, { username, password });
         this.token = response.data.accessToken;
-        this.user = { id: response.data.id, username: response.data.username };
-        if (process.client && this.token) localStorage.setItem('token', this.token);
+        this.user = { 
+          id: response.data.user_id, 
+          username: response.data.username,
+          full_name: response.data.full_name,
+          email: response.data.email,
+          role: response.data.role
+        };
+        if (process.client && this.token) {
+          localStorage.setItem('token', this.token);
+          localStorage.setItem('user', JSON.stringify(this.user));
+        }
         return { success: true };
       } catch (error: any) {
         return { 
@@ -43,18 +55,36 @@ export const useAuthStore = defineStore('auth', {
     logout() {
       this.user = null;
       this.token = null;
-      if (process.client) localStorage.removeItem('token');
+      if (process.client) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      }
     },
     initAuth() {
       if (process.client) {
         const token = localStorage.getItem('token');
         if (token) this.token = token;
+        const user = localStorage.getItem('user');
+        if (user) {
+          try {
+            this.user = JSON.parse(user);
+          } catch (e) {
+            console.error('Error parsing user from localStorage:', e);
+          }
+        }
       }
     },
     bypassLogin() {
       this.token = 'mock-token';
-      this.user = { id: '00000000-0000-0000-0000-000000000000', username: 'Test Staff' };
-      if (process.client && this.token) localStorage.setItem('token', this.token);
+      this.user = { 
+        id: '00000000-0000-0000-0000-000000000000', 
+        username: 'Test Staff',
+        role: 'Staff'
+      };
+      if (process.client && this.token) {
+        localStorage.setItem('token', this.token);
+        localStorage.setItem('user', JSON.stringify(this.user));
+      }
     }
   },
   getters: {

@@ -45,11 +45,11 @@
           
           <div class="mt-4">
             <h4 class="text-xs font-bold text-slate-800 font-mono">{{ locker.name }} ({{ locker.monthName }})</h4>
-            <p v-if="locker.status === 'occupied'" class="text-[10px] text-slate-650 font-medium truncate mt-1" :title="locker.item.name">
-              สิ่งของ: <span class="font-bold text-slate-800">{{ locker.item.name }}</span>
+            <p v-if="locker.status === 'occupied'" class="text-[10px] text-slate-650 font-medium truncate mt-1" :title="locker.item?.name">
+              สิ่งของ: <span class="font-bold text-slate-800">{{ locker.item?.name }}</span>
             </p>
             <p v-if="locker.status === 'occupied'" class="text-[9px] text-slate-400 font-medium mt-0.5">
-              เมื่อ: {{ formatDate(locker.item.date) }}
+              เมื่อ: {{ formatDate(locker.item?.date) }}
             </p>
             <p v-else class="text-[10px] text-slate-400 mt-1 font-medium italic">ตู้ว่างพร้อมจัดเก็บสิ่งของที่พบใหม่</p>
           </div>

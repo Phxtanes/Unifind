@@ -24,7 +24,36 @@ const MOCK_LOCKERS = [
   { locker_id: 3, locker_code: 'L03', status: 'AVAILABLE' }
 ]
 
-const MOCK_FOUND = [
+interface FoundItem {
+  found_item_id: number;
+  item_name: string;
+  categoryName: string;
+  locationName: string;
+  floor?: string;
+  found_date: string;
+  description: string;
+  status: string;
+  lockerCode: string;
+  image_url: string | null;
+  finderName: string;
+  finderPhone: string;
+}
+
+interface LostItem {
+  lost_item_id: number;
+  item_name: string;
+  categoryName: string;
+  locationName: string;
+  floor?: string;
+  lost_datetime: string;
+  description: string;
+  status: string;
+  image_url: string | null;
+  reporterName: string;
+  reporterPhone: string;
+}
+
+const MOCK_FOUND: FoundItem[] = [
   {
     found_item_id: 1,
     item_name: 'กระเป๋าสตางค์หนังสีน้ำตาล',
@@ -53,7 +82,7 @@ const MOCK_FOUND = [
   }
 ]
 
-const MOCK_LOST = [
+const MOCK_LOST: LostItem[] = [
   {
     lost_item_id: 3,
     item_name: 'กุญแจรถยนต์ Toyota',
@@ -442,7 +471,8 @@ export const useItemsStore = defineStore('items', {
         finderPhone: item.Person?.phone || item.finderPhone,
         finderType: item.Person?.person_type || 'STUDENT',
         finderStudentId: item.Person?.student_id || '',
-        finderEmail: item.Person?.email || ''
+        finderEmail: item.Person?.email || '',
+        staffName: item.staffName || null
       }))
 
       const mappedLost = state.lostItems.map(item => ({
@@ -464,7 +494,8 @@ export const useItemsStore = defineStore('items', {
         reporterPhone: item.Person?.phone || item.reporterPhone,
         reporterType: item.Person?.person_type || 'STUDENT',
         reporterStudentId: item.Person?.student_id || '',
-        reporterEmail: item.Person?.email || ''
+        reporterEmail: item.Person?.email || '',
+        staffName: item.staffName || null
       }))
 
       return [...mappedFound, ...mappedLost]
