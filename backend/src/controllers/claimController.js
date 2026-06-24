@@ -18,7 +18,7 @@ const getCategoryName = (categoryId) => {
 // POST /api/claims (Staff records a claim/return)
 exports.createClaim = async (req, res) => {
   try {
-    const { found_item_id, claimer_id, remark, status = 'CLAIMED' } = req.body;
+    const { found_item_id, claimer_id, remark, status = 'CLAIMED', proof_description, proof_image_url } = req.body;
 
     if (!found_item_id || !claimer_id) {
       return res.status(400).json({ message: 'found_item_id and claimer_id are required' });
@@ -27,15 +27,15 @@ exports.createClaim = async (req, res) => {
     // Check if item exists and is STORED or MATCHED
     const { data: item, error: findError } = await supabase
       .from('FoundItem')
-      .select('status')
-      .eq('found_item_id', item_id)
+      .select('status, locker_id')
+      .eq('found_item_id', found_item_id)
       .maybeSingle();
 
     if (findError || !item) {
       return res.status(404).json({ message: 'Found item not found' });
     }
 
-    if (item.status === 'CLAIMED') {
+    if (item.status === 'CLAIMED' || item.status === 'RETURNED') {
       return res.status(400).json({ message: 'Item is already claimed or unavailable' });
     }
 
@@ -47,18 +47,35 @@ exports.createClaim = async (req, res) => {
       .single();
 
     const claim = claimsDb.createClaim({
-      found_item_id: item_id,
-      claimer_id: req.userId,
+      found_item_id: found_item_id,
+      claimer_id: claimer_id,
       claimer_username: claimant ? claimant.username : 'Registered User',
-      proof_description,
+      proof_description: proof_description || remark,
       proof_image_url
     });
+
+    // Insert into Supabase Claim table for persistence
+    const { error: dbClaimError } = await supabase
+      .from('Claim')
+      .insert({
+        found_item_id: parseInt(found_item_id),
+        claimer_id: parseInt(claimer_id),
+        claim_date: new Date().toISOString(),
+        return_date: new Date().toISOString(),
+        status: status || 'CLAIMED',
+        remark: remark || proof_description || null,
+        created_by: req.userId
+      });
+
+    if (dbClaimError) {
+      console.error('Error inserting Claim to Supabase:', dbClaimError.message);
+    }
 
     // Update FoundItem status
     await supabase.from('FoundItem').update({ status }).eq('found_item_id', found_item_id);
 
-    // If RETURNED, free up the locker if it was in one
-    if (status === 'RETURNED' && item.locker_id) {
+    // If RETURNED or CLAIMED, free up the locker if it was in one
+    if ((status === 'RETURNED' || status === 'CLAIMED') && item.locker_id) {
         await supabase.from('Locker').update({ status: 'AVAILABLE' }).eq('locker_id', item.locker_id);
     }
 

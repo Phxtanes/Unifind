@@ -166,8 +166,14 @@ exports.createFoundItem = async (req, res) => {
         }
       }
     }
+    // Trigger Matching
+    const matchingService = require('../services/matchingService');
+    const aiMatch = await matchingService.checkFoundItemMatch(data);
 
-    res.status(201).json(formatItem(data));
+    res.status(201).json({
+      ...formatItem(data),
+      aiMatch
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -209,6 +215,13 @@ exports.updateFoundItem = async (req, res) => {
     if (lockerId !== undefined) updateData.locker_id = lockerId;
     if (finderId !== undefined) updateData.finder_id = finderId;
 
+    // Fetch existing found item to check locker details before updating
+    const { data: oldItem } = await supabase
+      .from('FoundItem')
+      .select('locker_id, status')
+      .eq('found_item_id', id)
+      .maybeSingle();
+
     const { data: updatedItem, error } = await supabase
       .from('FoundItem')
       .update(updateData)
@@ -219,6 +232,18 @@ exports.updateFoundItem = async (req, res) => {
     if (error) {
       if (error.code === 'PGRST116') return res.status(404).json({ message: 'Found item not found' });
       throw error;
+    }
+
+    // Release old locker if status is CLAIMED or RETURNED, or if locker_id is updated/removed
+    if (oldItem && oldItem.locker_id) {
+      const isStatusClaimed = status === 'CLAIMED' || status === 'RETURNED';
+      const isLockerChanged = lockerId !== undefined && lockerId !== oldItem.locker_id;
+      if (isStatusClaimed || isLockerChanged || lockerId === null) {
+        await supabase
+          .from('Locker')
+          .update({ status: 'AVAILABLE' })
+          .eq('locker_id', oldItem.locker_id);
+      }
     }
 
     // Upload to Supabase Storage if file exists

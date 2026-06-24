@@ -101,7 +101,7 @@ exports.checkFoundItemMatch = async (foundItem) => {
     try {
       const { data, error } = await supabase
         .from('LostItem')
-        .select('*, User!reporter_id(*)')
+        .select('*, Person!reporter_id(*)')
         .eq('category_id', foundItem.category_id)
         .eq('status', 'LOST');
       if (error) throw error;
@@ -172,7 +172,7 @@ ${JSON.stringify(candidates, null, 2)}
 
       const matchedLost = lostItems.find(item => Number(item.lost_item_id) === parsedMatchId);
       if (matchedLost) {
-        const ownerEmail = parseDescriptionEmail(matchedLost.description) || (matchedLost.User ? matchedLost.User.email : null);
+        const ownerEmail = parseDescriptionEmail(matchedLost.description) || (matchedLost.Person ? matchedLost.Person.email : null);
         if (ownerEmail) {
           const lineUserId = lineBindings.getLineUserId(ownerEmail);
           if (lineUserId) {
@@ -195,9 +195,23 @@ ${JSON.stringify(candidates, null, 2)}
           }
         }
       }
+      return {
+        matched: true,
+        confidence: matchResult.confidence || 0,
+        reason: matchResult.reason || '',
+        matchedItem: matchedLost ? {
+          id: matchedLost.lost_item_id,
+          name: matchedLost.item_name,
+          description: parseDescriptionText(matchedLost.description),
+          date: matchedLost.lost_datetime,
+          reporter: matchedLost.Person ? matchedLost.Person.full_name : 'ไม่ได้ระบุ'
+        } : null
+      };
     }
+    return { matched: false, confidence: 0, reason: 'ไม่มีของที่ตรงกัน', matchedItem: null };
   } catch (err) {
     console.error('❌ checkFoundItemMatch Error:', err);
+    return { matched: false, confidence: 0, reason: 'เกิดข้อผิดพลาดในการตรวจสอบความคล้ายคลึง', error: err.message };
   }
 };
 
@@ -214,7 +228,7 @@ exports.checkLostItemMatch = async (lostItem) => {
     try {
       const { data, error } = await supabase
         .from('FoundItem')
-        .select('*')
+        .select('*, Person!finder_id(*)')
         .eq('category_id', lostItem.category_id)
         .in('status', ['FOUND', 'STORED']);
       if (error) throw error;
@@ -283,9 +297,9 @@ ${JSON.stringify(candidates, null, 2)}
         // Find reporter email to notify
         try {
           const { data: reporter, error: userError } = await supabase
-            .from('User')
+            .from('Person')
             .select('*')
-            .eq('user_id', lostItem.reporter_id)
+            .eq('person_id', lostItem.reporter_id)
             .single();
 
           if (userError) throw userError;
@@ -332,8 +346,76 @@ ${JSON.stringify(candidates, null, 2)}
           console.log(`ℹ️ Owner email ${ownerEmail} has no bound LINE Account.`);
         }
       }
+      return {
+        matched: true,
+        confidence: matchResult.confidence || 0,
+        reason: matchResult.reason || '',
+        matchedItem: matchedFound ? {
+          id: matchedFound.found_item_id,
+          name: matchedFound.item_name,
+          description: parseDescriptionText(matchedFound.description),
+          date: matchedFound.found_date,
+          founder: matchedFound.Person ? matchedFound.Person.full_name : 'ไม่ได้ระบุ'
+        } : null
+      };
     }
+    return { matched: false, confidence: 0, reason: 'ไม่มีของที่ตรงกัน', matchedItem: null };
   } catch (err) {
     console.error('❌ checkLostItemMatch Error:', err);
+    return { matched: false, confidence: 0, reason: 'เกิดข้อผิดพลาดในการตรวจสอบความคล้ายคลึง', error: err.message };
+  }
+};
+
+/**
+ * Compare a specific LostItem and FoundItem using Gemini AI
+ */
+exports.analyzeMatchBetweenItems = async (lostItem, foundItem) => {
+  try {
+    const lostDesc = parseDescriptionText(lostItem.description);
+    const foundDesc = parseDescriptionText(foundItem.description);
+
+    const prompt = `คุณคือระบบวิเคราะห์สิ่งของสูญหายอัจฉริยะ (AI Lost & Found Matcher) ของ Unifind
+จงเปรียบเทียบสิ่งของที่ผู้ใช้แจ้งหาย (Lost Item) กับของที่มีผู้พบเจอ (Found Item) ว่ามีโอกาสที่จะเป็น "ของชิ้นเดียวกัน" มากน้อยเพียงใด
+
+สิ่งของที่แจ้งหาย (Lost Item):
+- ชื่อ: "${lostItem.item_name}"
+- รายละเอียด: "${lostDesc}"
+- วันที่หาย: "${lostItem.lost_datetime || lostItem.created_at}"
+- สถานที่: "${lostItem.Location ? lostItem.Location.location_name : 'ไม่ระบุ'} ชั้น ${lostItem.floor || 'ไม่ระบุ'}"
+
+สิ่งของที่มีผู้พบเจอ (Found Item):
+- ชื่อ: "${foundItem.item_name}"
+- รายละเอียด: "${foundDesc}"
+- วันที่พบ: "${foundItem.found_date || foundItem.created_at}"
+- สถานที่: "${foundItem.Location ? foundItem.Location.location_name : 'ไม่ระบุ'} ชั้น ${foundItem.floor || 'ไม่ระบุ'}"
+
+หน้าที่ของคุณ:
+1. วิเคราะห์เปรียบเทียบความคล้ายคลึงทางกายภาพ สี ยี่ห้อ จุดสังเกต และสถานที่/เวลา
+2. ตอบกลับเป็น JSON ในรูปแบบนี้เท่านั้น:
+   {
+     "matched": true,
+     "confidence": 85,
+     "reason": "อธิบายการเปรียบเทียบสั้นๆ เป็นภาษาไทยว่าทำไมถึงแมตช์หรือทำไมไม่ตรงกัน"
+   }
+3. หากไม่แมตช์หรือคะแนนความมั่นใจน้อยกว่า 50% ให้ตอบ:
+   {
+     "matched": false,
+     "confidence": 30,
+     "reason": "ระบุเหตุผลที่ไม่ตรงกัน"
+   }
+   
+ห้ามพิมพ์ข้อความเกริ่นนำหรือคำอธิบายใดๆ นอกเหนือจากรูปแบบ JSON ที่กำหนด`;
+
+    const aiResult = await generateContentWithFallback(ai, {
+      contents: prompt,
+      config: { responseMimeType: 'application/json' }
+    });
+
+    const matchResult = JSON.parse(aiResult.text.trim());
+    console.log('🤖 AI Manual Pair Matching Result:', matchResult);
+    return matchResult;
+  } catch (err) {
+    console.error('❌ analyzeMatchBetweenItems Error:', err);
+    return { matched: false, confidence: 0, reason: 'เกิดข้อผิดพลาดในการวิเคราะห์ด้วย AI: ' + err.message };
   }
 };

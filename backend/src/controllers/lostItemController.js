@@ -356,7 +356,8 @@ exports.createLostItem = async (req, res) => {
     // Fetch user username to format output
     const { data: user } = await supabase.from('User').select('username').eq('user_id', req.userId).maybeSingle();
 
-    if (status === 'lost' || status === 'LOST') {
+    const isLost = !status || status === 'lost' || status === 'LOST';
+    if (isLost) {
       // Create LostItem
       const { data, error } = await supabase
         .from('LostItem')
@@ -375,11 +376,14 @@ exports.createLostItem = async (req, res) => {
 
       if (error) throw error;
 
-      // Trigger Matching asynchronously
+      // Trigger Matching
       const matchingService = require('../services/matchingService');
-      matchingService.checkLostItemMatch(data);
+      const aiMatch = await matchingService.checkLostItemMatch(data);
 
-      res.status(201).json(formatLostItem({ ...data, User: user }, []));
+      res.status(201).json({
+        ...formatLostItem({ ...data, User: user }, []),
+        aiMatch
+      });
     } else {
       // Create FoundItem
       const lockerId = await getLockerId(locker);
@@ -401,13 +405,17 @@ exports.createLostItem = async (req, res) => {
 
       if (error) throw error;
 
-      // Trigger Matching asynchronously if not claimed
+      // Trigger Matching if not claimed
+      let aiMatch = null;
       if (status !== 'claimed' && status !== 'CLAIMED') {
         const matchingService = require('../services/matchingService');
-        matchingService.checkFoundItemMatch(data);
+        aiMatch = await matchingService.checkFoundItemMatch(data);
       }
 
-      res.status(201).json(formatFoundItem({ ...data, User: user }, []));
+      res.status(201).json({
+        ...formatFoundItem({ ...data, User: user }, []),
+        aiMatch
+      });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -683,6 +691,47 @@ exports.deleteLostItem = async (req, res) => {
     }
 
     res.status(200).json({ message: 'Item deleted permanently from database' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// POST /api/lost-items/analyze-match
+exports.analyzeItemsMatch = async (req, res) => {
+  try {
+    const { lost_item_id, found_item_id } = req.body;
+
+    if (!lost_item_id || !found_item_id) {
+      return res.status(400).json({ message: 'lost_item_id and found_item_id are required' });
+    }
+
+    // 1. Fetch Lost Item
+    const { data: lostItem, error: lostError } = await supabase
+      .from('LostItem')
+      .select('*, Location(*), Category(*)')
+      .eq('lost_item_id', lost_item_id)
+      .single();
+
+    if (lostError || !lostItem) {
+      return res.status(404).json({ message: 'Lost item not found' });
+    }
+
+    // 2. Fetch Found Item
+    const { data: foundItem, error: foundError } = await supabase
+      .from('FoundItem')
+      .select('*, Location(*), Category(*)')
+      .eq('found_item_id', found_item_id)
+      .single();
+
+    if (foundError || !foundItem) {
+      return res.status(404).json({ message: 'Found item not found' });
+    }
+
+    // 3. Call matching service
+    const matchingService = require('../services/matchingService');
+    const analysis = await matchingService.analyzeMatchBetweenItems(lostItem, foundItem);
+
+    res.status(200).json(analysis);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

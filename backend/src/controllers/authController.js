@@ -52,8 +52,8 @@ exports.register = async (req, res) => {
         email,
         password_hash: hashedPassword,
         full_name: username,
-        role: 'MEMBER',
-        status: 'Pending'
+        role: 'STAFF',
+        status: 'Inactive'
       });
 
     if (insertError) throw insertError;
@@ -79,14 +79,9 @@ exports.login = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Check if account is active/suspended
-    if (user.status === 'Suspended') {
-      return res.status(403).json({ message: 'บัญชีนี้ถูกระงับการใช้งานชั่วคราว' });
-    }
-
-    // For member who hasn't been approved to staff yet
-    if (user.role === 'MEMBER' && user.status === 'Pending') {
-      return res.status(403).json({ message: 'บัญชีของคุณยังอยู่ระหว่างรออนุมัติสิทธิ์เข้าใช้งาน' });
+    // Check if account is active
+    if (user.status === 'Inactive') {
+      return res.status(403).json({ message: 'บัญชีของคุณยังไม่ได้รับการอนุมัติสิทธิ์เข้าใช้งาน หรือ ถูกระงับการใช้งานชั่วคราว' });
     }
 
     const passwordIsValid = await bcrypt.compare(password, user.password_hash);
@@ -118,11 +113,66 @@ exports.getUsers = async (req, res) => {
     const { data: users, error } = await supabase
       .from('User')
       .select('user_id, username, email, role, status, created_at')
-      .in('role', ['ADMIN', 'STAFF']);
+      .in('role', ['ADMIN', 'STAFF'])
+      .eq('status', 'Active');
 
     if (error) throw error;
 
     res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Admin creates a new user directly
+exports.createUser = async (req, res) => {
+  try {
+    const { username, email, password, role = 'STAFF', status = 'Active' } = req.body;
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'Username, email, and password are required' });
+    }
+
+    // Check if username already exists
+    const { data: existingUser } = await supabase
+      .from('User')
+      .select('user_id')
+      .eq('username', username)
+      .maybeSingle();
+
+    if (existingUser) {
+      return res.status(400).json({ message: 'Username is already taken' });
+    }
+
+    // Check if email already exists
+    const { data: existingEmail } = await supabase
+      .from('User')
+      .select('user_id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (existingEmail) {
+      return res.status(400).json({ message: 'Email is already registered' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 8);
+    
+    const { data: newUser, error: insertError } = await supabase
+      .from('User')
+      .insert({
+        username,
+        email,
+        password_hash: hashedPassword,
+        full_name: username,
+        role: role.toUpperCase(),
+        status: status
+      })
+      .select()
+      .single();
+
+    if (insertError) throw insertError;
+
+    res.status(201).json({ message: 'User created successfully', user: formatUser(newUser) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -134,8 +184,8 @@ exports.getPendingUsers = async (req, res) => {
     const { data: pendingUsers, error } = await supabase
       .from('User')
       .select('user_id, username, email, role, status, created_at')
-      .eq('role', 'MEMBER')
-      .eq('status', 'Pending');
+      .eq('role', 'STAFF')
+      .eq('status', 'Inactive');
 
     if (error) throw error;
 
@@ -224,7 +274,7 @@ exports.deactivateUser = async (req, res) => {
 
     const { data: user, error } = await supabase
       .from('User')
-      .update({ status: 'Suspended' })
+      .update({ status: 'Inactive' })
       .eq('user_id', userId)
       .select()
       .single();

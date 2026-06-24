@@ -13,6 +13,7 @@ router.post('/bind-line', verifyToken, controller.bindLine);
 // Admin-only User Management endpoints
 router.get('/users', verifyToken, isAdmin, controller.getUsers);
 router.get('/users/pending', verifyToken, isAdmin, controller.getPendingUsers);
+router.post('/users', verifyToken, isAdmin, controller.createUser);
 
 // Approve is basically Activate
 router.put('/user/:userId/approve', verifyToken, isAdmin, controller.activateUser);
