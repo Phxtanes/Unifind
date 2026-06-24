@@ -6,7 +6,7 @@
       <div class="relative h-44 w-full bg-slate-50 border-b border-slate-100">
         <img v-if="imageSrc" :src="imageSrc" class="w-full h-full object-cover" />
         <div v-else class="flex flex-col items-center justify-center h-full text-slate-350 text-xs font-medium bg-slate-50">
-          <span class="text-lg mb-1">📷</span> ไม่มีภาพประกอบ
+          <font-awesome :icon="['fas', 'image']" class="text-lg mb-1" /> ไม่มีภาพประกอบ
         </div>
         
         <!-- Status Tag -->
@@ -26,21 +26,29 @@
         <div class="flex items-start justify-between gap-2 mb-1">
           <h3 class="text-sm font-bold text-slate-800 truncate" :title="item.name">{{ item.name }}</h3>
         </div>
-        <p class="text-slate-400 text-[10px] font-medium mb-3">🕒 บันทึก: {{ formattedDate }}</p>
-        <p class="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2 min-h-[2.5rem]">{{ item.description || 'ไม่มีรายละเอียดเพิ่มเติม' }}</p>
+        <p class="text-slate-400 text-[10px] font-medium mb-3">
+          <font-awesome :icon="['fas', 'clock']" class="mr-1" /> บันทึก: {{ formattedDate }}
+        </p>
+        <p class="text-slate-500 text-xs leading-relaxed mb-4 line-clamp-2 min-h-[2.5rem]">{{ formatDescription(item.description) }}</p>
         
         <!-- Details block -->
         <div class="bg-slate-50/50 p-3.5 rounded-lg space-y-2 text-xs border border-slate-100">
           <div class="flex items-center text-slate-600">
-            <span class="text-slate-400 w-4 mr-1.5 text-center">📍</span> 
+            <span class="text-slate-400 w-4 mr-1.5 text-center">
+              <font-awesome :icon="['fas', 'location-dot']" />
+            </span> 
             <span class="truncate">สถานที่: <span class="font-semibold text-slate-700">{{ item.place }}</span></span>
           </div>
           <div class="flex items-center text-slate-600">
-            <span class="text-slate-400 w-4 mr-1.5 text-center">📁</span> 
+            <span class="text-slate-400 w-4 mr-1.5 text-center">
+              <font-awesome :icon="['fas', 'folder']" />
+            </span> 
             <span class="truncate">หมวดหมู่: <span class="font-semibold text-slate-700">{{ item.category }}</span></span>
           </div>
           <div class="flex items-center text-slate-600" v-if="item.locker">
-            <span class="text-slate-400 w-4 mr-1.5 text-center">📦</span> 
+            <span class="text-slate-400 w-4 mr-1.5 text-center">
+              <font-awesome :icon="['fas', 'box-archive']" />
+            </span> 
             <span class="truncate">ตู้ล็อกเกอร์: <span class="font-semibold text-slate-700">{{ item.locker }}</span></span>
           </div>
         </div>
@@ -52,9 +60,9 @@
       <!-- Status select dropdown -->
       <select :value="item.status === 'stored' ? 'found' : item.status === 'removed' ? 'claimed' : item.status" @change="$emit('changeStatus', item.id, $event.target.value)" 
         class="flex-1 bg-white border border-slate-200 text-xs font-semibold text-slate-600 py-2 px-2.5 rounded-lg outline-none focus:border-slate-800 transition">
-        <option value="lost">🔴 ของหาย (Lost)</option>
-        <option value="found">🟢 พบเจอ (Found)</option>
-        <option value="claimed">⚫ คืนแล้ว (Claimed)</option>
+        <option value="lost">ของหาย (Lost)</option>
+        <option value="found">พบเจอ (Found)</option>
+        <option value="claimed">คืนแล้ว (Claimed)</option>
       </select>
 
       <!-- Delete Button (Clean icon) -->
@@ -71,7 +79,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useItemHelpers } from '~/composables/useItemHelpers'
 import dayjs from 'dayjs'
+
+const { formatDescription } = useItemHelpers()
 
 const props = defineProps({
   item: {

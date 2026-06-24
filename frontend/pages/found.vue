@@ -4,7 +4,9 @@
     <!-- Controls & Search Card -->
     <div class="bg-white rounded-xl py-3 px-4 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div class="relative flex-1 max-w-xs">
-        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">🔎</span>
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">
+          <font-awesome :icon="['fas', 'magnifying-glass']" />
+        </span>
         <input v-model="searchQuery" type="text" id="search-found"
           placeholder="ค้นหา..." 
           class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-xs text-slate-700 transition" />
@@ -16,27 +18,29 @@
     </div>
 
     <!-- Items Table Card -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between min-h-[480px]">
+    <div class="bg-white pt-0 px-6 pb-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between min-h-[480px]">
       <div class="overflow-x-auto -mx-6">
         <table class="w-full text-left border-collapse min-w-[700px]">
           <thead>
-            <tr class="border-b border-slate-150 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider bg-slate-50/75">
-              <th class="py-3.5 px-6 font-bold">รายการ</th>
-              <th class="py-3.5 px-6 font-bold">หมวดหมู่</th>
-              <th class="py-3.5 px-6 font-bold">สถานะ</th>
-              <th class="py-3.5 px-6 font-bold">สถานที่</th>
-              <th class="py-3.5 px-6 font-bold">วันที่บันทึก</th>
-              <th class="py-3.5 px-6 font-bold">ตู้ล็อกเกอร์</th>
-              <th class="py-3.5 px-6 font-bold text-center">จัดการ</th>
+            <tr class="border-b border-slate-200 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest bg-slate-50/70">
+              <th class="py-4 px-6 font-bold">รายการ</th>
+              <th class="py-4 px-6 font-bold">หมวดหมู่</th>
+              <th class="py-4 px-6 font-bold">สถานะ</th>
+              <th class="py-4 px-6 font-bold">สถานที่</th>
+              <th class="py-4 px-6 font-bold">วันที่บันทึก</th>
+              <th class="py-4 px-6 font-bold">ตู้ล็อกเกอร์</th>
+              <th class="py-4 px-6 font-bold text-center">จัดการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr v-for="item in paginatedItems" :key="item.id" 
                 @click="openItemDetail(item)"
-                class="hover:bg-slate-50/50 text-xs transition duration-150 cursor-pointer">
+                class="hover:bg-indigo-50/30 text-xs transition duration-150 cursor-pointer">
               <td class="py-3 px-6 flex items-center gap-3">
                 <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="w-10 h-10 rounded-xl object-cover border border-slate-155 shadow-sm" />
-                <div v-else class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-400 border border-emerald-100 shadow-sm">🧩</div>
+                <div v-else class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-400 border border-emerald-100 shadow-sm">
+                  <font-awesome :icon="['fas', 'puzzle-piece']" />
+                </div>
                 <div>
                   <h4 class="font-bold text-slate-800 truncate max-w-[180px]" :title="item.name">{{ item.name }}</h4>
                   <p class="text-[9px] text-slate-400 font-mono mt-0.5">ID: {{ getMockCode(item) }}</p>
@@ -54,26 +58,26 @@
               <td class="py-3 px-6 text-slate-600 font-mono font-medium">{{ item.locker || '-' }}</td>
               <td class="py-3 px-6">
                 <div class="flex items-center justify-center gap-2">
-                  <select :value="'found'"
-                    @click.stop
-                    @change.stop="changeStatus(item.id, ($event.target as HTMLSelectElement).value)" 
-                    class="bg-white border border-slate-200 hover:border-slate-300 text-[11px] font-semibold text-slate-600 py-1 px-2 rounded-lg outline-none focus:ring-1 focus:ring-emerald-500 focus:border-indigo-500 transition cursor-pointer shadow-sm">
-                    <option value="lost">ของหาย (Lost)</option>
-                    <option value="found">พบเจอ (Found)</option>
-                    <option value="claimed">คืนแล้ว (Claimed)</option>
-                  </select>
+                  <button 
+                    @click.stop="openReturnModal(item)"
+                    class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold py-1 px-2.5 rounded-lg transition duration-150 shadow-sm flex items-center gap-1.5 hover:shadow">
+                    <font-awesome :icon="['fas', 'hand-holding-hand']" />
+                    คืนของ
+                  </button>
                   <button @click.stop="openEditModal(item)" class="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-transparent hover:border-indigo-100/50 transition" title="แก้ไข">
-                    ✏️
+                    <font-awesome :icon="['fas', 'pen-to-square']" />
                   </button>
                   <button @click.stop="deleteItem(item.id)" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg border border-transparent hover:border-rose-100/50 transition">
-                    🗑️
+                    <font-awesome :icon="['fas', 'trash-can']" />
                   </button>
                 </div>
               </td>
             </tr>
             <tr v-if="paginatedItems.length === 0">
               <td colspan="7" class="text-center py-20 text-slate-455">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-lg mx-auto shadow-sm">🧩</div>
+                <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-lg mx-auto shadow-sm">
+                  <font-awesome :icon="['fas', 'puzzle-piece']" />
+                </div>
                 <p class="text-xs mt-3 font-semibold text-slate-700">ไม่มีรายการสิ่งของที่พบในระบบ</p>
               </td>
             </tr>
@@ -109,6 +113,109 @@
       @submit="handleEditSubmit" 
     />
 
+    <!-- Success Modal -->
+    <SuccessModal 
+      :show="showSuccessModal" 
+      :title="successModalTitle" 
+      :message="successModalMessage" 
+      @close="showSuccessModal = false" 
+    />
+
+    <!-- Return Item Modal -->
+    <div v-if="showReturnModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm transition-opacity duration-300">
+      <div class="bg-white w-full max-w-md rounded-2xl border border-slate-100 shadow-2xl p-6 relative overflow-hidden max-h-[90vh] flex flex-col animate-fade-in">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-650 text-sm">
+              <font-awesome :icon="['fas', 'hand-holding-hand']" />
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-800">ทำรายการส่งคืนสิ่งของ</h3>
+              <p class="text-[10px] text-slate-450 mt-0.5">กรอกข้อมูลผู้รับสิ่งของเพื่อบันทึกประวัติการส่งคืน</p>
+            </div>
+          </div>
+          <button @click="closeReturnModal" class="text-slate-400 hover:text-slate-650 transition p-1">
+            <font-awesome :icon="['fas', 'xmark']" />
+          </button>
+        </div>
+
+        <!-- Form content -->
+        <form @submit.prevent="handleReturnSubmit" class="space-y-4 overflow-y-auto flex-1 pr-1">
+          <div class="p-3 bg-indigo-50/50 border border-indigo-100/50 rounded-xl flex items-center gap-3">
+            <img v-if="getItemImageSrc(returnItem)" :src="getItemImageSrc(returnItem)" class="w-12 h-12 rounded-lg object-cover border border-slate-200" />
+            <div v-else class="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-400 text-lg">
+              <font-awesome :icon="['fas', 'box-open']" />
+            </div>
+            <div>
+              <p class="text-xs font-bold text-slate-800 line-clamp-1">{{ returnItem?.name }}</p>
+              <p class="text-[9px] text-slate-500 font-medium">ตู้ล็อกเกอร์: {{ returnItem?.locker || '-' }}</p>
+            </div>
+          </div>
+
+          <!-- Receiver Full Name -->
+          <div>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">ชื่อ-นามสกุล ผู้รับคืน <span style="color: red;">*</span></label>
+            <input type="text" v-model="returnForm.full_name" required placeholder="เช่น สมชาย รักดี" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition" />
+          </div>
+
+          <!-- Person Type -->
+          <div>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">ประเภทบุคคล <span style="color: red;">*</span></label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" @click="returnForm.person_type = 'STUDENT'" :class="returnForm.person_type === 'STUDENT' ? 'bg-indigo-600 text-white font-bold border-transparent' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'" class="py-2 text-[10px] rounded-xl border text-center transition">นักศึกษา</button>
+              <button type="button" @click="returnForm.person_type = 'STAFF'" :class="returnForm.person_type === 'STAFF' ? 'bg-indigo-600 text-white font-bold border-transparent' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'" class="py-2 text-[10px] rounded-xl border text-center transition">บุคลากร</button>
+              <button type="button" @click="returnForm.person_type = 'EXTERNAL'" :class="returnForm.person_type === 'EXTERNAL' ? 'bg-indigo-600 text-white font-bold border-transparent' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'" class="py-2 text-[10px] rounded-xl border text-center transition">บุคคลภายนอก</button>
+            </div>
+          </div>
+
+          <!-- Student ID (if student) -->
+          <div v-if="returnForm.person_type === 'STUDENT'">
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">รหัสนักศึกษา <span style="color: red;">*</span></label>
+            <input type="text" v-model="returnForm.student_id" required placeholder="เช่น 660110xxxx" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition" />
+          </div>
+
+          <!-- Phone Number -->
+          <div>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">เบอร์โทรศัพท์ติดต่อ <span style="color: red;">*</span></label>
+            <input type="text" v-model="returnForm.phone" required placeholder="เช่น 089xxxxxxx" maxlength="10" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition" />
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">อีเมล (ถ้ามี)</label>
+            <input type="email" v-model="returnForm.email" placeholder="เช่น somchai@utcc.ac.th" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition" />
+          </div>
+
+          <!-- Relationship -->
+          <div>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">ความสัมพันธ์กับสิ่งของ <span style="color: red;">*</span></label>
+            <select v-model="returnForm.relationship" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition">
+              <option value="owner">เป็นเจ้าของสิ่งของ (Owner)</option>
+              <option value="representative">เป็นผู้แทนมารับคืน (Representative)</option>
+            </select>
+          </div>
+
+          <!-- Notes -->
+          <div>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">หมายเหตุ / บันทึกการส่งมอบ</label>
+            <textarea v-model="returnForm.remark" rows="2" placeholder="เช่น ตรวจสอบภาพถ่ายหรือหลักฐานเรียบร้อยแล้ว" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition resize-none"></textarea>
+          </div>
+
+          <!-- Submit Buttons -->
+          <div class="flex items-center gap-3 pt-3 border-t border-slate-100">
+            <button type="button" @click="closeReturnModal" class="flex-1 border border-slate-200 hover:bg-slate-50 text-slate-550 text-xs font-semibold py-2 px-4 rounded-xl transition">ยกเลิก</button>
+            <button type="submit" :disabled="isSubmitting" class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-xs font-bold py-2 px-4 rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center gap-2">
+              <font-awesome v-if="isSubmitting" :icon="['fas', 'spinner']" class="animate-spin" />
+              <span>ยืนยันการคืนของ</span>
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -136,6 +243,16 @@ const showEditModal = ref(false)
 const editingItem = ref<any>(null)
 const isSubmitting = ref(false)
 
+const showSuccessModal = ref(false)
+const successModalTitle = ref('บันทึกสำเร็จ!')
+const successModalMessage = ref('')
+
+const triggerSuccess = (title: string, message: string) => {
+  successModalTitle.value = title
+  successModalMessage.value = message
+  showSuccessModal.value = true
+}
+
 const openItemDetail = (item: any) => {
   selectedItem.value = item
   showDetailModal.value = true
@@ -162,7 +279,7 @@ const handleEditSubmit = async (data: any, imageFile: any) => {
     if (editingItem.value) {
       await itemsStore.updateFoundItem(editingItem.value.id, data.itemData, data.finderData, imageFile)
       showEditModal.value = false
-      alert('บันทึกการแก้ไขเรียบร้อยแล้ว!')
+      triggerSuccess('แก้ไขข้อมูลสำเร็จ!', 'บันทึกการแก้ไขข้อมูลสิ่งของพบเจอเรียบร้อยแล้ว!')
     }
   } catch (error) {
     console.error('Error updating found item:', error)
@@ -170,6 +287,63 @@ const handleEditSubmit = async (data: any, imageFile: any) => {
   } finally {
     isSubmitting.value = false
     editingItem.value = null
+  }
+}
+
+const showReturnModal = ref(false)
+const returnItem = ref<any>(null)
+const returnForm = ref({
+  full_name: '',
+  person_type: 'STUDENT',
+  student_id: '',
+  phone: '',
+  email: '',
+  relationship: 'owner',
+  remark: ''
+})
+
+const openReturnModal = (item: any) => {
+  returnItem.value = item
+  returnForm.value = {
+    full_name: '',
+    person_type: 'STUDENT',
+    student_id: '',
+    phone: '',
+    email: '',
+    relationship: 'owner',
+    remark: ''
+  }
+  showReturnModal.value = true
+}
+
+const closeReturnModal = () => {
+  showReturnModal.value = false
+  setTimeout(() => { returnItem.value = null }, 300)
+}
+
+const handleReturnSubmit = async () => {
+  if (!returnItem.value) return
+  isSubmitting.value = true
+  try {
+    const remarkWithRel = `ความสัมพันธ์: ${returnForm.value.relationship === 'owner' ? 'เจ้าของ' : 'ผู้แทนรับคืน'}. หมายเหตุ: ${returnForm.value.remark || '-'}`
+    
+    await itemsStore.claimFoundItem(returnItem.value.id, {
+      full_name: returnForm.value.full_name,
+      person_type: returnForm.value.person_type,
+      student_id: returnForm.value.student_id,
+      phone: returnForm.value.phone,
+      email: returnForm.value.email,
+      remark: remarkWithRel
+    })
+
+    showReturnModal.value = false
+    triggerSuccess('คืนของสำเร็จ!', `ดำเนินการส่งคืนสิ่งของ "${returnItem.value.name}" แก่คุณ ${returnForm.value.full_name} เรียบร้อยแล้ว!`)
+  } catch (error) {
+    console.error('Error claiming found item:', error)
+    alert('เกิดข้อผิดพลาดในการบันทึกการส่งคืนของ')
+  } finally {
+    isSubmitting.value = false
+    returnItem.value = null
   }
 }
 

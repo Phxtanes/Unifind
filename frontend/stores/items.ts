@@ -114,7 +114,7 @@ export const useItemsStore = defineStore('items', {
 
       try {
         const headers = authStore.token ? { Authorization: `Bearer ${authStore.token}` } : {}
-        
+
         // Categories and Locations do not require authorization in the backend routes
         const [catRes, locRes] = await Promise.all([
           axios.get(`${config.public.apiBaseUrl}/master/categories`),
@@ -269,7 +269,7 @@ export const useItemsStore = defineStore('items', {
 
       // 1. Find or create the reporter
       const reporter = await this.findOrCreatePerson(reporterData)
-      
+
       // 2. Post lost item using FormData
       const formData = new FormData()
       formData.append('item_name', itemData.item_name)
@@ -279,12 +279,13 @@ export const useItemsStore = defineStore('items', {
       formData.append('lost_datetime', itemData.lost_datetime)
       formData.append('description', itemData.description || '')
       formData.append('reporter_id', String(reporter.person_id))
+      formData.append('status', 'LOST')
       if (imageFile) {
         formData.append('image', imageFile)
       }
 
       const response = await axios.post(`${config.public.apiBaseUrl}/lost-items`, formData, {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${authStore.token}`,
           'Content-Type': 'multipart/form-data'
         }
@@ -336,7 +337,7 @@ export const useItemsStore = defineStore('items', {
       }
 
       const response = await axios.post(`${config.public.apiBaseUrl}/found-items`, formData, {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${authStore.token}`,
           'Content-Type': 'multipart/form-data'
         }
@@ -447,58 +448,118 @@ export const useItemsStore = defineStore('items', {
 
       await this.fetchFoundItems()
       return response.data
+    },
+
+    async claimFoundItem(foundItemId: number, claimerData: any) {
+      const config = useRuntimeConfig()
+      const authStore = useAuthStore()
+
+      // 1. Create or find the claimer person
+      const claimer = await this.findOrCreatePerson({
+        full_name: claimerData.full_name,
+        person_type: claimerData.person_type || 'STUDENT',
+        student_id: claimerData.student_id || '',
+        phone: claimerData.phone || '',
+        email: claimerData.email || '',
+        department: claimerData.department || ''
+      })
+
+      // 2. Call POST /api/claims to record the claim
+      if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
+        const itemIdx = MOCK_FOUND.findIndex(i => i.found_item_id === foundItemId)
+        if (itemIdx > -1) {
+          MOCK_FOUND[itemIdx].status = 'CLAIMED'
+        }
+        await this.fetchFoundItems()
+        return
+      }
+
+      const response = await axios.post(`${config.public.apiBaseUrl}/claims`, {
+        found_item_id: foundItemId,
+        claimer_id: claimer.person_id,
+        remark: claimerData.remark || 'ส่งคืนของสำเร็จ',
+        status: 'CLAIMED'
+      }, {
+        headers: { Authorization: `Bearer ${authStore.token}` }
+      })
+
+      // 3. Refresh items state
+      await this.fetchItems()
+      return response.data
     }
   },
   getters: {
     items: (state) => {
       const mappedFound = state.foundItems.map(item => ({
-        id: item.found_item_id,
-        dbId: item.found_item_id,
+        id: item.found_item_id || item.id,
+        dbId: item.found_item_id || item.id,
         type: 'found',
-        name: item.item_name,
-        category: item.categoryName || 'อื่นๆ',
+        name: item.item_name || item.name,
+        category: item.categoryName || item.category || 'อื่นๆ',
         category_id: item.category_id,
-        place: item.locationName || 'ไม่ระบุ',
+        place: item.locationName || item.place || 'ไม่ระบุ',
         location_id: item.location_id,
         floor: item.floor || '',
-        date: item.found_date,
+        date: item.found_date || item.date,
         description: item.description,
-        status: item.status.toLowerCase(),
-        locker: item.lockerCode || '-',
+        status: (item.status || '').toLowerCase(),
+        locker: item.lockerCode || item.locker || '-',
         locker_id: item.locker_id,
-        image_url: item.image_url || null,
-        finderName: item.Person?.full_name || item.finderName,
+        image_url: item.image_url || item.picture || null,
+        finderName: item.Person?.full_name || item.finderName || item.staffName,
         finderPhone: item.Person?.phone || item.finderPhone,
         finderType: item.Person?.person_type || 'STUDENT',
         finderStudentId: item.Person?.student_id || '',
         finderEmail: item.Person?.email || '',
-        staffName: item.staffName || null
+        staffName: item.staffName || null,
+        created_at: item.created_at || null,
+        updated_at: item.updated_at || null
       }))
 
-      const mappedLost = state.lostItems.map(item => ({
-        id: item.lost_item_id,
-        dbId: item.lost_item_id,
-        type: 'lost',
-        name: item.item_name,
-        category: item.categoryName || 'อื่นๆ',
-        category_id: item.category_id,
-        place: item.locationName || 'ไม่ระบุ',
-        location_id: item.location_id,
-        floor: item.floor || '',
-        date: item.lost_datetime,
-        description: item.description,
-        status: item.status.toLowerCase(),
-        locker: '-',
-        image_url: item.image_url || null,
-        reporterName: item.Person?.full_name || item.reporterName,
-        reporterPhone: item.Person?.phone || item.reporterPhone,
-        reporterType: item.Person?.person_type || 'STUDENT',
-        reporterStudentId: item.Person?.student_id || '',
-        reporterEmail: item.Person?.email || '',
-        staffName: item.staffName || null
-      }))
+      const mappedLost = state.lostItems.map(item => {
+        let type = item.type;
+        if (!type) {
+          if (item.status === 'lost' || item.status === 'LOST') {
+            type = 'lost';
+          } else {
+            type = 'found';
+          }
+        }
+        return {
+          id: item.lost_item_id || item.id,
+          dbId: item.lost_item_id || item.id,
+          type: type,
+          name: item.item_name || item.name,
+          category: item.categoryName || item.category || 'อื่นๆ',
+          category_id: item.category_id,
+          place: item.locationName || item.place || 'ไม่ระบุ',
+          location_id: item.location_id,
+          floor: item.floor || '',
+          date: item.lost_datetime || item.date,
+          description: item.description,
+          status: (item.status || '').toLowerCase(),
+          locker: item.locker || '-',
+          image_url: item.image_url || item.picture || null,
+          reporterName: item.Person?.full_name || item.reporterName || item.staffName,
+          reporterPhone: item.Person?.phone || item.reporterPhone,
+          reporterType: item.Person?.person_type || 'STUDENT',
+          reporterStudentId: item.Person?.student_id || '',
+          reporterEmail: item.Person?.email || '',
+          staffName: item.staffName || null,
+          created_at: item.created_at || null,
+          updated_at: item.updated_at || null
+        };
+      })
 
-      return [...mappedFound, ...mappedLost]
+      const allMerged = [...mappedFound, ...mappedLost];
+      const seen = new Set();
+      return allMerged.filter(item => {
+        if (!item.id) return false;
+        const key = `${item.type}-${item.id}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
     },
     countByStatus: (state) => (status: string) => {
       const itemsList = [

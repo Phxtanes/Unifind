@@ -1,11 +1,13 @@
 <template>
-  <div v-if="show" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4 sm:p-6" @click.self="$emit('close')">
+  <div v-if="show && item" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4 sm:p-6" @click.self="$emit('close')">
     <div class="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-2xl w-full flex flex-col md:flex-row transform transition-all animate-fade-in-up">
       
       <!-- Left side: Image -->
       <div class="md:w-2/5 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-100 flex items-center justify-center relative min-h-[200px]">
         <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="absolute inset-0 w-full h-full object-cover" />
-        <div v-else class="text-6xl text-slate-300">📷</div>
+        <div v-else class="text-6xl text-slate-300">
+          <font-awesome :icon="['fas', 'image']" />
+        </div>
         <div class="absolute top-3 left-3 flex gap-2">
           <span class="px-2 py-1 text-[10px] font-bold rounded-lg shadow-sm bg-white/90 text-slate-800 border border-slate-200/50">
             {{ getMockCode(item) }}
@@ -38,29 +40,41 @@
           <!-- Detail Row -->
           <div>
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">สถานที่</p>
-            <p class="text-sm text-slate-700 flex items-center gap-2"><span class="text-rose-500">📍</span> {{ item.place || '-' }}</p>
+            <p class="text-sm text-slate-700 flex items-center gap-2">
+              <font-awesome :icon="['fas', 'location-dot']" class="text-rose-500 w-4 text-center" />
+              {{ item.place || '-' }}
+            </p>
           </div>
           
           <div>
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">วันที่และเวลา</p>
-            <p class="text-sm text-slate-700 flex items-center gap-2"><span class="text-indigo-500">🕒</span> {{ formatFullDate(item.date) }}</p>
+            <p class="text-sm text-slate-700 flex items-center gap-2">
+              <font-awesome :icon="['fas', 'clock']" class="text-indigo-500 w-4 text-center" />
+              {{ formatFullDate(item.date) }}
+            </p>
           </div>
 
           <div>
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">ตู้ล็อกเกอร์</p>
-            <p class="text-sm text-slate-700 flex items-center gap-2"><span class="text-amber-500">🗄️</span> {{ item.locker || '-' }}</p>
+            <p class="text-sm text-slate-700 flex items-center gap-2">
+              <font-awesome :icon="['fas', 'box-archive']" class="text-amber-500 w-4 text-center" />
+              {{ item.locker || '-' }}
+            </p>
           </div>
 
           <div>
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">รายละเอียดเพิ่มเติม</p>
             <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 min-h-[60px]">
-              <p class="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed">{{ item.description || 'ไม่มีรายละเอียดเพิ่มเติม' }}</p>
+              <p class="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed">{{ formatDescription(item.description) }}</p>
             </div>
           </div>
 
           <div>
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">เจ้าหน้าที่ผู้บันทึก</p>
-            <p class="text-xs text-slate-500 flex items-center gap-2"><span>👤</span> {{ item.staffName || 'Admin' }}</p>
+            <p class="text-xs text-slate-500 flex items-center gap-2">
+              <font-awesome :icon="['fas', 'user']" class="text-slate-450 w-4 text-center" />
+              {{ item.staffName || 'Admin' }}
+            </p>
           </div>
         </div>
 
@@ -84,7 +98,7 @@ const props = defineProps<{
 
 const emit = defineEmits(['close'])
 
-const { getItemImageSrc, translateCategory, getMockCode, formatFullDate } = useItemHelpers()
+const { getItemImageSrc, translateCategory, getMockCode, formatFullDate, formatDescription } = useItemHelpers()
 </script>
 
 <style scoped>

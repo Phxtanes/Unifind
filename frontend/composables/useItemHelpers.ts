@@ -20,7 +20,7 @@ export const useItemHelpers = () => {
   }
 
   const getMockCode = (item: any) => {
-    if (!item.id) return 'FND-2026-0001'
+    if (!item || !item.id) return 'FND-2026-0001'
     const prefix = item.status === 'lost' ? 'LST' : 'FND'
     const year = dayjs(item.date).format('YYYY')
     const padId = String(item.id).slice(-4).padStart(4, '0')
@@ -28,6 +28,7 @@ export const useItemHelpers = () => {
   }
 
   const getItemImageSrc = (item: any) => {
+    if (!item) return ''
     const path = item.picture || item.image_url
     if (!path) return ''
     if (path.startsWith('http')) return path
@@ -38,7 +39,23 @@ export const useItemHelpers = () => {
   const formatDateShort = (dateStr: any) => dayjs(dateStr).format('D มิ.ย. YY')
   const formatFullDate = (dateStr: any) => dayjs(dateStr).format('DD MMMM YYYY HH:mm น.')
 
-  const changeStatus = async (id: number, newStatus: string) => {
+  const formatDescription = (desc: string) => {
+    if (!desc) return 'ไม่มีรายละเอียดเพิ่มเติม'
+    try {
+      const trimmed = desc.trim()
+      if (trimmed.startsWith('{')) {
+        const parsed = JSON.parse(trimmed)
+        if (parsed && typeof parsed === 'object' && 'textDescription' in parsed) {
+          return parsed.textDescription || 'ไม่มีรายละเอียดเพิ่มเติม'
+        }
+      }
+    } catch (e) {
+      // Treat as raw text
+    }
+    return desc
+  }
+
+  const changeStatus = async (id: number, newStatus: string, reason?: string) => {
     try {
       const item = itemsStore.items.find(i => i.id === id)
       if (!item) return
@@ -59,19 +76,53 @@ export const useItemHelpers = () => {
           if (idx !== -1) itemsStore.lostItems[idx].status = dbStatus
         } else {
           const idx = itemsStore.foundItems.findIndex(i => i.found_item_id === id)
-          if (idx !== -1) itemsStore.foundItems[idx].status = dbStatus
+          if (idx !== -1) {
+            itemsStore.foundItems[idx].status = dbStatus
+            if (reason) {
+              itemsStore.foundItems[idx].description = reason
+            }
+          }
         }
         return
       }
 
-      await axios.put(`${config.public.apiBaseUrl}/${endpoint}/${id}`, { status: dbStatus }, {
+      const body: any = { status: dbStatus }
+      if (reason && !isLost) {
+        let updatedDesc = item.description || ''
+        try {
+          const trimmed = updatedDesc.trim()
+          if (trimmed.startsWith('{')) {
+            const parsed = JSON.parse(trimmed)
+            if (parsed && typeof parsed === 'object') {
+              const currentText = parsed.textDescription || ''
+              parsed.textDescription = currentText ? `${currentText}\n[นำกลับไปยังคลังเนื่องจาก: ${reason}]` : `[นำกลับไปยังคลังเนื่องจาก: ${reason}]`
+              updatedDesc = JSON.stringify(parsed)
+            } else {
+              updatedDesc = `${updatedDesc}\n[นำกลับไปยังคลังเนื่องจาก: ${reason}]`
+            }
+          } else {
+            updatedDesc = updatedDesc ? `${updatedDesc}\n[นำกลับไปยังคลังเนื่องจาก: ${reason}]` : `[นำกลับไปยังคลังเนื่องจาก: ${reason}]`
+          }
+        } catch (e) {
+          updatedDesc = updatedDesc ? `${updatedDesc}\n[นำกลับไปยังคลังเนื่องจาก: ${reason}]` : `[นำกลับไปยังคลังเนื่องจาก: ${reason}]`
+        }
+        body.description = updatedDesc
+      }
+
+      await axios.put(`${config.public.apiBaseUrl}/${endpoint}/${id}`, body, {
         headers: { Authorization: `Bearer ${authStore.token}` }
       })
 
       await itemsStore.fetchItems()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error changing status:', error)
-      alert('เกิดข้อผิดพลาดในการแก้ไขสถานะ')
+      if (error.response?.status === 401) {
+        alert('เซสชันการใช้งานของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่อีกครั้ง')
+        authStore.logout()
+        navigateTo('/')
+      } else {
+        alert('เกิดข้อผิดพลาดในการแก้ไขสถานะ')
+      }
     }
   }
 
@@ -99,9 +150,15 @@ export const useItemHelpers = () => {
       })
 
       await itemsStore.fetchItems()
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting item:', error)
-      alert('เกิดข้อผิดพลาดในการลบข้อมูล')
+      if (error.response?.status === 401) {
+        alert('เซสชันการใช้งานของคุณหมดอายุแล้ว กรุณาเข้าสู่ระบบใหม่อีกครั้ง')
+        authStore.logout()
+        navigateTo('/')
+      } else {
+        alert('เกิดข้อผิดพลาดในการลบข้อมูล')
+      }
     }
   }
 
@@ -112,6 +169,7 @@ export const useItemHelpers = () => {
     formatDate,
     formatDateShort,
     formatFullDate,
+    formatDescription,
     changeStatus,
     deleteItem
   }

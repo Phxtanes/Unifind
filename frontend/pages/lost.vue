@@ -4,7 +4,9 @@
     <!-- Controls & Search Card -->
     <div class="bg-white rounded-xl py-3 px-4 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div class="relative flex-1 max-w-xs">
-        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">🔎</span>
+        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">
+          <font-awesome :icon="['fas', 'magnifying-glass']" />
+        </span>
         <input v-model="searchQuery" type="text" id="search-lost"
           placeholder="ค้นหา..." 
           class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-1 focus:ring-rose-500 focus:border-rose-500 outline-none text-xs text-slate-700 transition" />
@@ -16,27 +18,29 @@
     </div>
 
     <!-- Items Table Card -->
-    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between min-h-[480px]">
+    <div class="bg-white pt-0 px-6 pb-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between min-h-[480px]">
       <div class="overflow-x-auto -mx-6">
         <table class="w-full text-left border-collapse min-w-[700px]">
           <thead>
-            <tr class="border-b border-slate-150 text-[10px] font-extrabold text-slate-500 uppercase tracking-wider bg-slate-50/75">
-              <th class="py-3.5 px-6 font-bold">รายการ</th>
-              <th class="py-3.5 px-6 font-bold">หมวดหมู่</th>
-              <th class="py-3.5 px-6 font-bold">สถานะ</th>
-              <th class="py-3.5 px-6 font-bold">สถานที่</th>
-              <th class="py-3.5 px-6 font-bold">วันที่บันทึก</th>
-              <th class="py-3.5 px-6 font-bold">ตู้ล็อกเกอร์</th>
-              <th class="py-3.5 px-6 font-bold text-center">จัดการ</th>
+            <tr class="border-b border-slate-200 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest bg-slate-50/70">
+              <th class="py-4 px-6 font-bold">รายการ</th>
+              <th class="py-4 px-6 font-bold">หมวดหมู่</th>
+              <th class="py-4 px-6 font-bold">สถานะ</th>
+              <th class="py-4 px-6 font-bold">สถานที่</th>
+              <th class="py-4 px-6 font-bold">วันที่บันทึก</th>
+              <th class="py-4 px-6 font-bold">ตู้ล็อกเกอร์</th>
+              <th class="py-4 px-6 font-bold text-center">จัดการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
             <tr v-for="item in paginatedItems" :key="item.id" 
                 @click="openItemDetail(item)"
-                class="hover:bg-slate-50/50 text-xs transition duration-150 cursor-pointer">
+                class="hover:bg-indigo-50/30 text-xs transition duration-150 cursor-pointer">
               <td class="py-3 px-6 flex items-center gap-3">
                 <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="w-10 h-10 rounded-xl object-cover border border-slate-155 shadow-sm" />
-                <div v-else class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-400 border border-rose-100 shadow-sm">👜</div>
+                <div v-else class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-400 border border-rose-100 shadow-sm">
+                  <font-awesome :icon="['fas', 'briefcase']" />
+                </div>
                 <div>
                   <h4 class="font-bold text-slate-800 truncate max-w-[180px]" :title="item.name">{{ item.name }}</h4>
                   <p class="text-[9px] text-slate-400 font-mono mt-0.5">ID: {{ getMockCode(item) }}</p>
@@ -54,26 +58,20 @@
               <td class="py-3 px-6 text-slate-600 font-mono font-medium">{{ item.locker || '-' }}</td>
               <td class="py-3 px-6">
                 <div class="flex items-center justify-center gap-2">
-                  <select value="lost"
-                    @click.stop
-                    @change.stop="changeStatus(item.id, ($event.target as HTMLSelectElement).value)" 
-                    class="bg-white border border-slate-200 hover:border-slate-300 text-[11px] font-semibold text-slate-600 py-1 px-2 rounded-lg outline-none focus:ring-1 focus:ring-rose-500 focus:border-rose-500 transition cursor-pointer shadow-sm">
-                    <option value="lost">ของหาย (Lost)</option>
-                    <option value="found">พบเจอ (Found)</option>
-                    <option value="claimed">คืนแล้ว (Claimed)</option>
-                  </select>
                   <button @click.stop="openEditModal(item)" class="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-transparent hover:border-indigo-100/50 transition" title="แก้ไข">
-                    ✏️
+                    <font-awesome :icon="['fas', 'pen-to-square']" />
                   </button>
                   <button @click.stop="deleteItem(item.id)" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg border border-transparent hover:border-rose-100/50 transition">
-                    🗑️
+                    <font-awesome :icon="['fas', 'trash-can']" />
                   </button>
                 </div>
               </td>
             </tr>
             <tr v-if="paginatedItems.length === 0">
               <td colspan="7" class="text-center py-20 text-slate-455">
-                <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-lg mx-auto shadow-sm">👜</div>
+                <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-lg mx-auto shadow-sm">
+                  <font-awesome :icon="['fas', 'briefcase']" />
+                </div>
                 <p class="text-xs mt-3 font-semibold text-slate-700">ไม่มีรายการของหายในระบบ</p>
               </td>
             </tr>
@@ -109,6 +107,14 @@
       @submit="handleEditSubmit" 
     />
 
+    <!-- Success Modal -->
+    <SuccessModal 
+      :show="showSuccessModal" 
+      :title="successModalTitle" 
+      :message="successModalMessage" 
+      @close="showSuccessModal = false" 
+    />
+
   </div>
 </template>
 
@@ -136,6 +142,16 @@ const showEditModal = ref(false)
 const editingItem = ref<any>(null)
 const isSubmitting = ref(false)
 
+const showSuccessModal = ref(false)
+const successModalTitle = ref('บันทึกสำเร็จ!')
+const successModalMessage = ref('')
+
+const triggerSuccess = (title: string, message: string) => {
+  successModalTitle.value = title
+  successModalMessage.value = message
+  showSuccessModal.value = true
+}
+
 const openItemDetail = (item: any) => {
   selectedItem.value = item
   showDetailModal.value = true
@@ -162,7 +178,7 @@ const handleEditSubmit = async (data: any, imageFile: any) => {
     if (editingItem.value) {
       await itemsStore.updateLostItem(editingItem.value.id, data.itemData, data.reporterData, imageFile)
       showEditModal.value = false
-      alert('บันทึกการแก้ไขเรียบร้อยแล้ว!')
+      triggerSuccess('แก้ไขข้อมูลสำเร็จ!', 'บันทึกการแก้ไขข้อมูลของหายเรียบร้อยแล้ว!')
     }
   } catch (error) {
     console.error('Error updating lost item:', error)

@@ -174,7 +174,7 @@ const logout = () => {
 };
 
 const menuItems = computed(() => {
-  return [
+  const items = [
     {
       title: 'หน้าหลัก',
       path: '/dashboard',
@@ -209,8 +209,23 @@ const menuItems = computed(() => {
       title: 'รายงาน',
       path: '/reports',
       icon: 'chart-pie'
+    },
+    {
+      title: 'วิเคราะห์จับคู่',
+      path: '/matching',
+      icon: 'robot'
     }
   ];
+
+  if (authStore.user?.role?.toLowerCase() === 'admin') {
+    items.push({
+      title: 'จัดการผู้ใช้',
+      path: '/users',
+      icon: 'users'
+    });
+  }
+
+  return items;
 });
 
 watch(

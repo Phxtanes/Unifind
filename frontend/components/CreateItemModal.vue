@@ -26,10 +26,10 @@
             <!-- Column 1: ข้อมูลสิ่งของ -->
             <div class="space-y-4">
               <div class="flex items-center gap-2 mb-4">
-                <div class="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-500 font-bold">
+                <div class="w-6 h-6 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 font-bold">
                   <font-awesome :icon="['fas', 'box']" class="text-[11px]" />
                 </div>
-                <h3 class="text-xs font-extrabold text-indigo-650 uppercase tracking-wider">ข้อมูลสิ่งของ</h3>
+                <h3 class="text-xs font-extrabold text-blue-600 uppercase tracking-wider">ข้อมูลสิ่งของ</h3>
               </div>
 
               <!-- ชื่อสิ่งของ -->
@@ -94,9 +94,9 @@
 
               <!-- ชั้นที่พบ -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">ชั้นที่พบ <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-650 mb-1.5">ชั้นที่พบ</label>
                 <div class="relative">
-                  <input v-model="form.floor" type="text" required placeholder="เช่น ชั้น 1, ชั้น 4"
+                  <input v-model="form.floor" type="text" placeholder="เช่น ชั้น 1, ชั้น 4"
                     class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                     <font-awesome :icon="['fas', 'building']" class="text-xs" />
@@ -109,6 +109,8 @@
                 <label class="block text-xs font-bold text-slate-650 mb-1.5">วันและเวลาที่พบ <span class="text-red-500">*</span></label>
                 <div class="relative">
                   <input v-model="form.found_date" type="datetime-local" required
+                    @click="showDateTimePicker"
+                    @focus="showDateTimePicker"
                     class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                     <font-awesome :icon="['fas', 'calendar-days']" class="text-xs" />
@@ -315,6 +317,13 @@ const emit = defineEmits(['close', 'submit'])
 
 const itemsStore = useItemsStore()
 
+const showDateTimePicker = (event) => {
+  const target = event.target
+  if (target && typeof target.showPicker === 'function') {
+    target.showPicker()
+  }
+}
+
 const form = ref({
   item_name: '',
   category_id: '',
@@ -349,7 +358,15 @@ watch(() => props.show, (newVal) => {
         location_id: props.editItem.location_id || '',
         floor: props.editItem.floor || '',
         found_date: dayjs(props.editItem.date).format('YYYY-MM-DDTHH:mm'),
-        description: props.editItem.description || '',
+        description: (() => {
+          try {
+            const parsed = JSON.parse(props.editItem.description)
+            if (parsed && typeof parsed === 'object' && ('textDescription' in parsed)) {
+              return parsed.textDescription || ''
+            }
+          } catch (e) {}
+          return props.editItem.description || ''
+        })(),
         status: props.editItem.status ? props.editItem.status.toUpperCase() : 'STORED',
         locker_id: props.editItem.locker_id || '',
         finder_name: props.editItem.finderName || '',

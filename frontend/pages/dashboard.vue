@@ -1,224 +1,270 @@
 <template>
   <div class="space-y-8">
 
-    <!-- Horizontal Statistics Cards -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-5">
-      <!-- Lost Items Stat Card -->
-      <NuxtLink to="/lost" class="bg-white p-5 rounded-2xl border border-rose-100 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition group">
-        <div class="space-y-1">
-          <p class="text-rose-500 text-[10px] font-bold uppercase tracking-wider">ของหาย (LOST)</p>
-          <p class="text-2xl font-black text-rose-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ itemsStore.countByStatus('lost') }}</p>
-          <p class="text-[10px] text-slate-400 font-medium">รอการติดต่อกลับ</p>
+    <!-- Header Area -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-slate-100">
+      <div>
+        <h1 class="text-xl font-bold text-slate-800">ภาพรวมระบบ Lost & Found</h1>
+        <p class="text-xs text-slate-500 mt-0.5">ภาพรวมสถานะและสถิติของระบบ</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Period Filter -->
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs pointer-events-none">
+            <font-awesome :icon="['fas', 'calendar-days']" />
+          </span>
+          <select v-model="selectedPeriod" class="appearance-none bg-white border border-slate-200 rounded-xl pl-8 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
+            <option value="all">ช่วงเวลา: ทั้งหมด</option>
+            <option value="30">ช่วงเวลา: 30 วันล่าสุด</option>
+            <option value="90">ช่วงเวลา: 90 วันล่าสุด</option>
+            <option value="180">ช่วงเวลา: 180 วันล่าสุด</option>
+            <option value="365">ช่วงเวลา: 1 ปีล่าสุด</option>
+          </select>
+          <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400 text-[10px]">
+            <font-awesome :icon="['fas', 'chevron-down']" />
+          </div>
         </div>
-        <div class="w-12 h-12 rounded-xl bg-rose-50 border border-rose-100/50 flex items-center justify-center text-xl text-rose-600">👜</div>
+
+        <!-- Category Filter -->
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs pointer-events-none">
+            <font-awesome :icon="['fas', 'tag']" />
+          </span>
+          <select v-model="selectedCategory" class="appearance-none bg-white border border-slate-200 rounded-xl pl-8 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
+            <option value="all">หมวดหมู่: ทั้งหมด</option>
+            <option v-for="cat in itemsStore.categories" :key="cat.category_id" :value="cat.category_id">
+              {{ cat.category_name }}
+            </option>
+          </select>
+          <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400 text-[10px]">
+            <font-awesome :icon="['fas', 'chevron-down']" />
+          </div>
+        </div>
+
+        <!-- Location Filter -->
+        <div class="relative">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs pointer-events-none">
+            <font-awesome :icon="['fas', 'location-dot']" />
+          </span>
+          <select v-model="selectedLocation" class="appearance-none bg-white border border-slate-200 rounded-xl pl-8 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
+            <option value="all">สถานที่: ทั้งหมด</option>
+            <option v-for="loc in itemsStore.locations" :key="loc.location_id" :value="loc.location_id">
+              {{ loc.location_name }}
+            </option>
+          </select>
+          <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400 text-[10px]">
+            <font-awesome :icon="['fas', 'chevron-down']" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Horizontal Statistics Cards -->
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- All Items Stat Card -->
+      <NuxtLink to="/items" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition duration-300 group">
+        <div class="space-y-1">
+          <p class="text-slate-450 text-[10px] font-bold uppercase tracking-wider">รายการทั้งหมด</p>
+          <p class="text-3xl font-black text-blue-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ filteredAllCount }}</p>
+        </div>
+        <div class="w-14 h-14 rounded-2xl bg-blue-500 flex items-center justify-center text-2xl text-white shadow-md shadow-blue-200/60">
+          <font-awesome :icon="['fas', 'boxes-stacked']" />
+        </div>
+      </NuxtLink>
+
+      <!-- Lost Items Stat Card -->
+      <NuxtLink to="/lost" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition duration-300 group">
+        <div class="space-y-1">
+          <p class="text-slate-450 text-[10px] font-bold uppercase tracking-wider">ของหาย (Lost)</p>
+          <p class="text-3xl font-black text-rose-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ filteredLostCount }}</p>
+        </div>
+        <div class="w-14 h-14 rounded-2xl bg-rose-500 flex items-center justify-center text-2xl text-white shadow-md shadow-rose-200/60">
+          <font-awesome :icon="['fas', 'briefcase']" />
+        </div>
       </NuxtLink>
       
-      <!-- Found Items Stat Card -->
-      <NuxtLink to="/found" class="bg-white p-5 rounded-2xl border border-emerald-100 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition group">
+      <!-- Stored Items Stat Card -->
+      <NuxtLink to="/found" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition duration-300 group">
         <div class="space-y-1">
-          <p class="text-emerald-500 text-[10px] font-bold uppercase tracking-wider">พบของ (FOUND)</p>
-          <p class="text-2xl font-black text-emerald-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ itemsStore.countByStatus('found') }}</p>
-          <p class="text-[10px] text-slate-400 font-medium">รายการที่เก็บรักษา</p>
+          <p class="text-slate-455 text-[10px] font-bold uppercase tracking-wider">ของพบ / ยังไม่เคลม</p>
+          <p class="text-3xl font-black text-purple-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ filteredFoundCount }}</p>
         </div>
-        <div class="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100/50 flex items-center justify-center text-xl text-emerald-600">🧩</div>
+        <div class="w-14 h-14 rounded-2xl bg-purple-500 flex items-center justify-center text-2xl text-white shadow-md shadow-purple-200/60">
+          <font-awesome :icon="['fas', 'box-archive']" />
+        </div>
       </NuxtLink>
       
       <!-- Claimed Items Stat Card -->
-      <NuxtLink to="/claimed" class="bg-white p-5 rounded-2xl border border-indigo-100 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition group">
+      <NuxtLink to="/claimed" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition duration-300 group">
         <div class="space-y-1">
-          <p class="text-indigo-500 text-[10px] font-bold uppercase tracking-wider">คืนแล้ว (CLAIMED)</p>
-          <p class="text-2xl font-black text-indigo-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ itemsStore.countByStatus('claimed') }}</p>
-          <p class="text-[10px] text-slate-400 font-medium">ส่งคืนเจ้าของแล้ว</p>
+          <p class="text-slate-455 text-[10px] font-bold uppercase tracking-wider">ส่งคืนแล้ว (Claimed)</p>
+          <p class="text-3xl font-black text-emerald-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ filteredClaimedCount }}</p>
         </div>
-        <div class="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100/50 flex items-center justify-center text-xl text-indigo-600">🔄</div>
+        <div class="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center text-2xl text-white shadow-md shadow-emerald-200/60">
+          <font-awesome :icon="['fas', 'circle-check']" />
+        </div>
       </NuxtLink>
-      
-      <!-- Expired Items Stat Card -->
-      <div class="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm flex items-center justify-between hover:shadow-md transition group">
-        <div class="space-y-1">
-          <p class="text-amber-500 text-[10px] font-bold uppercase tracking-wider">เกินกำหนด (EXPIRED)</p>
-          <p class="text-2xl font-black text-amber-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ itemsStore.countExpired }}</p>
-          <p class="text-[10px] text-slate-400 font-medium">เกิน 30 วันยังไม่มารับ</p>
-        </div>
-        <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100/50 flex items-center justify-center text-xl text-amber-600">🗄️</div>
-      </div>
     </section>
 
     <!-- Middle Layout Section: Status Overview & Trend Chart -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
       <!-- Status Donut Chart Overview -->
-      <div class="col-span-12 lg:col-span-6 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-        <div class="mb-4">
-          <h3 class="text-sm font-bold text-[#0B132B] uppercase tracking-wider">ภาพรวมสถานะสิ่งของ</h3>
-          <p class="text-xs text-slate-400 mt-0.5">อัตราส่วนการกระจายสถานะทั้งหมดในระบบ</p>
+      <div class="col-span-12 lg:col-span-5 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h3 class="text-sm font-semibold text-[#0B132B] uppercase tracking-wider">สถานะรายการ</h3>
+          </div>
         </div>
         
         <div class="flex flex-col sm:flex-row items-center gap-8 md:gap-12 flex-1 py-2">
           <!-- Chart Left -->
-          <div class="relative flex items-center justify-center shrink-0">
-            <svg class="w-36 h-36 transform -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="38" stroke="#F1F5F9" stroke-width="8" fill="transparent" />
-              <circle v-for="(segment, index) in chartSegments" :key="index"
-                cx="50" cy="50" r="38" :stroke="segment.color" stroke-width="8"
-                fill="transparent" 
-                :stroke-dasharray="segment.dashArray" 
-                :stroke-dashoffset="segment.dashOffset"
-                class="transition-all duration-1000 ease-in-out" />
-            </svg>
-            <div class="absolute flex flex-col items-center justify-center">
-              <span class="text-3xl font-black text-slate-800">{{ itemsStore.items.length }}</span>
-              <span class="text-[10px] text-slate-400 font-bold mt-1">รายการทั้งหมด</span>
+          <div class="relative flex items-center justify-center shrink-0 w-36 h-36">
+            <canvas ref="donutChartCanvas"></canvas>
+            <div class="absolute flex flex-col items-center justify-center text-center pointer-events-none">
+              <span class="text-3xl font-black text-slate-800 leading-none">{{ totalChartCount }}</span>
+              <span class="text-[10px] text-slate-450 font-semibold mt-1">รายการ</span>
+              <span class="text-[10px] text-slate-450 font-semibold leading-none">ทั้งหมด</span>
             </div>
           </div>
           
           <!-- Legends Right -->
-          <div class="flex-1 space-y-3 w-full">
-            <div v-for="seg in chartSegments" :key="seg.label" class="flex items-center justify-between text-xs border-b border-slate-50 pb-1.5">
-              <div class="flex items-center gap-2">
-                <span class="w-2.5 h-2.5 rounded-full" :style="{ backgroundColor: seg.color }"></span>
-                <span class="font-medium text-slate-600">{{ seg.label }}</span>
+          <div class="flex-1 space-y-3.5 w-full">
+            <div v-for="seg in chartSegments" :key="seg.label" class="flex items-center justify-between text-xs border-b border-slate-50 pb-2">
+              <div class="flex items-center gap-2.5">
+                <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
+                <span class="font-semibold text-slate-650">{{ seg.label }}</span>
               </div>
-              <div class="text-right">
-                <span class="font-bold text-slate-800">{{ seg.count }}</span>
-                <span class="text-[10px] text-slate-400 ml-1.5">({{ seg.percent }}%)</span>
+              <div class="text-right font-semibold text-slate-800 flex items-center gap-4 font-mono">
+                <span>{{ seg.count }}</span>
+                <span class="text-[10px] text-slate-400 font-medium font-sans w-10 text-right">{{ seg.percent }}%</span>
               </div>
             </div>
           </div>
         </div>
       </div>
       
-      <!-- Weekly Trend Chart -->
-      <div class="col-span-12 lg:col-span-6 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-        <div class="mb-4">
-          <h3 class="text-sm font-bold text-[#0B132B] uppercase tracking-wider">แนวโน้มการทำของหาย &amp; พบของ</h3>
-          <p class="text-xs text-slate-400 mt-0.5">เปรียบเทียบสถิติสัปดาห์นี้และสัปดาห์ที่ผ่านมา</p>
-        </div>
-        
-        <div class="h-36 w-full pt-2">
-          <svg class="w-full h-full" viewBox="0 0 300 120" preserveAspectRatio="none">
-            <line x1="0" y1="20" x2="300" y2="20" stroke="#F1F5F9" stroke-width="1" stroke-dasharray="4" />
-            <line x1="0" y1="60" x2="300" y2="60" stroke="#F1F5F9" stroke-width="1" stroke-dasharray="4" />
-            <line x1="0" y1="100" x2="300" y2="100" stroke="#F1F5F9" stroke-width="1" stroke-dasharray="4" />
-            <path d="M 10 90 Q 75 40, 150 75 T 290 30" fill="none" stroke="#EF4444" stroke-width="3" stroke-linecap="round" />
-            <path d="M 10 100 Q 75 70, 150 45 T 290 20" fill="none" stroke="#10B981" stroke-width="3" stroke-linecap="round" />
-            <path d="M 10 90 Q 75 40, 150 75 T 290 30 L 290 110 L 10 110 Z" fill="url(#lostGrad)" opacity="0.06" />
-            <path d="M 10 100 Q 75 70, 150 45 T 290 20 L 290 110 L 10 110 Z" fill="url(#foundGrad)" opacity="0.06" />
-            <defs>
-              <linearGradient id="lostGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#EF4444" />
-                <stop offset="100%" stop-color="#EF4444" stop-opacity="0" />
-              </linearGradient>
-              <linearGradient id="foundGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stop-color="#10B981" />
-                <stop offset="100%" stop-color="#10B981" stop-opacity="0" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        
-        <div class="flex justify-between items-center text-[10px] text-slate-400 mt-4 border-t border-slate-50 pt-3">
-          <div class="flex gap-4">
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-rose-500"></span> ของหาย (Lost)</span>
-            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> พบของ (Found)</span>
+      <!-- Monthly Statistics Chart -->
+      <div class="col-span-12 lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between relative animate-fade-in">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h3 class="text-sm font-semibold text-[#0B132B] uppercase tracking-wider">สถิติรายเดือน</h3>
           </div>
-          <span>อัปเดตล่าสุด: {{ lastUpdatedText }}</span>
+          <!-- Period Badge -->
+          <!-- <span class="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-100 text-[10px] font-semibold text-slate-500">
+            เทรนด์ 6 เดือนล่าสุด
+          </span> -->
+        </div>
+        
+        <div class="h-44 w-full pt-2 relative">
+          <canvas ref="lineChartCanvas"></canvas>
+        </div>
+        
+        <div class="flex justify-start gap-6 items-center text-[10px] text-slate-500 mt-4 border-t border-slate-50 pt-3">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#EF4444] shadow-sm shadow-red-200"></span> ของหาย (Lost)</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#3B82F6] shadow-sm shadow-blue-200"></span> ของพบ / ยังไม่เคลม</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#10B981] shadow-sm shadow-green-200"></span> ส่งคืนแล้ว (Claimed)</span>
         </div>
       </div>
     </section>
 
-    <!-- Bottom Layout Section: Recent Activity & Locker Summary -->
+    <!-- Bottom Layout Section: Recent Items & Recent Activity -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-      <!-- Recent Stored Items -->
+      
+      <!-- Latest Items Card Grid -->
       <div class="col-span-12 lg:col-span-8 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-        <div class="flex justify-between items-center mb-4">
+        <div class="flex justify-between items-center mb-5">
           <div>
-            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">รายการนำส่งล่าสุด</h3>
-            <p class="text-xs text-slate-400">ของที่พบและถูกจัดเก็บเข้าคลังในช่วงนี้</p>
+            <h3 class="text-sm font-semibold text-[#0B132B] uppercase tracking-wider">รายการล่าสุด</h3>
+            <p class="text-xs text-slate-400 mt-0.5">รายการของหายและของพบล่าสุด</p>
           </div>
-          <NuxtLink to="/items" class="text-xs font-bold text-indigo-600 hover:text-indigo-700 hover:underline">ดูทั้งหมด →</NuxtLink>
+          <NuxtLink to="/items" class="text-xs font-semibold text-indigo-650 hover:text-indigo-700 hover:underline">ดูทั้งหมด</NuxtLink>
         </div>
         
-        <div class="overflow-x-auto -mx-6">
-          <table class="w-full text-left border-collapse min-w-[500px]">
-            <thead>
-              <tr class="border-b border-slate-150 text-[10px] font-extrabold text-slate-550 uppercase tracking-wider bg-slate-50/75">
-                <th class="py-3 px-6 font-bold">รายการ</th>
-                <th class="py-3 px-6 font-bold">สถานที่</th>
-                <th class="py-3 px-6 font-bold">ตู้ล็อกเกอร์</th>
-                <th class="py-3 px-6 font-bold">วันที่</th>
-                <th class="py-3 px-6 font-bold text-right">สถานะ</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-slate-100 text-xs">
-              <tr v-for="item in itemsStore.items.slice(0, 4)" :key="item.id" class="hover:bg-slate-50/50 transition duration-150">
-                <td class="py-3 px-6 font-semibold text-slate-800 flex items-center gap-2">
-                  <div class="w-8 h-8 rounded-lg overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center border border-slate-150 shadow-sm">
-                    <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="w-full h-full object-cover" />
-                    <span v-else class="text-sm">{{ item.status === 'lost' ? '👜' : '🧩' }}</span>
-                  </div>
-                  <span class="truncate max-w-[150px]" :title="item.name">{{ item.name }}</span>
-                </td>
-                <td class="py-3 px-6 text-slate-600 font-medium truncate max-w-[120px]" :title="item.place">{{ item.place }}</td>
-                <td class="py-3 px-6 font-mono text-slate-650 font-medium">{{ item.locker || '-' }}</td>
-                <td class="py-3 px-6 text-slate-450 font-medium">{{ formatDate(item.date) }}</td>
-                <td class="py-3 px-6 text-right">
-                  <span :class="{
-                    'bg-rose-50/70 text-rose-700 border-rose-100/80': item.status === 'lost',
-                    'bg-emerald-50/70 text-emerald-700 border-emerald-100/80': item.status === 'found' || item.status === 'stored',
-                    'bg-slate-150/50 text-slate-700 border-slate-200/80': item.status === 'claimed' || item.status === 'removed'
-                  }" class="inline-flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold rounded-full border uppercase">
-                    <span :class="{
-                      'bg-rose-500': item.status === 'lost',
-                      'bg-emerald-500': item.status === 'found' || item.status === 'stored',
-                      'bg-slate-500': item.status === 'claimed' || item.status === 'removed'
-                    }" class="w-1 h-1 rounded-full"></span>
-                    {{ item.status === 'lost' ? 'ของหาย' : (item.status === 'found' || item.status === 'stored') ? 'พร้อมคืน' : 'คืนแล้ว' }}
-                  </span>
-                </td>
-              </tr>
-              <tr v-if="itemsStore.items.length === 0">
-                <td colspan="5" class="py-12 text-center text-slate-450">
-                  <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-lg mx-auto shadow-sm">🔎</div>
-                  <p class="text-xs mt-3 font-semibold text-slate-700">ไม่มีรายการประวัติสิ่งของล่าสุด</p>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <!-- Cards List -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div v-for="item in latestItems" :key="item.id" class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col p-3 hover:shadow-md transition group relative overflow-hidden">
+            
+            <!-- Image Area -->
+            <div class="relative w-full h-28 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center border border-slate-100">
+              <!-- Type Badge -->
+              <span class="absolute top-2 left-2 z-10 px-2 py-0.5 text-[8px] font-semibold rounded text-white shadow-sm" :class="item.type === 'lost' ? 'bg-[#EF4444]' : 'bg-[#8B5CF6]'">
+                {{ item.type === 'lost' ? 'ของหาย' : 'ของพบ' }}
+              </span>
+              <img v-if="item.image_url || getItemImageSrc(item)" :src="item.image_url || getItemImageSrc(item)" class="w-full h-full object-cover" />
+              <font-awesome v-else :icon="item.status === 'lost' ? ['fas', 'briefcase'] : ['fas', 'puzzle-piece']" class="text-2xl text-slate-300" />
+            </div>
+
+            <!-- Content Area -->
+            <div class="mt-3 flex-1 flex flex-col justify-between space-y-2">
+              <div class="space-y-1">
+                <!-- Item Name -->
+                <h4 class="text-xs font-semibold text-slate-800 line-clamp-1 group-hover:text-indigo-650 transition" :title="item.name">
+                  {{ item.name }}
+                </h4>
+                
+                <!-- Location with pin icon -->
+                <div class="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
+                  <font-awesome :icon="['fas', 'location-dot']" class="text-slate-400" />
+                  <span class="truncate max-w-[110px]">{{ item.place }}</span>
+                </div>
+                
+                <!-- Date/Time -->
+                <div class="text-[9px] text-slate-400 font-normal flex items-center gap-1">
+                  <font-awesome :icon="['fas', 'calendar-days']" class="text-slate-350" />
+                  <span>{{ item.formattedDate }}</span>
+                </div>
+              </div>
+
+              <!-- Bottom Status Badge -->
+              <div class="pt-1">
+                <span :class="(item.status === 'claimed' || item.status === 'returned') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'" class="inline-block px-2 py-0.5 text-[9px] font-bold rounded border uppercase tracking-wider">
+                  {{ (item.status === 'claimed' || item.status === 'returned') ? 'ส่งคืนแล้ว' : 'รอดำเนินการ' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div v-if="latestItems.length === 0" class="py-12 text-center text-slate-400">
+          <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-lg mx-auto shadow-sm">
+            <font-awesome :icon="['fas', 'magnifying-glass']" />
+          </div>
+          <p class="text-xs mt-3 font-semibold text-slate-700">ไม่มีรายการสิ่งของล่าสุด</p>
         </div>
       </div>
 
-      <!-- Lockers Overview Preview Card -->
+      <!-- Latest Activity Timeline Card -->
       <div class="col-span-12 lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
         <div>
-          <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-1">ตู้เก็บของ (Lockers)</h3>
-          <p class="text-xs text-slate-400 mb-4">จำลองการจัดเก็บสิ่งของในตู้ล็อกเกอร์</p>
+          <div class="flex justify-between items-center mb-5">
+            <h3 class="text-sm font-semibold text-[#0B132B] uppercase tracking-wider">กิจกรรมล่าสุด</h3>
+            <NuxtLink to="/items" class="text-xs font-semibold text-indigo-650 hover:text-indigo-755 hover:underline">ดูทั้งหมด</NuxtLink>
+          </div>
           
-          <div class="grid grid-cols-4 gap-2 mb-4">
-            <NuxtLink v-for="locker in lockersList" :key="locker.name" 
-              to="/lockers"
-              :class="{
-                'bg-emerald-50 border-emerald-200 text-emerald-700': locker.status === 'empty',
-                'bg-amber-50 border-amber-200 text-amber-700': locker.status === 'occupied',
-              }"
-              class="h-12 border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:scale-105 transition duration-150 text-center p-1">
-              <span class="text-[9px] font-bold">ตู้ที่ {{ locker.monthIndex }}</span>
-              <span class="text-[8px] opacity-75 font-semibold leading-none mt-0.5">{{ locker.monthName }}</span>
-              <span class="text-[8px] opacity-65 mt-0.5">{{ locker.status === 'empty' ? 'ว่าง' : 'มีของ' }}</span>
-            </NuxtLink>
+          <div class="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+            <div v-for="act in latestActivities" :key="act.id" class="relative flex items-start gap-3">
+              <!-- Timeline circle/icon -->
+              <div :class="act.colorClass" class="absolute -left-[21px] w-5 h-5 rounded-full flex items-center justify-center text-[9px] shadow-sm z-10">
+                <font-awesome :icon="['fas', act.icon]" />
+              </div>
+              
+              <!-- Content -->
+              <div class="flex-1 flex justify-between items-start gap-2 pl-3">
+                <div>
+                  <p class="text-xs font-semibold text-slate-800 leading-snug">
+                    {{ act.title }}
+                  </p>
+                  <p v-if="act.subtitle" class="text-[10px] text-slate-400 font-medium mt-0.5">
+                    {{ act.subtitle }}
+                  </p>
+                </div>
+                <span class="text-[9px] font-semibold text-slate-450 whitespace-nowrap shrink-0 mt-0.5">
+                  {{ act.time }}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-
-        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-[11px] space-y-2">
-          <div class="flex justify-between items-center text-slate-600">
-            <span>🟢 ตู้ที่ว่าง:</span>
-            <span class="font-bold text-slate-800">{{ lockersList.filter(l => l.status === 'empty').length }} ตู้</span>
-          </div>
-          <div class="flex justify-between items-center text-slate-600">
-            <span>🟠 ตู้ที่ใช้งาน:</span>
-            <span class="font-bold text-slate-800">{{ lockersList.filter(l => l.status === 'occupied').length }} ตู้</span>
-          </div>
-          <NuxtLink to="/lockers" class="w-full text-center text-[10px] font-bold text-indigo-600 hover:text-indigo-700 pt-1 block">ตรวจสอบผังตู้ล็อกเกอร์ทั้งหมด →</NuxtLink>
         </div>
       </div>
     </section>
@@ -227,18 +273,48 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
 import { useAuthStore } from '~/stores/auth'
 import { useRuntimeConfig } from '#app'
 import axios from 'axios'
 import dayjs from 'dayjs'
+import {
+  Chart,
+  DoughnutController,
+  ArcElement,
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Filler,
+  Tooltip,
+  Legend
+} from 'chart.js'
+
+Chart.register(
+  DoughnutController,
+  ArcElement,
+  LineController,
+  LineElement,
+  PointElement,
+  LinearScale,
+  CategoryScale,
+  Filler,
+  Tooltip,
+  Legend
+)
 
 definePageMeta({ layout: 'dashboard', title: 'แดชบอร์ดระบบ', icon: 'house' })
 
 const itemsStore = useItemsStore()
 const { formatDate, getItemImageSrc } = useItemHelpers()
+
+const selectedPeriod = ref('180')
+const selectedCategory = ref('all')
+const selectedLocation = ref('all')
 
 const lastUpdated = ref(new Date())
 const lastUpdatedText = ref('เมื่อสักครู่')
@@ -256,12 +332,96 @@ const updateLastUpdatedText = () => {
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
 
+// Format Thai Date and Time like "24 มิ.ย. 68 | 14:10 น."
+const formatThaiDateTime = (dateStr: any) => {
+  if (!dateStr) return 'ไม่ระบุ'
+  const d = dayjs(dateStr)
+  const shortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+  const day = d.date()
+  const month = shortMonths[d.month()]
+  // Show Buddhist Era Year in 2 digits (e.g. 2025 is 2568 -> 68, 2026 is 2569 -> 69)
+  const yearBE = (d.year() + 543) % 100
+  const time = d.format('HH:mm')
+  return `${day} ${month} ${yearBE} | ${time} น.`
+}
+
+const donutChartCanvas = ref<HTMLCanvasElement | null>(null)
+const lineChartCanvas = ref<HTMLCanvasElement | null>(null)
+
+let donutChartInstance: Chart | null = null
+let lineChartInstance: Chart | null = null
+
+const triggerCreateModal = () => {
+  window.dispatchEvent(new CustomEvent('open-create-modal'))
+}
+
+// Filtered items based on Category and Location (useful for monthly stats where we want historical data of that category/location)
+const filteredItemsExcludingPeriod = computed(() => {
+  let list = itemsStore.items
+
+  // Filter by Category
+  if (selectedCategory.value !== 'all') {
+    const catId = parseInt(selectedCategory.value, 10)
+    list = list.filter(item => item.category_id === catId || String(item.category_id) === selectedCategory.value)
+  }
+
+  // Filter by Location
+  if (selectedLocation.value !== 'all') {
+    const locId = parseInt(selectedLocation.value, 10)
+    list = list.filter(item => item.location_id === locId || String(item.location_id) === selectedLocation.value)
+  }
+
+  return list
+})
+
+// Fully filtered items (including Period)
+const filteredItems = computed(() => {
+  let list = filteredItemsExcludingPeriod.value
+
+  // Filter by Period
+  if (selectedPeriod.value !== 'all') {
+    const days = parseInt(selectedPeriod.value, 10)
+    if (!isNaN(days)) {
+      const cutOff = dayjs().subtract(days, 'day')
+      list = list.filter(item => {
+        const itemDate = dayjs(item.date || item.created_at)
+        return itemDate.isAfter(cutOff)
+      })
+    }
+  }
+
+  return list
+})
+
+const filteredAllCount = computed(() => filteredItems.value.length)
+const filteredLostCount = computed(() => filteredItems.value.filter(i => i.status === 'lost').length)
+const filteredFoundCount = computed(() => filteredItems.value.filter(i => i.status === 'found' || i.status === 'stored').length)
+const filteredClaimedCount = computed(() => filteredItems.value.filter(i => i.status === 'claimed' || i.status === 'returned').length)
+
+// Calculate the number of items created in the last 30 days
+const getTrend = (type: string) => {
+  const thirtyDaysAgo = dayjs().subtract(30, 'day')
+  let list = filteredItems.value
+  if (type === 'all') {
+    return list.filter(item => dayjs(item.created_at || item.date).isAfter(thirtyDaysAgo)).length
+  } else if (type === 'lost') {
+    return list.filter(item => item.status === 'lost' && dayjs(item.created_at || item.date).isAfter(thirtyDaysAgo)).length
+  } else if (type === 'found') {
+    return list.filter(item => (item.status === 'found' || item.status === 'stored') && dayjs(item.created_at || item.date).isAfter(thirtyDaysAgo)).length
+  } else if (type === 'claimed') {
+    return list.filter(item => (item.status === 'claimed' || item.status === 'returned') && dayjs(item.created_at || item.date).isAfter(thirtyDaysAgo)).length
+  }
+  return 0
+}
+
 onMounted(async () => {
   if (itemsStore.items.length === 0) {
     await itemsStore.fetchItems()
   }
   lastUpdated.value = itemsStore.lastUpdated || new Date()
   updateLastUpdatedText()
+
+  initCharts()
 
   // ตรวจสอบและเชื่อมโยงบัญชี LINE หากมี pendingLineUserId
   const pendingLineUserId = localStorage.getItem('pendingLineUserId')
@@ -279,59 +439,311 @@ onMounted(async () => {
 })
 
 const chartSegments = computed(() => {
-  const total = itemsStore.items.length || 1
-  const lost = itemsStore.countByStatus('lost')
-  const found = itemsStore.countByStatus('found')
-  const claimed = itemsStore.countByStatus('claimed')
-  const expired = itemsStore.countExpired
-  
+  const lost = filteredLostCount.value
+  const foundStored = filteredFoundCount.value
+  const claimed = filteredClaimedCount.value
+
+  const total = lost + foundStored + claimed
+
   const categories = [
     { label: 'ของหาย (Lost)', count: lost, color: '#EF4444' },
-    { label: 'พบของ (Found)', count: found, color: '#10B981' },
-    { label: 'คืนแล้ว (Claimed)', count: claimed, color: '#4F46E5' },
-    { label: 'เกินกำหนด (Expired)', count: expired, color: '#F59E0B' }
+    { label: 'ของพบ / ยังไม่เคลม', count: foundStored, color: '#8B5CF6' },
+    { label: 'ส่งคืนแล้ว (Claimed)', count: claimed, color: '#10B981' }
   ]
   
-  let accumulatedPercent = 0
-  const circumference = 238.76
-
   return categories.map(cat => {
-    const percent = Math.round((cat.count / total) * 100)
-    const strokeDash = circumference
-    const strokeOffset = circumference - (cat.count / total) * circumference
-    const offset = (accumulatedPercent / 100) * circumference
-    accumulatedPercent += (cat.count / total) * 100
-
+    const percent = total > 0 ? Math.round((cat.count / total) * 100) : 0
     return {
       ...cat,
-      percent,
-      dashArray: `${strokeDash}`,
-      dashOffset: `${strokeOffset - offset}`
+      percent
     }
   })
 })
 
-const lockersList = computed(() => {
-  const monthNames = [
-    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-  ]
+const totalChartCount = computed(() => {
+  return chartSegments.value.reduce((acc, cur) => acc + cur.count, 0)
+})
+
+// Latest Items computed list
+const latestItems = computed(() => {
+  return [...filteredItems.value]
+    .sort((a, b) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime())
+    .map(item => {
+      let statusLabel = 'กำลังตามหา'
+      let badgeClass = 'bg-[#FBBF24] text-white' // Yellow
+      if (item.status === 'stored' || item.status === 'found') {
+        statusLabel = 'เก็บไว้ในคลัง'
+        badgeClass = 'bg-[#8B5CF6] text-white' // Purple
+      } else if (item.status === 'claimed' || item.status === 'returned') {
+        statusLabel = 'ส่งคืนแล้ว'
+        badgeClass = 'bg-[#10B981] text-white' // Green
+      }
+      return {
+        ...item,
+        statusLabel,
+        badgeClass,
+        formattedDate: formatThaiDateTime(item.date)
+      }
+    })
+    .slice(0, 5)
+})
+
+// Latest Activity computed timeline list
+const latestActivities = computed(() => {
   const list = []
-  for (let i = 1; i <= 12; i++) {
-    const name = `ล็อกเกอร์ ที่ - ${i}`
-    const occupiedBy = itemsStore.items.find(item =>
-      item.locker &&
-      (item.locker === name || item.locker.includes(`ที่ - ${i}`) || item.locker.includes(`ที่ -${i}`)) &&
-      (item.status === 'stored' || item.status === 'found')
-    )
-    list.push({
-      name,
-      monthIndex: i,
-      monthName: monthNames[i - 1],
-      status: occupiedBy ? 'occupied' : 'empty',
-      item: occupiedBy || null
+  const dbItems = [...filteredItems.value].sort((a, b) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime())
+
+  for (const item of dbItems) {
+    const timeStr = dayjs(item.date).format('HH:mm') + ' น.'
+    const staff = item.staffName || 'เจ้าหน้าที่'
+    if (item.status === 'claimed' || item.status === 'returned') {
+      list.push({
+        id: `db-act-claim-${item.id}`,
+        title: `ส่งคืน "${item.name}" ให้${item.receiver || 'เจ้าของ'}`,
+        subtitle: `โดย ${staff}`,
+        time: timeStr,
+        icon: 'circle-check',
+        colorClass: 'bg-[#10B981] text-white',
+        borderClass: 'border-[#10B981]'
+      })
+    } else if (item.status === 'stored' || item.status === 'found') {
+      list.push({
+        id: `db-act-new-${item.id}`,
+        title: `บันทึกของพบใหม่ "${item.name}"`,
+        subtitle: `โดย ${staff}`,
+        time: timeStr,
+        icon: 'briefcase',
+        colorClass: 'bg-[#8B5CF6] text-white',
+        borderClass: 'border-[#8B5CF6]'
+      })
+    } else if (item.status === 'lost') {
+      list.push({
+        id: `db-act-update-${item.id}`,
+        title: `อัปเดตสถานะเป็น "กำลังตามหา" "${item.name}"`,
+        subtitle: item.reporterName ? `โดย ${item.reporterName}` : '',
+        time: timeStr,
+        icon: 'magnifying-glass',
+        colorClass: 'bg-[#FBBF24] text-white',
+        borderClass: 'border-[#FBBF24]'
+      })
+    }
+  }
+
+  return list.slice(0, 5)
+})
+
+// Monthly Statistics data plotting
+const monthlyStats = computed(() => {
+  const shortMonths = ['พ.ย.', 'ธ.ค.', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.']
+  const data = []
+  const now = dayjs()
+  
+  for (let i = 5; i >= 0; i--) {
+    const targetMonth = now.subtract(i, 'month')
+    const monthIndex = targetMonth.month()
+    const monthName = shortMonths[monthIndex] || shortMonths[0]
+    
+    // Filter items belonging to this month/year from filteredItemsExcludingPeriod
+    const itemsInMonth = filteredItemsExcludingPeriod.value.filter(item => {
+      const d = dayjs(item.date || item.created_at)
+      return d.month() === monthIndex && d.year() === targetMonth.year()
+    })
+
+    const lostItemsInMonth = itemsInMonth.filter(item => item.type === 'lost')
+    const foundItemsInMonth = itemsInMonth.filter(item => item.type === 'found' && (item.status === 'found' || item.status === 'stored'))
+    const claimedItemsInMonth = itemsInMonth.filter(item => item.status === 'claimed' || item.status === 'returned')
+
+    const lostH1 = lostItemsInMonth.filter(item => dayjs(item.date || item.created_at).date() <= 15).length
+    const foundH1 = foundItemsInMonth.filter(item => dayjs(item.date || item.created_at).date() <= 15).length
+    const claimedH1 = claimedItemsInMonth.filter(item => dayjs(item.date || item.created_at).date() <= 15).length
+
+    const lostH2 = lostItemsInMonth.filter(item => dayjs(item.date || item.created_at).date() > 15).length
+    const foundH2 = foundItemsInMonth.filter(item => dayjs(item.date || item.created_at).date() > 15).length
+    const claimedH2 = claimedItemsInMonth.filter(item => dayjs(item.date || item.created_at).date() > 15).length
+
+    data.push({
+      periodLabel: `${monthName} 69`,
+      lost: lostH1,
+      found: foundH1,
+      claimed: claimedH1
+    })
+    data.push({
+      periodLabel: `${monthName} 69`,
+      lost: lostH2,
+      found: foundH2,
+      claimed: claimedH2
     })
   }
-  return list
+
+  const finalData = data.map((d) => {
+    return {
+      periodLabel: d.periodLabel,
+      lost: d.lost,
+      found: d.found,
+      claimed: d.claimed
+    }
+  })
+
+  const maxVal = Math.max(...finalData.map(d => Math.max(d.lost, d.found, d.claimed)), 10)
+
+  return {
+    maxVal,
+    monthsData: finalData
+  }
+})
+
+const initCharts = () => {
+  if (donutChartInstance) donutChartInstance.destroy()
+  if (lineChartInstance) lineChartInstance.destroy()
+
+  const segments = chartSegments.value
+  const total = totalChartCount.value
+
+  // Initialize Donut Chart
+  if (donutChartCanvas.value) {
+    donutChartInstance = new Chart(donutChartCanvas.value, {
+      type: 'doughnut',
+      data: {
+        labels: segments.map(s => s.label),
+        datasets: [{
+          data: segments.map(s => s.count),
+          backgroundColor: segments.map(s => s.color),
+          borderWidth: 2,
+          borderColor: '#ffffff',
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        cutout: '75%',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: true,
+            callbacks: {
+              label: (context) => {
+                const count = context.raw as number
+                const percent = total > 0 ? Math.round((count / total) * 100) : 0
+                return ` ${context.label}: ${count} รายการ (${percent}%)`
+              }
+            }
+          }
+        }
+      }
+    })
+  }
+
+  // Initialize Line Chart
+  if (lineChartCanvas.value) {
+    const stats = monthlyStats.value
+    const ctx = lineChartCanvas.value.getContext('2d')
+    let lostGradient: CanvasGradient | string = '#EF4444'
+    let foundGradient: CanvasGradient | string = '#3B82F6'
+    let claimedGradient: CanvasGradient | string = '#10B981'
+
+    if (ctx) {
+      lostGradient = ctx.createLinearGradient(0, 0, 0, 150)
+      lostGradient.addColorStop(0, 'rgba(239, 68, 68, 0.15)')
+      lostGradient.addColorStop(1, 'rgba(239, 68, 68, 0.0)')
+
+      foundGradient = ctx.createLinearGradient(0, 0, 0, 150)
+      foundGradient.addColorStop(0, 'rgba(59, 130, 246, 0.15)')
+      foundGradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)')
+
+      claimedGradient = ctx.createLinearGradient(0, 0, 0, 150)
+      claimedGradient.addColorStop(0, 'rgba(16, 185, 129, 0.15)')
+      claimedGradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)')
+    }
+
+    lineChartInstance = new Chart(lineChartCanvas.value, {
+      type: 'line',
+      data: {
+        labels: stats.monthsData.map(d => d.periodLabel.split(' ')[0]),
+        datasets: [
+          {
+            label: 'ของหาย (Lost)',
+            data: stats.monthsData.map(d => d.lost),
+            borderColor: '#EF4444',
+            backgroundColor: lostGradient,
+            fill: true,
+            tension: 0.4,
+            borderWidth: 2,
+            pointBackgroundColor: '#EF4444',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 1.5,
+            pointRadius: 2.5,
+            pointHoverRadius: 4.5
+          },
+          {
+            label: 'ของพบ / ยังไม่เคลม',
+            data: stats.monthsData.map(d => d.found),
+            borderColor: '#3B82F6',
+            backgroundColor: foundGradient,
+            fill: true,
+            tension: 0.4,
+            borderWidth: 2,
+            pointBackgroundColor: '#3B82F6',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 1.5,
+            pointRadius: 2.5,
+            pointHoverRadius: 4.5
+          },
+          {
+            label: 'ส่งคืนแล้ว (Claimed)',
+            data: stats.monthsData.map(d => d.claimed),
+            borderColor: '#10B981',
+            backgroundColor: claimedGradient,
+            fill: true,
+            tension: 0.4,
+            borderWidth: 2,
+            pointBackgroundColor: '#10B981',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 1.5,
+            pointRadius: 2.5,
+            pointHoverRadius: 4.5
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: true }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: {
+              color: '#94A3B8',
+              font: { size: 9, weight: 'bold' }
+            }
+          },
+          y: {
+            grid: {
+              color: '#F1F5F9'
+            },
+            ticks: {
+              color: '#94A3B8',
+              font: { size: 9, weight: 'bold' },
+              stepSize: Math.max(1, Math.round(stats.maxVal / 5))
+            },
+            min: 0,
+            max: stats.maxVal
+          }
+        }
+      }
+    })
+  }
+}
+
+watch(filteredItems, () => {
+  initCharts()
+}, { deep: true })
+
+onBeforeUnmount(() => {
+  if (donutChartInstance) donutChartInstance.destroy()
+  if (lineChartInstance) lineChartInstance.destroy()
 })
 </script>

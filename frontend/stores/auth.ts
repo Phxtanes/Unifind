@@ -39,10 +39,10 @@ export const useAuthStore = defineStore('auth', {
         };
       }
     },
-    async register(username: string, email: string, password: string) {
+    async register(username: string, email: string, password: string, fullName?: string) {
       const config = useRuntimeConfig();
       try {
-        await axios.post(`${config.public.apiBaseUrl}/auth/register`, { username, email, password });
+        await axios.post(`${config.public.apiBaseUrl}/auth/register`, { username, email, password, full_name: fullName });
         return { success: true, message: 'สมัครสมาชิกสำเร็จ!' };
       } catch (error: any) {
         return { 
