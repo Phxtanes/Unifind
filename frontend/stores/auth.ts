@@ -20,8 +20,8 @@ export const useAuthStore = defineStore('auth', {
       try {
         const response = await axios.post(`${config.public.apiBaseUrl}/auth/login`, { username, password });
         this.token = response.data.accessToken;
-        this.user = { 
-          id: response.data.user_id, 
+        this.user = {
+          id: response.data.id,
           username: response.data.username,
           full_name: response.data.full_name,
           email: response.data.email,
@@ -33,9 +33,9 @@ export const useAuthStore = defineStore('auth', {
         }
         return { success: true };
       } catch (error: any) {
-        return { 
-          success: false, 
-          message: error.response?.data?.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' 
+        return {
+          success: false,
+          message: error.response?.data?.message || 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง'
         };
       }
     },
@@ -45,9 +45,9 @@ export const useAuthStore = defineStore('auth', {
         await axios.post(`${config.public.apiBaseUrl}/auth/register`, { username, email, password, full_name: fullName });
         return { success: true, message: 'สมัครสมาชิกสำเร็จ!' };
       } catch (error: any) {
-        return { 
-          success: false, 
-          message: error.response?.data?.message || 'การสมัครสมาชิกล้มเหลว' 
+        return {
+          success: false,
+          message: error.response?.data?.message || 'การสมัครสมาชิกล้มเหลว'
         };
       }
     },
@@ -76,10 +76,10 @@ export const useAuthStore = defineStore('auth', {
     },
     bypassLogin() {
       this.token = 'mock-token';
-      this.user = { 
-        id: '00000000-0000-0000-0000-000000000000', 
-        username: 'Test Staff',
-        role: 'Staff'
+      this.user = {
+        id: '1',
+        username: 'Test Admin',
+        role: 'ADMIN'
       };
       if (process.client && this.token) {
         localStorage.setItem('token', this.token);

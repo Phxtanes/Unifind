@@ -7,10 +7,12 @@ const formatUser = (user) => {
   if (!user) return null;
   return {
     id: user.user_id,
+    user_id: user.user_id,
     username: user.username,
     email: user.email,
     full_name: user.full_name,
     role: user.role ? user.role.toLowerCase() : 'staff',
+    status: user.status,
     isActive: user.status === 'Active',
     isApproved: user.status === 'Active' || user.role === 'ADMIN' || user.role === 'STAFF',
   };
@@ -77,7 +79,7 @@ exports.login = async (req, res) => {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    if (user.status === 'Inactive') {
+    if (user.status === 'Inactive' || user.status === 'Suspended') {
       return res.status(403).json({ message: 'บัญชีของคุณยังไม่ได้รับการอนุมัติสิทธิ์เข้าใช้งาน หรือ ถูกระงับการใช้งานชั่วคราว' });
     }
 
@@ -112,7 +114,7 @@ exports.getUsers = async (req, res) => {
       .from('users')
       .select('user_id, username, email, full_name, role, status')
       .in('role', ['ADMIN', 'STAFF'])
-      .eq('status', 'Active');
+      .in('status', ['Active', 'Suspended']);
 
     if (error) throw error;
 
@@ -262,7 +264,7 @@ exports.deactivateUser = async (req, res) => {
 
     const { data: user, error } = await supabase
       .from('users')
-      .update({ status: 'Inactive' })
+      .update({ status: 'Suspended' })
       .eq('user_id', userId)
       .select()
       .single();
