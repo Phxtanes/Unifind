@@ -3,9 +3,8 @@ const supabase = require('../config/supabase');
 exports.getPersons = async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('Person')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .from('persons')
+      .select('*');
 
     if (error) throw error;
     res.status(200).json(data);
@@ -17,9 +16,9 @@ exports.getPersons = async (req, res) => {
 exports.findOrCreatePerson = async (req, res) => {
   try {
     const { person_type, full_name, student_id, email, phone, department } = req.body;
-    
-    // Try to find existing person by phone or student_id
-    let query = supabase.from('Person').select('*');
+
+    // Try to find existing person by student_id, phone, or full_name
+    let query = supabase.from('persons').select('*');
     if (student_id) {
       query = query.eq('student_id', student_id);
     } else if (phone) {
@@ -28,15 +27,15 @@ exports.findOrCreatePerson = async (req, res) => {
       query = query.eq('full_name', full_name);
     }
 
-    const { data: existingPerson, error: searchError } = await query.maybeSingle();
+    const { data: existingPerson } = await query.maybeSingle();
 
     if (existingPerson) {
       return res.status(200).json(existingPerson);
     }
 
-    // Create new if not found
+    // Create new person
     const { data: newPerson, error: insertError } = await supabase
-      .from('Person')
+      .from('persons')
       .insert({ person_type, full_name, student_id, email, phone, department })
       .select()
       .single();

@@ -18,7 +18,7 @@
           <p class="text-xs text-amber-700 font-semibold mt-1">ตู้ที่ใช้งาน</p>
         </div>
         <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 text-center">
-          <p class="text-2xl font-black text-slate-700">12</p>
+          <p class="text-2xl font-black text-slate-700">{{ lockersList.length }}</p>
           <p class="text-xs text-slate-600 font-semibold mt-1">ตู้ทั้งหมด</p>
         </div>
       </div>
@@ -46,7 +46,7 @@
           </div>
           
           <div class="mt-4">
-            <h4 class="text-xs font-bold text-slate-800 font-mono">{{ locker.name }} ({{ locker.monthName }})</h4>
+            <h4 class="text-xs font-bold text-slate-800 font-mono">{{ locker.name }}</h4>
             <p v-if="locker.status === 'occupied'" class="text-[10px] text-slate-650 font-medium truncate mt-1">
               จำนวน: <span class="font-bold text-slate-800">{{ locker.items.length }} รายการ</span>
             </p>
@@ -70,7 +70,7 @@
             </span>
             <div>
               <h3 class="text-sm font-bold text-slate-800 font-mono">{{ selectedLocker.name }}</h3>
-              <p class="text-[10px] text-slate-500 font-medium">ตู้ล็อกเกอร์ประจำเดือน {{ selectedLocker.monthName }}</p>
+              <p class="text-[10px] text-slate-500 font-medium">ตู้ล็อกเกอร์: {{ selectedLocker.items.length }} รายการ</p>
             </div>
           </div>
           <button @click="showLockerModal = false" class="text-slate-400 hover:text-slate-650 hover:bg-slate-100 p-1.5 rounded-lg transition">
@@ -157,27 +157,31 @@ const selectLocker = (locker: any) => {
 }
 
 const lockersList = computed(() => {
-  const monthNames = [
-    'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
-    'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
-  ]
-  const list = []
-  for (let i = 1; i <= 12; i++) {
-    const name = `ล็อกเกอร์ ที่ - ${i}`
-    const itemsInLocker = itemsStore.items.filter(item =>
-      item.locker &&
-      (item.locker === name || item.locker.includes(`ที่ - ${i}`) || item.locker.includes(`ที่ -${i}`)) &&
-      (item.status === 'stored' || item.status === 'found')
-    )
-    list.push({
-      name,
-      monthIndex: i,
-      monthName: monthNames[i - 1],
-      status: itemsInLocker.length > 0 ? 'occupied' : 'empty',
-      items: itemsInLocker
-    })
+  // Group items by locker_id (VARCHAR) — only 'stored' or 'found' status
+  const storedItems = itemsStore.items.filter(item =>
+    item.locker_id && (item.status === 'stored' || item.status === 'found')
+  )
+
+  // Build unique locker groups
+  const lockerMap: Record<string, any[]> = {}
+  for (const item of storedItems) {
+    const key = item.locker_id as string
+    if (!lockerMap[key]) lockerMap[key] = []
+    lockerMap[key].push(item)
   }
-  return list
+
+  const list = Object.entries(lockerMap).map(([lockerId, items]) => ({
+    name: lockerId,
+    status: 'occupied',
+    items,
+  }))
+
+  // If no items at all, show placeholder empty state
+  if (list.length === 0) {
+    return [{ name: 'ไม่มีของในตู้', status: 'empty', items: [] }]
+  }
+
+  return list.sort((a, b) => a.name.localeCompare(b.name))
 })
 </script>
 

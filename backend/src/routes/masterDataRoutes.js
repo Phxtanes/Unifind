@@ -1,25 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const categoryController = require('../controllers/categoryController');
-const locationController = require('../controllers/locationController');
-const lockerController = require('../controllers/lockerController');
-const personController = require('../controllers/personController');
+const locationController  = require('../controllers/locationController');
+const buildingController  = require('../controllers/buildingController');
+const personController    = require('../controllers/personController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
 // Categories
-router.get('/categories', categoryController.getCategories);
-router.post('/categories', verifyToken, categoryController.createCategory);
+router.get('/categories',        categoryController.getCategories);
+router.post('/categories',       verifyToken, categoryController.createCategory);
+router.put('/categories/:id',    verifyToken, categoryController.updateCategory);
+router.delete('/categories/:id', verifyToken, categoryController.deleteCategory);
+
+// Buildings
+router.get('/buildings',         buildingController.getBuildings);
+router.post('/buildings',        verifyToken, buildingController.createBuilding);
+router.put('/buildings/:id',     verifyToken, buildingController.updateBuilding);
+router.delete('/buildings/:id',  verifyToken, buildingController.deleteBuilding);
 
 // Locations
-router.get('/locations', locationController.getLocations);
-router.post('/locations', verifyToken, locationController.createLocation);
-
-// Lockers
-router.get('/lockers', lockerController.getLockers);
-router.post('/lockers', verifyToken, lockerController.createLocker);
+router.get('/locations',         locationController.getLocations);
+router.post('/locations',        verifyToken, locationController.createLocation);
+router.put('/locations/:id',     verifyToken, locationController.updateLocation);
+router.delete('/locations/:id',  verifyToken, locationController.deleteLocation);
 
 // Persons
-router.get('/persons', verifyToken, personController.getPersons);
+router.get('/persons',                 verifyToken, personController.getPersons);
 router.post('/persons/find-or-create', verifyToken, personController.findOrCreatePerson);
 
 module.exports = router;

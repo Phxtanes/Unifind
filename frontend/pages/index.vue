@@ -54,8 +54,13 @@
           <input v-model="loginData.password" type="password" class="login-input" placeholder="รหัสผ่าน" required
             :disabled="loading" />
           
-          <button type="submit" class="login-button font-semibold mb-4" :disabled="loading" :class="{ loading }">
+          <button type="submit" class="login-button font-semibold mb-2" :disabled="loading" :class="{ loading }">
             {{ loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบเจ้าหน้าที่' }}
+          </button>
+
+          <button type="button" @click="handleBypass" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 shadow-sm mb-4">
+            <font-awesome :icon="['fas', 'bolt']" class="text-amber-500" />
+            เข้าใช้งานระบบแบบ Bypass (สำหรับทดสอบ)
           </button>
 
           <p class="text-xs text-center text-slate-500 font-semibold mt-2">
@@ -146,6 +151,11 @@ const handleLogin = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const handleBypass = () => {
+  auth.bypassLogin()
+  navigateTo('/dashboard')
 }
 
 const handleRegister = async () => {

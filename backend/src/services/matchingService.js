@@ -16,7 +16,7 @@ function loadLocalDb() {
   } catch (e) {
     console.error('Error loading local DB in matchingService:', e);
   }
-  return { LostItem: [], FoundItem: [] };
+  return { lost_items: [], items: [] };
 }
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -94,24 +94,33 @@ exports.sendPushToLine = sendPushToLine;
  */
 exports.checkFoundItemMatch = async (foundItem) => {
   try {
-    console.log(`🔍 Checking matches for FoundItem: "${foundItem.item_name}" (ID: ${foundItem.found_item_id})`);
+    console.log(`🔍 Checking matches for Found Item: "${foundItem.item_name}" (ID: ${foundItem.item_id})`);
 
     // Fetch active LostItems in the same category
     let lostItems = [];
     try {
-      const { data, error } = await supabase
-        .from('LostItem')
-        .select('*, Person!reporter_id(*)')
-        .eq('category_id', foundItem.category_id)
-        .eq('status', 'LOST');
+      // Filter by status_code LOST via join
+      const { data: statusData } = await supabase
+        .from('lost_item_statuses')
+        .select('status_id')
+        .eq('status_code', 'LOST')
+        .maybeSingle();
+      const lostStatusId = statusData?.status_id;
+
+      const query = supabase
+        .from('lost_items')
+        .select('*, reporter:persons!lost_items_reporter_id_fkey(full_name, email, phone)')
+        .eq('category_id', foundItem.category_id);
+      if (lostStatusId) query.eq('status_id', lostStatusId);
+
+      const { data, error } = await query;
       if (error) throw error;
       lostItems = data || [];
     } catch (err) {
       console.warn('Supabase offline in checkFoundItemMatch, using local JSON database fallback');
       const db = loadLocalDb();
-      lostItems = (db.LostItem || []).filter(item => 
-        Number(item.category_id) === Number(foundItem.category_id) && 
-        item.status === 'LOST'
+      lostItems = (db.lost_items || []).filter(item =>
+        Number(item.category_id) === Number(foundItem.category_id)
       );
     }
 
@@ -172,7 +181,7 @@ ${JSON.stringify(candidates, null, 2)}
 
       const matchedLost = lostItems.find(item => Number(item.lost_item_id) === parsedMatchId);
       if (matchedLost) {
-        const ownerEmail = parseDescriptionEmail(matchedLost.description) || (matchedLost.Person ? matchedLost.Person.email : null);
+        const ownerEmail = matchedLost.reporter ? matchedLost.reporter.email : null;
         if (ownerEmail) {
           const lineUserId = lineBindings.getLineUserId(ownerEmail);
           if (lineUserId) {
@@ -202,9 +211,9 @@ ${JSON.stringify(candidates, null, 2)}
         matchedItem: matchedLost ? {
           id: matchedLost.lost_item_id,
           name: matchedLost.item_name,
-          description: parseDescriptionText(matchedLost.description),
+          description: matchedLost.description || '',
           date: matchedLost.lost_datetime,
-          reporter: matchedLost.Person ? matchedLost.Person.full_name : 'ไม่ได้ระบุ'
+          reporter: matchedLost.reporter ? matchedLost.reporter.full_name : 'ไม่ได้ระบุ'
         } : null
       };
     }
@@ -226,19 +235,27 @@ exports.checkLostItemMatch = async (lostItem) => {
     // Fetch FoundItems that are currently stored/found
     let foundItems = [];
     try {
-      const { data, error } = await supabase
-        .from('FoundItem')
-        .select('*, Person!finder_id(*)')
-        .eq('category_id', lostItem.category_id)
-        .in('status', ['FOUND', 'STORED']);
+      // Filter by status_codes FOUND/STORED via join
+      const { data: statusData } = await supabase
+        .from('found_item_statuses')
+        .select('status_id')
+        .in('status_code', ['FOUND', 'STORED']);
+      const storedStatusIds = (statusData || []).map(s => s.status_id);
+
+      let query = supabase
+        .from('items')
+        .select('*, finder:persons!items_finder_id_fkey(full_name, email, phone)')
+        .eq('category_id', lostItem.category_id);
+      if (storedStatusIds.length > 0) query = query.in('status_id', storedStatusIds);
+
+      const { data, error } = await query;
       if (error) throw error;
       foundItems = data || [];
     } catch (err) {
       console.warn('Supabase offline in checkLostItemMatch, using local JSON database fallback');
       const db = loadLocalDb();
-      foundItems = (db.FoundItem || []).filter(item => 
-        Number(item.category_id) === Number(lostItem.category_id) && 
-        ['FOUND', 'STORED'].includes(item.status)
+      foundItems = (db.items || []).filter(item =>
+        Number(item.category_id) === Number(lostItem.category_id)
       );
     }
 
@@ -248,7 +265,7 @@ exports.checkLostItemMatch = async (lostItem) => {
     }
 
     const candidates = foundItems.map(item => ({
-      id: item.found_item_id,
+      id: item.item_id,
       name: item.item_name,
       description: item.description || ''
     }));
@@ -297,7 +314,7 @@ ${JSON.stringify(candidates, null, 2)}
         // Find reporter email to notify
         try {
           const { data: reporter, error: userError } = await supabase
-            .from('Person')
+            .from('persons')
             .select('*')
             .eq('person_id', lostItem.reporter_id)
             .single();
@@ -307,9 +324,9 @@ ${JSON.stringify(candidates, null, 2)}
             ownerEmail = reporter.email;
           }
         } catch (err) {
-          console.warn('Supabase offline or error fetching User in checkLostItemMatch, using local DB fallback');
+          console.warn('Supabase offline or error fetching Person in checkLostItemMatch, using local DB fallback');
           const db = loadLocalDb();
-          const localPerson = (db.Person || []).find(p => p.person_id === lostItem.reporter_id);
+          const localPerson = (db.persons || []).find(p => p.person_id === lostItem.reporter_id);
           if (localPerson) {
             ownerEmail = localPerson.email;
           }
@@ -325,16 +342,15 @@ ${JSON.stringify(candidates, null, 2)}
           }
           const parsedMatchId = Number(targetMatchId);
 
-          const matchedFound = foundItems.find(item => Number(item.found_item_id) === parsedMatchId);
+          const matchedFound = foundItems.find(item => Number(item.item_id) === parsedMatchId);
           if (matchedFound) {
-            const foundDesc = parseDescriptionText(matchedFound.description);
             const notificationMessage = `[แจ้งเตือนด่วนจากระบบ Unifind] 🔍
 
 ระบบตรวจพบลักษณะของหายที่คุณเพิ่งแจ้งเข้าระบบ ตรงกับสิ่งของที่อยู่ในห้องคลังกลางครับ!
 
 📌 ของที่คุณแจ้งหาย: "${lostItem.item_name}"
 📍 ของที่มีผู้เก็บได้ในคลัง: "${matchedFound.item_name}"
-📝 รายละเอียดที่พบ: ${foundDesc}
+📝 รายละเอียดที่พบ: ${matchedFound.description || ''}
 
 ✨ รายละเอียดที่ตรงกัน: ${matchResult.reason}
 
@@ -351,11 +367,11 @@ ${JSON.stringify(candidates, null, 2)}
         confidence: matchResult.confidence || 0,
         reason: matchResult.reason || '',
         matchedItem: matchedFound ? {
-          id: matchedFound.found_item_id,
+          id: matchedFound.item_id,
           name: matchedFound.item_name,
-          description: parseDescriptionText(matchedFound.description),
+          description: matchedFound.description || '',
           date: matchedFound.found_date,
-          founder: matchedFound.Person ? matchedFound.Person.full_name : 'ไม่ได้ระบุ'
+          founder: matchedFound.finder ? matchedFound.finder.full_name : 'ไม่ได้ระบุ'
         } : null
       };
     }
@@ -381,13 +397,13 @@ exports.analyzeMatchBetweenItems = async (lostItem, foundItem) => {
 - ชื่อ: "${lostItem.item_name}"
 - รายละเอียด: "${lostDesc}"
 - วันที่หาย: "${lostItem.lost_datetime || lostItem.created_at}"
-- สถานที่: "${lostItem.Location ? lostItem.Location.location_name : 'ไม่ระบุ'} ชั้น ${lostItem.floor || 'ไม่ระบุ'}"
+- สถานที่: "${lostItem.locations ? lostItem.locations.location_name + (lostItem.locations.floor ? ' ชั้น ' + lostItem.locations.floor : '') : 'ไม่ระบุ'}"
 
 สิ่งของที่มีผู้พบเจอ (Found Item):
 - ชื่อ: "${foundItem.item_name}"
 - รายละเอียด: "${foundDesc}"
 - วันที่พบ: "${foundItem.found_date || foundItem.created_at}"
-- สถานที่: "${foundItem.Location ? foundItem.Location.location_name : 'ไม่ระบุ'} ชั้น ${foundItem.floor || 'ไม่ระบุ'}"
+- สถานที่: "${foundItem.locations ? foundItem.locations.location_name + (foundItem.locations.floor ? ' ชั้น ' + foundItem.locations.floor : '') : 'ไม่ระบุ'}"
 
 หน้าที่ของคุณ:
 1. วิเคราะห์เปรียบเทียบความคล้ายคลึงทางกายภาพ สี ยี่ห้อ จุดสังเกต และสถานที่/เวลา

@@ -354,9 +354,9 @@ const runAIPairMatching = async () => {
 
   try {
     const headers = { Authorization: `Bearer ${authStore.token}` }
-    const response = await axios.post(`${config.public.apiBaseUrl}/lost-items/analyze-match`, {
+    const response = await axios.post(`${config.public.apiBaseUrl}/items/analyze-match`, {
       lost_item_id: selectedLost.value.dbId || selectedLost.value.id,
-      found_item_id: selectedFound.value.dbId || selectedFound.value.id
+      item_id: selectedFound.value.dbId || selectedFound.value.id
     }, { headers })
 
     matchResult.value = response.data

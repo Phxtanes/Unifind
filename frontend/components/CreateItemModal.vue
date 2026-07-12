@@ -92,18 +92,6 @@
                 </div>
               </transition>
 
-              <!-- ชั้นที่พบ -->
-              <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">ชั้นที่พบ</label>
-                <div class="relative">
-                  <input v-model="form.floor" type="text" placeholder="เช่น ชั้น 1, ชั้น 4"
-                    class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
-                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
-                    <font-awesome :icon="['fas', 'building']" class="text-xs" />
-                  </div>
-                </div>
-              </div>
-
               <!-- วันและเวลาที่พบ -->
               <div>
                 <label class="block text-xs font-bold text-slate-650 mb-1.5">วันและเวลาที่พบ <span class="text-red-500">*</span></label>
@@ -246,22 +234,17 @@
                 </div>
               </div>
 
-              <!-- ระบุตู้ล็อกเกอร์ที่จัดเก็บ -->
+              <!-- รหัสตู้ล็อกเกอร์ที่จัดเก็บ -->
               <div>
                 <label class="block text-xs font-bold text-slate-650 mb-1.5">
-                  ตู้ล็อกเกอร์ที่จัดเก็บ <span class="text-red-500">*</span> 
-                  <span class="text-[10px] text-indigo-500 font-bold ml-1">(เลือกตามเดือนเริ่มต้นอัตโนมัติ)</span>
+                  รหัสตู้ล็อกเกอร์ที่จัดเก็บ
+                  <span class="text-[10px] text-slate-400 font-normal ml-1">(ถ้ามี เช่น L01, L-03)</span>
                 </label>
                 <div class="relative">
-                  <select v-model="form.locker_id" required class="w-full pl-4 pr-12 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
-                    <option value="" disabled>เลือกตู้ล็อกเกอร์ที่จัดเก็บ</option>
-                    <option v-for="lock in itemsStore.lockers" :key="lock.locker_id" :value="lock.locker_id">
-                      {{ lock.locker_code }} ({{ lock.status }})
-                    </option>
-                  </select>
-                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 gap-1.5">
+                  <input v-model="form.locker_id" type="text" placeholder="เช่น L01, ตู้ A-02"
+                    class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
+                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                     <font-awesome :icon="['fas', 'lock']" class="text-xs" />
-                    <font-awesome :icon="['fas', 'chevron-down']" class="text-[10px]" />
                   </div>
                 </div>
               </div>
@@ -331,7 +314,6 @@ const form = ref({
   item_name: '',
   category_id: '',
   location_id: '',
-  floor: '',
   found_date: '',
   description: '',
   status: 'STORED',
@@ -351,7 +333,7 @@ const customLocationName = ref('')
 watch(() => props.show, (newVal) => {
   if (newVal) {
     // Ensure master data is fetched from the database
-    if (itemsStore.categories.length === 0 || itemsStore.locations.length === 0 || itemsStore.lockers.length === 0) {
+    if (itemsStore.categories.length === 0 || itemsStore.locations.length === 0) {
       itemsStore.fetchMasterData()
     }
     if (props.editItem) {
@@ -359,17 +341,8 @@ watch(() => props.show, (newVal) => {
         item_name: props.editItem.name || '',
         category_id: props.editItem.category_id || '',
         location_id: props.editItem.location_id || '',
-        floor: props.editItem.floor || '',
         found_date: dayjs(props.editItem.date).format('YYYY-MM-DDTHH:mm'),
-        description: (() => {
-          try {
-            const parsed = JSON.parse(props.editItem.description)
-            if (parsed && typeof parsed === 'object' && ('textDescription' in parsed)) {
-              return parsed.textDescription || ''
-            }
-          } catch (e) {}
-          return props.editItem.description || ''
-        })(),
+        description: props.editItem.description || '',
         status: props.editItem.status ? props.editItem.status.toUpperCase() : 'STORED',
         locker_id: props.editItem.locker_id || '',
         finder_name: props.editItem.finderName || '',
@@ -386,7 +359,6 @@ watch(() => props.show, (newVal) => {
         item_name: '',
         category_id: '',
         location_id: '',
-        floor: '',
         found_date: dayjs().format('YYYY-MM-DDTHH:mm'),
         description: '',
         status: 'STORED',
@@ -404,22 +376,6 @@ watch(() => props.show, (newVal) => {
   }
 })
 
-const autoSelectLocker = () => {
-  const dateVal = form.value.found_date
-  if (dateVal && itemsStore.lockers.length > 0) {
-    const month = dayjs(dateVal).month() + 1
-    const matchedLocker = itemsStore.lockers.find(lock => {
-      const codeNum = parseInt(lock.locker_code.replace(/\D/g, ''))
-      return codeNum === month
-    })
-    if (matchedLocker) {
-      form.value.locker_id = matchedLocker.locker_id
-    }
-  }
-}
-
-watch(() => form.value.found_date, autoSelectLocker)
-watch(() => itemsStore.lockers, autoSelectLocker, { deep: true })
 
 const triggerFileInput = () => {
   fileInput.value?.click()
@@ -475,11 +431,10 @@ const submitForm = async () => {
     item_name: form.value.item_name,
     category_id: parseInt(form.value.category_id),
     location_id: parseInt(finalLocationId),
-    floor: form.value.floor,
     found_date: form.value.found_date,
     description: form.value.description,
     status: form.value.status,
-    locker_id: parseInt(form.value.locker_id)
+    locker_id: form.value.locker_id || null  // VARCHAR — send as-is
   }
 
   const finderData = {

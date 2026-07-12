@@ -5,9 +5,9 @@
 ---
 
 ## 📌 ภาพรวม (Overview)
-ฐานข้อมูลประกอบด้วย 11 ตารางหลัก โดยสามารถแบ่งออกเป็นกลุ่มได้ดังนี้:
+ฐานข้อมูลประกอบด้วย 14 ตารางหลัก โดยสามารถแบ่งออกเป็นกลุ่มได้ดังนี้:
 1. **ระบบผู้ใช้งาน (Authentication):** `User`
-2. **ข้อมูลหลัก (Master Data):** `Person`, `Category`, `Location`, `Locker`
+2. **ข้อมูลหลัก (Master Data):** `Person`, `Category`, `Building`, `Location`, `Locker`, `FoundItemStatus`, `LostItemStatus`
 3. **ข้อมูลสิ่งของ (Item Data):** `FoundItem`, `LostItem`, `ItemPhoto`
 4. **ระบบการจัดการ (Process Data):** `Match`, `Claim`, `AuditLog`
 
@@ -15,7 +15,7 @@
 
 ## 📝 รายละเอียดแต่ละตาราง (Tables Dictionary)
 
-### 1. User (บัญชีผู้ใช้งานระบบ) ⭐ *[NEW]*
+### 1. User (บัญชีผู้ใช้งานระบบ)
 เก็บข้อมูลบัญชีของเจ้าหน้าที่และผู้ดูแลระบบ สำหรับการ Login เข้าสู่ระบบ Staff Portal
 
 | Field | Type | รายละเอียด |
@@ -30,10 +30,6 @@
 | `last_login` | TIMESTAMP | วันเวลาที่เข้าระบบล่าสุด |
 | `created_at` | TIMESTAMP | วันที่สร้างบัญชี |
 | `updated_at` | TIMESTAMP | วันที่แก้ไขบัญชีล่าสุด |
-
-**รายละเอียดสิทธิ์ (Role):**
-- **ADMIN:** จัดการผู้ใช้งาน, ดูรายงานทั้งหมด, แก้ไขข้อมูลได้ทุกอย่าง
-- **STAFF:** บันทึกของที่พบ, บันทึกของหาย, คืนสิ่งของ, ค้นหาข้อมูล
 
 ---
 
@@ -50,6 +46,8 @@
 | `phone` | VARCHAR | เบอร์โทรศัพท์ |
 | `department` | VARCHAR | คณะ / หน่วยงาน |
 
+---
+
 ### 3. Category (หมวดหมู่)
 เก็บข้อมูลหมวดหมู่สิ่งของ (เช่น เอกสาร, กระเป๋า, เครื่องประดับ)
 
@@ -60,26 +58,70 @@
 | `description` | TEXT | คำอธิบาย |
 | `is_active` | BOOLEAN | สถานะการใช้งาน (Default: true) |
 
-### 4. Location (สถานที่)
-เก็บข้อมูลสถานที่หลักที่เป็นอาคาร/ตึกภายในมหาวิทยาลัย
+---
+
+### 4. Building (อาคาร/ตึก) ⭐ *[NEW]*
+เก็บข้อมูลหลักของอาคาร/ตึก เพื่อป้องกันการระบุชื่อตึกซ้ำซ้อน
+
+| Field | Type | รายละเอียด |
+|---|---|---|
+| `building_id` | **PK** (BIGINT) | รหัสตึก |
+| `building_name` | VARCHAR | ชื่อตึก (เช่น อาคาร 24, อาคาร 6) - *UNIQUE* |
+| `description` | TEXT | คำอธิบายเพิ่มเติม |
+| `is_active` | BOOLEAN | สถานะการใช้งาน |
+
+---
+
+### 5. Location (สถานที่/ห้อง) ⭐ *[UPDATED]*
+เก็บข้อมูลสถานที่ย่อยที่เป็นห้องหรือจุดระบุภายในอาคาร
 
 | Field | Type | รายละเอียด |
 |---|---|---|
 | `location_id` | **PK** (BIGINT) | รหัสสถานที่ |
-| `location_name` | VARCHAR | ชื่อตึก/อาคาร (เช่น ตึก 1 ถึง ตึก 24) |
+| `location_name` | VARCHAR | ชื่อสถานที่ (เช่น ห้องเรียน 2402, โรงอาหารหลัก) |
+| `building_id` | **FK** (BIGINT) | อ้างอิงตาราง `Building` |
 | `description` | TEXT | คำอธิบายเพิ่มเติม |
+| `is_active` | BOOLEAN | สถานะการใช้งาน |
 
-### 5. Locker (ตู้เก็บของ)
+---
+
+### 6. Locker (ตู้เก็บของ)
 เก็บข้อมูลตู้สำหรับจัดเก็บสิ่งของที่เก็บได้ (มีตู้ที่ 1-12)
 
 | Field | Type | รายละเอียด |
 |---|---|---|
 | `locker_id` | **PK** (BIGINT) | รหัสตู้เก็บของ |
-| `locker_code` | VARCHAR | รหัสหน้าตู้ (เช่น ล็อกเกอร์ที่ 1 ถึง ล็อกเกอร์ที่ 12) - *UNIQUE* |
+| `locker_code` | VARCHAR | รหัสหน้าตู้ - *UNIQUE* |
 | `location_id` | **FK** (BIGINT) | อ้างอิงตาราง `Location` (ถ้ามี) |
 | `status` | VARCHAR | สถานะ (`AVAILABLE`, `IN_USE`, `MAINTENANCE`) |
 
-### 6. FoundItem (สิ่งของที่พบ)
+---
+
+### 7. FoundItemStatus (สถานะสิ่งของที่พบ) ⭐ *[NEW]*
+ตาราง lookup เก็บสถานะและรายละเอียดแสดงผลสำหรับสิ่งของที่พบ
+
+| Field | Type | รายละเอียด |
+|---|---|---|
+| `status_id` | **PK** (BIGINT) | รหัสสถานะ |
+| `status_code` | VARCHAR | รหัสสากล (เช่น FOUND, STORED, MATCHED, CLAIMED) - *UNIQUE* |
+| `status_name_th` | VARCHAR | คำอธิบายภาษาไทย (แสดงบนเว็บ) |
+| `description` | TEXT | รายละเอียดสถานะ |
+
+---
+
+### 8. LostItemStatus (สถานะสิ่งของที่หาย) ⭐ *[NEW]*
+ตาราง lookup เก็บสถานะและรายละเอียดแสดงผลสำหรับแจ้งของหาย
+
+| Field | Type | รายละเอียด |
+|---|---|---|
+| `status_id` | **PK** (BIGINT) | รหัสสถานะ |
+| `status_code` | VARCHAR | รหัสสากล (เช่น LOST, MATCHED, CLOSED) - *UNIQUE* |
+| `status_name_th` | VARCHAR | คำอธิบายภาษาไทย (แสดงบนเว็บ) |
+| `description` | TEXT | รายละเอียดสถานะ |
+
+---
+
+### 9. FoundItem (สิ่งของที่พบ) ⭐ *[UPDATED]*
 เก็บข้อมูลสิ่งของที่มีคนเก็บได้และนำมาส่งมอบ
 
 | Field | Type | รายละเอียด |
@@ -87,15 +129,17 @@
 | `found_item_id` | **PK** (BIGINT) | รหัสสิ่งของที่พบ |
 | `item_name` | VARCHAR | ชื่อสิ่งของ |
 | `category_id` | **FK** (BIGINT) | อ้างอิงตาราง `Category` |
-| `location_id` | **FK** (BIGINT) | อ้างอิงสถานที่พบ (`Location`) |
-| `floor` | VARCHAR | ชั้นที่พบ (กรอกเอง) |
+| `location_id` | **FK** (BIGINT) | อ้างอิงตาราง `Location` |
+| `floor` | INTEGER | ชั้นที่พบ (เปลี่ยนเป็นตัวเลข) |
 | `found_date` | DATE | วันที่พบสิ่งของ |
 | `description` | TEXT | รายละเอียด/ตำหนิ |
-| `status` | ENUM | สถานะ (`FOUND`, `STORED`, `MATCHED`, `CLAIMED`, `RETURNED`, `EXPIRED`) |
+| `status_id` | **FK** (BIGINT) | อ้างอิงตาราง `FoundItemStatus` |
 | `locker_id` | **FK** (BIGINT) | ตู้เก็บของที่จัดเก็บ (`Locker`) |
 | `finder_id` | **FK** (BIGINT) | ผู้พบสิ่งของ (`Person`) |
 
-### 7. LostItem (สิ่งของที่หาย)
+---
+
+### 10. LostItem (สิ่งของที่หาย) ⭐ *[UPDATED]*
 เก็บข้อมูลการแจ้งของหาย
 
 | Field | Type | รายละเอียด |
@@ -103,14 +147,16 @@
 | `lost_item_id` | **PK** (BIGINT) | รหัสสิ่งของที่หาย |
 | `item_name` | VARCHAR | ชื่อสิ่งของ |
 | `category_id` | **FK** (BIGINT) | อ้างอิงตาราง `Category` |
-| `location_id` | **FK** (BIGINT) | อ้างอิงสถานที่หาย (`Location`) |
-| `floor` | VARCHAR | ชั้นที่หาย (กรอกเอง) |
+| `location_id` | **FK** (BIGINT) | อ้างอิงตาราง `Location` |
+| `floor` | INTEGER | ชั้นที่หาย (เปลี่ยนเป็นตัวเลข) |
 | `lost_datetime` | TIMESTAMP | วันเวลาที่คาดว่าหาย |
 | `description` | TEXT | รายละเอียด/ตำหนิ |
-| `status` | ENUM | สถานะ (`LOST`, `MATCHED`, `CLOSED`) |
+| `status_id` | **FK** (BIGINT) | อ้างอิงตาราง `LostItemStatus` |
 | `reporter_id` | **FK** (BIGINT) | ผู้แจ้งหาย (`Person`) |
 
-### 8. Match (การจับคู่)
+---
+
+### 11. Match (การจับคู่)
 ตารางเก็บประวัติการจับคู่ระหว่างของที่พบ (Found) และของที่หาย (Lost)
 
 | Field | Type | รายละเอียด |
@@ -123,7 +169,9 @@
 | `matched_by` | **FK** (BIGINT) | ผู้ดำเนินการ/ตรวจสอบ (`User`) |
 | `remark` | TEXT | หมายเหตุ |
 
-### 9. Claim (การรับคืน)
+---
+
+### 12. Claim (การรับคืน)
 บันทึกประวัติการส่งมอบสิ่งของคืนให้เจ้าของ
 
 | Field | Type | รายละเอียด |
@@ -136,7 +184,9 @@
 | `status` | ENUM | สถานะ (`CLAIMED`, `RETURNED`, `CANCELLED`) |
 | `created_by` | **FK** (BIGINT) | เจ้าหน้าที่ผู้ทำรายการ (`User`) |
 
-### 10. ItemPhoto (รูปภาพสิ่งของ)
+---
+
+### 13. ItemPhoto (รูปภาพสิ่งของ)
 เก็บข้อมูลรูปภาพของสิ่งของ เพื่อให้ 1 รายการสามารถมีได้หลายรูป
 
 | Field | Type | รายละเอียด |
@@ -147,7 +197,9 @@
 | `file_url` | TEXT | ลิงก์รูปภาพ |
 | `is_primary` | BOOLEAN | เป็นรูปหลักหรือไม่ |
 
-### 11. AuditLog (ประวัติการแก้ไข)
+---
+
+### 14. AuditLog (ประวัติการแก้ไข)
 เก็บ Log การกระทำต่างๆ ในระบบ เพื่อความปลอดภัยและการตรวจสอบ (Audit)
 
 | Field | Type | รายละเอียด |
@@ -160,7 +212,3 @@
 | `old_value` | JSONB | ข้อมูลก่อนแก้ (JSON) |
 | `new_value` | JSONB | ข้อมูลใหม่ (JSON) |
 | `ip_address` | VARCHAR | IP ของผู้ใช้ |
-
----
-
-*เอกสารนี้ถูกสร้างขึ้นเพื่อใช้ประกอบการพัฒนาโปรเจกต์ UniFind*

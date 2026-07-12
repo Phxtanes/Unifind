@@ -61,8 +61,8 @@ export const useItemHelpers = () => {
       if (!item) return
 
       const isLost = item.type === 'lost'
-      const endpoint = isLost ? 'lost-items' : 'found-items'
-      
+      const endpoint = isLost ? 'lost-items' : 'items'
+
       let dbStatus = ''
       if (isLost) {
         dbStatus = newStatus === 'lost' ? 'LOST' : 'CLOSED'
@@ -75,12 +75,9 @@ export const useItemHelpers = () => {
           const idx = itemsStore.lostItems.findIndex(i => i.lost_item_id === id)
           if (idx !== -1) itemsStore.lostItems[idx].status = dbStatus
         } else {
-          const idx = itemsStore.foundItems.findIndex(i => i.found_item_id === id)
+          const idx = itemsStore.foundItems.findIndex(i => i.item_id === id)
           if (idx !== -1) {
             itemsStore.foundItems[idx].status = dbStatus
-            if (reason) {
-              itemsStore.foundItems[idx].description = reason
-            }
           }
         }
         return
@@ -88,25 +85,10 @@ export const useItemHelpers = () => {
 
       const body: any = { status: dbStatus }
       if (reason && !isLost) {
-        let updatedDesc = item.description || ''
-        try {
-          const trimmed = updatedDesc.trim()
-          if (trimmed.startsWith('{')) {
-            const parsed = JSON.parse(trimmed)
-            if (parsed && typeof parsed === 'object') {
-              const currentText = parsed.textDescription || ''
-              parsed.textDescription = currentText ? `${currentText}\n[นำกลับไปยังคลังเนื่องจาก: ${reason}]` : `[นำกลับไปยังคลังเนื่องจาก: ${reason}]`
-              updatedDesc = JSON.stringify(parsed)
-            } else {
-              updatedDesc = `${updatedDesc}\n[นำกลับไปยังคลังเนื่องจาก: ${reason}]`
-            }
-          } else {
-            updatedDesc = updatedDesc ? `${updatedDesc}\n[นำกลับไปยังคลังเนื่องจาก: ${reason}]` : `[นำกลับไปยังคลังเนื่องจาก: ${reason}]`
-          }
-        } catch (e) {
-          updatedDesc = updatedDesc ? `${updatedDesc}\n[นำกลับไปยังคลังเนื่องจาก: ${reason}]` : `[นำกลับไปยังคลังเนื่องจาก: ${reason}]`
-        }
-        body.description = updatedDesc
+        const currentDesc = item.description || ''
+        body.description = currentDesc
+          ? `${currentDesc}\n[นำกลับไปยังคลังเนื่องจาก: ${reason}]`
+          : `[นำกลับไปยังคลังเนื่องจาก: ${reason}]`
       }
 
       await axios.put(`${config.public.apiBaseUrl}/${endpoint}/${id}`, body, {
@@ -134,13 +116,13 @@ export const useItemHelpers = () => {
       if (!item) return
 
       const isLost = item.type === 'lost'
-      const endpoint = isLost ? 'lost-items' : 'found-items'
+      const endpoint = isLost ? 'lost-items' : 'items'
 
       if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
         if (isLost) {
           itemsStore.lostItems = itemsStore.lostItems.filter(i => i.lost_item_id !== id)
         } else {
-          itemsStore.foundItems = itemsStore.foundItems.filter(i => i.found_item_id !== id)
+          itemsStore.foundItems = itemsStore.foundItems.filter(i => i.item_id !== id)
         }
         return
       }

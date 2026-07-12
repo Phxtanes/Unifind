@@ -2,17 +2,17 @@ const supabase = require('../config/supabase');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-// Helper to format Supabase user response (convert DB schema to frontend expected formats)
+// Helper to format user response
 const formatUser = (user) => {
   if (!user) return null;
   return {
     id: user.user_id,
     username: user.username,
     email: user.email,
-    role: user.role ? user.role.toLowerCase() : 'member', // frontend expects: 'admin', 'staff', 'member'
+    full_name: user.full_name,
+    role: user.role ? user.role.toLowerCase() : 'staff',
     isActive: user.status === 'Active',
     isApproved: user.status === 'Active' || user.role === 'ADMIN' || user.role === 'STAFF',
-    createdAt: user.created_at
   };
 };
 
@@ -21,9 +21,8 @@ exports.register = async (req, res) => {
   try {
     const { username, email, password, full_name } = req.body;
 
-    // Check if username already exists
     const { data: existingUser } = await supabase
-      .from('User')
+      .from('users')
       .select('user_id')
       .eq('username', username)
       .maybeSingle();
@@ -32,9 +31,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: 'Username is already taken' });
     }
 
-    // Check if email already exists
     const { data: existingEmail } = await supabase
-      .from('User')
+      .from('users')
       .select('user_id')
       .eq('email', email)
       .maybeSingle();
@@ -44,16 +42,16 @@ exports.register = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 8);
-    
+
     const { error: insertError } = await supabase
-      .from('User')
+      .from('users')
       .insert({
         username,
         email,
         password_hash: hashedPassword,
-        full_name: username,
+        full_name: full_name || username,
         role: 'STAFF',
-        status: 'Inactive'
+        status: 'Inactive',
       });
 
     if (insertError) throw insertError;
@@ -70,16 +68,15 @@ exports.login = async (req, res) => {
     const { username, password } = req.body;
 
     const { data: user } = await supabase
-      .from('User')
+      .from('users')
       .select('*')
       .eq('username', username)
       .maybeSingle();
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found.' });
     }
 
-    // Check if account is active
     if (user.status === 'Inactive') {
       return res.status(403).json({ message: 'บัญชีของคุณยังไม่ได้รับการอนุมัติสิทธิ์เข้าใช้งาน หรือ ถูกระงับการใช้งานชั่วคราว' });
     }
@@ -89,30 +86,31 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid Password!' });
     }
 
-    const token = jwt.sign({ id: user.user_id, role: user.role.toLowerCase() }, process.env.JWT_SECRET, {
-      expiresIn: 86400 // 24 hours
-    });
+    const token = jwt.sign(
+      { id: user.user_id, role: user.role.toLowerCase() },
+      process.env.JWT_SECRET,
+      { expiresIn: 86400 }
+    );
 
     res.status(200).json({
       id: user.user_id,
       username: user.username,
       email: user.email,
+      full_name: user.full_name,
       role: user.role.toLowerCase(),
-      accessToken: token
+      accessToken: token,
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-/* --- Admin User Management Methods --- */
-
-// Get all users
+// Get all active users
 exports.getUsers = async (req, res) => {
   try {
     const { data: users, error } = await supabase
-      .from('User')
-      .select('user_id, username, email, role, status, created_at')
+      .from('users')
+      .select('user_id, username, email, full_name, role, status')
       .in('role', ['ADMIN', 'STAFF'])
       .eq('status', 'Active');
 
@@ -127,15 +125,14 @@ exports.getUsers = async (req, res) => {
 // Admin creates a new user directly
 exports.createUser = async (req, res) => {
   try {
-    const { username, email, password, role = 'STAFF', status = 'Active' } = req.body;
+    const { username, email, password, full_name, role = 'STAFF', status = 'Active' } = req.body;
 
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'Username, email, and password are required' });
     }
 
-    // Check if username already exists
     const { data: existingUser } = await supabase
-      .from('User')
+      .from('users')
       .select('user_id')
       .eq('username', username)
       .maybeSingle();
@@ -144,9 +141,8 @@ exports.createUser = async (req, res) => {
       return res.status(400).json({ message: 'Username is already taken' });
     }
 
-    // Check if email already exists
     const { data: existingEmail } = await supabase
-      .from('User')
+      .from('users')
       .select('user_id')
       .eq('email', email)
       .maybeSingle();
@@ -156,16 +152,16 @@ exports.createUser = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 8);
-    
+
     const { data: newUser, error: insertError } = await supabase
-      .from('User')
+      .from('users')
       .insert({
         username,
         email,
         password_hash: hashedPassword,
-        full_name: username,
+        full_name: full_name || username,
         role: role.toUpperCase(),
-        status: status
+        status,
       })
       .select()
       .single();
@@ -182,39 +178,33 @@ exports.createUser = async (req, res) => {
 exports.getPendingUsers = async (req, res) => {
   try {
     const { data: pendingUsers, error } = await supabase
-      .from('User')
-      .select('user_id, username, email, role, status, created_at')
+      .from('users')
+      .select('user_id, username, email, full_name, role, status')
       .eq('role', 'STAFF')
       .eq('status', 'Inactive');
 
     if (error) throw error;
 
-    const formattedUsers = (pendingUsers || []).map(formatUser);
-    res.status(200).json(formattedUsers);
+    res.status(200).json((pendingUsers || []).map(formatUser));
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Approve member to staff
+// Approve user (set Active + STAFF)
 exports.approveUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
     const { data: user, error } = await supabase
-      .from('User')
-      .update({
-        role: 'STAFF',
-        status: 'Active'
-      })
+      .from('users')
+      .update({ role: 'STAFF', status: 'Active' })
       .eq('user_id', userId)
       .select()
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return res.status(404).json({ message: 'User not found' });
-      }
+      if (error.code === 'PGRST116') return res.status(404).json({ message: 'User not found' });
       throw error;
     }
 
@@ -224,40 +214,38 @@ exports.approveUser = async (req, res) => {
   }
 };
 
-// Reject member staff request
+// Reject and delete staff request
 exports.rejectUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
     const { error } = await supabase
-      .from('User')
+      .from('users')
       .delete()
       .eq('user_id', userId);
 
     if (error) throw error;
 
-    res.status(200).json(pendingUsers);
+    res.status(200).json({ message: 'User request rejected and removed' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Approve/Activate user
+// Activate user
 exports.activateUser = async (req, res) => {
   try {
     const { userId } = req.params;
 
     const { data: user, error } = await supabase
-      .from('User')
+      .from('users')
       .update({ status: 'Active' })
       .eq('user_id', userId)
       .select()
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return res.status(404).json({ message: 'User not found' });
-      }
+      if (error.code === 'PGRST116') return res.status(404).json({ message: 'User not found' });
       throw error;
     }
 
@@ -273,16 +261,14 @@ exports.deactivateUser = async (req, res) => {
     const { userId } = req.params;
 
     const { data: user, error } = await supabase
-      .from('User')
+      .from('users')
       .update({ status: 'Inactive' })
       .eq('user_id', userId)
       .select()
       .single();
 
     if (error) {
-      if (error.code === 'PGRST116') {
-        return res.status(404).json({ message: 'User not found' });
-      }
+      if (error.code === 'PGRST116') return res.status(404).json({ message: 'User not found' });
       throw error;
     }
 
@@ -298,7 +284,7 @@ exports.deleteUser = async (req, res) => {
     const { userId } = req.params;
 
     const { error } = await supabase
-      .from('User')
+      .from('users')
       .delete()
       .eq('user_id', userId);
 
@@ -319,7 +305,7 @@ exports.bindLine = async (req, res) => {
     }
 
     const { data: user, error } = await supabase
-      .from('User')
+      .from('users')
       .select('email, username')
       .eq('user_id', req.userId)
       .single();
@@ -331,15 +317,9 @@ exports.bindLine = async (req, res) => {
     const lineBindings = require('../config/lineBindings');
     const matchingService = require('../services/matchingService');
 
-    // Perform binding
     lineBindings.bind(user.email, lineUserId);
 
-    // Send a confirmation LINE Push Notification
-    const confirmationText = `[ระบบ Unifind] 🎉 ยินดีด้วย! 
-
-บัญชีไลน์นี้ได้รับการผูกเชื่อมโยงเข้ากับระบบ Unifind ของเจ้าหน้าที่ "${user.username}" (อีเมล: ${user.email}) เรียบร้อยแล้วครับ!
-
-นับจากนี้ท่านจะได้รับการแจ้งเตือนด่วนทันทีหากระบบตรวจพบคู่ของหายที่ตรงกันครับ`;
+    const confirmationText = `[ระบบ Unifind] 🎉 ยินดีด้วย! \n\nบัญชีไลน์นี้ได้รับการผูกเชื่อมโยงเข้ากับระบบ Unifind ของเจ้าหน้าที่ "${user.username}" (อีเมล: ${user.email}) เรียบร้อยแล้วครับ!\n\nนับจากนี้ท่านจะได้รับการแจ้งเตือนด่วนทันทีหากระบบตรวจพบคู่ของหายที่ตรงกันครับ`;
 
     await matchingService.sendPushToLine(lineUserId, confirmationText);
 
@@ -348,4 +328,3 @@ exports.bindLine = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-

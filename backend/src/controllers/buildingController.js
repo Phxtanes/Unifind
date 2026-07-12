@@ -1,11 +1,11 @@
 const supabase = require('../config/supabase');
 
-exports.getLocations = async (req, res) => {
+exports.getBuildings = async (req, res) => {
   try {
     const { data, error } = await supabase
-      .from('locations')
-      .select('*, buildings(building_name)')
-      .order('location_name', { ascending: true });
+      .from('buildings')
+      .select('*')
+      .order('building_name', { ascending: true });
 
     if (error) throw error;
     res.status(200).json(data);
@@ -14,17 +14,12 @@ exports.getLocations = async (req, res) => {
   }
 };
 
-exports.createLocation = async (req, res) => {
+exports.createBuilding = async (req, res) => {
   try {
-    const { location_name, building_id, floor, description } = req.body;
+    const { building_name, description } = req.body;
     const { data, error } = await supabase
-      .from('locations')
-      .insert({
-        location_name,
-        building_id: building_id ? parseInt(building_id) : null,
-        floor: floor !== undefined ? floor : null,
-        description,
-      })
+      .from('buildings')
+      .insert({ building_name, description })
       .select()
       .single();
 
@@ -35,14 +30,14 @@ exports.createLocation = async (req, res) => {
   }
 };
 
-exports.updateLocation = async (req, res) => {
+exports.updateBuilding = async (req, res) => {
   try {
     const { id } = req.params;
-    const { location_name, building_id, floor, description, is_active } = req.body;
+    const { building_name, description } = req.body;
     const { data, error } = await supabase
-      .from('locations')
-      .update({ location_name, building_id, floor, description, is_active })
-      .eq('location_id', id)
+      .from('buildings')
+      .update({ building_name, description })
+      .eq('building_id', id)
       .select()
       .single();
 
@@ -53,16 +48,16 @@ exports.updateLocation = async (req, res) => {
   }
 };
 
-exports.deleteLocation = async (req, res) => {
+exports.deleteBuilding = async (req, res) => {
   try {
     const { id } = req.params;
     const { error } = await supabase
-      .from('locations')
+      .from('buildings')
       .delete()
-      .eq('location_id', id);
+      .eq('building_id', id);
 
     if (error) throw error;
-    res.status(200).json({ message: 'Location deleted' });
+    res.status(200).json({ message: 'Building deleted' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

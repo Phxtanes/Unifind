@@ -1,8 +1,4 @@
 export default defineNuxtConfig({
-  ssr: false,
-  nitro: {
-    preset: 'static'
-  },
   app: {
     head: {
       link: [
@@ -36,12 +32,13 @@ export default defineNuxtConfig({
       hmr: {
         protocol: 'ws',
         host: 'localhost',
-        port: 9000
+        port: 9000,
+        clientPort: 9000
       }
     }
   },
   experimental: {
     appManifest: false
   },
-  devtools: { enabled: true }
+  devtools: { enabled: false }
 })

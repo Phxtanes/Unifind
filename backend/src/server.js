@@ -5,11 +5,10 @@ const cors = require('cors');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const supabase = require('./config/supabase');
-const authRoutes = require('./routes/authRoutes');
-const lostItemRoutes = require('./routes/lostItemRoutes');
-const foundItemRoutes = require('./routes/foundItemRoutes');
-const lineRoutes = require('./routes/lineRoutes');
-const claimRoutes = require('./routes/claimRoutes');
+const authRoutes       = require('./routes/authRoutes');
+const itemRoutes       = require('./routes/itemRoutes');
+const lostItemRoutes   = require('./routes/lostItemRoutes');
+const lineRoutes       = require('./routes/lineRoutes');
 const masterDataRoutes = require('./routes/masterDataRoutes');
 
 const app = express();
@@ -23,12 +22,11 @@ app.use(express.json());
 app.use('/uploads', express.static('uploads'));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/lost-items', lostItemRoutes);
-app.use('/api/found-items', foundItemRoutes);
-app.use('/api/line', lineRoutes);
-app.use('/api/claims', claimRoutes);
-app.use('/api/master', masterDataRoutes);
+app.use('/api/auth',        authRoutes);
+app.use('/api/items',       itemRoutes);
+app.use('/api/lost-items',  lostItemRoutes);
+app.use('/api/line',        lineRoutes);
+app.use('/api/master',      masterDataRoutes);
 
 const PORT = process.env.PORT || 9001;
 
@@ -36,7 +34,7 @@ const PORT = process.env.PORT || 9001;
 const seedAdmin = async () => {
   try {
     const { count, error } = await supabase
-      .from('User')
+      .from('users')
       .select('*', { count: 'exact', head: true })
       .eq('role', 'ADMIN');
 
@@ -48,20 +46,20 @@ const seedAdmin = async () => {
     if (count === 0) {
       const hashedPassword = await bcrypt.hash('admin1234', 8);
       const { error: insertError } = await supabase
-        .from('User')
+        .from('users')
         .insert({
-          username: 'admin',
-          full_name: 'System Admin',
-          email: 'admin@utcc.ac.th',
+          username:      'admin',
+          full_name:     'System Admin',
+          email:         'admin@utcc.ac.th',
           password_hash: hashedPassword,
-          role: 'ADMIN',
-          status: 'Active'
+          role:          'ADMIN',
+          status:        'Active',
         });
 
       if (insertError) {
         console.error('⚠️ Seeding admin error:', insertError.message);
       } else {
-        console.log('👑 Default Admin seeded successfully in Supabase: admin / admin1234');
+        console.log('👑 Default Admin seeded successfully: admin / admin1234');
       }
     } else {
       console.log('✅ Admin user already exists in Supabase');

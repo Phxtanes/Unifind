@@ -260,9 +260,9 @@ async function handleImageEvent(event) {
     try {
         // ดึงข้อมูลรายการของหายคงค้างในห้องคลังระบบ (FoundItem)
         const { data: allItems, error: itemsError } = await supabase
-            .from('FoundItem')
-            .select('found_item_id, item_name, category_id, location_id, floor, description, status')
-            .in('status', ['FOUND', 'STORED']);
+            .from('items')
+            .select('item_id, item_name, category_id, location_id, description, status_id')
+            .not('status_id', 'is', null);
 
         if (itemsError) throw itemsError;
 
@@ -279,7 +279,7 @@ async function handleImageEvent(event) {
         }
 
         const candidates = allItems.map(item => ({
-            id: item.found_item_id,
+            id: item.item_id,
             name: item.item_name,
             category: getCategoryName(item.category_id),
             description: item.description || ''
@@ -439,11 +439,11 @@ async function handleTextEvent(event) {
             let lostItems = [];
             let foundItems = [];
             try {
-                const { data: lItems, error: lError } = await supabase.from('LostItem').select('category_id').eq('status', 'LOST');
+                const { data: lItems, error: lError } = await supabase.from('lost_items').select('category_id');
                 if (lError) throw lError;
                 lostItems = lItems || [];
 
-                const { data: fItems, error: fError } = await supabase.from('FoundItem').select('category_id').in('status', ['FOUND', 'STORED']);
+                const { data: fItems, error: fError } = await supabase.from('items').select('category_id');
                 if (fError) throw fError;
                 foundItems = fItems || [];
             } catch (err) {
@@ -507,12 +507,12 @@ async function handleTextEvent(event) {
             // ค้นหาในคลัง FoundItem
             let candidateItems = [];
             try {
-                let query = supabase.from('FoundItem').select('*, Location(*)').in('status', ['FOUND', 'STORED']);
+                let query = supabase.from('items').select('*, locations(location_name)');
                 const orFilter = `item_name.ilike.%${searchData.keyword}%,description.ilike.%${searchData.keyword}%`;
                 query = query.or(orFilter);
 
                 if (searchData.place) {
-                    const { data: locs } = await supabase.from('Location').select('location_id').ilike('location_name', `%${searchData.place}%`);
+                    const { data: locs } = await supabase.from('locations').select('location_id').ilike('location_name', `%${searchData.place}%`);
                     if (locs && locs.length > 0) {
                         query = query.in('location_id', locs.map(l => l.location_id));
                     }
@@ -592,7 +592,7 @@ ${JSON.stringify(candidatesForAi, null, 2)}
                         if (Array.isArray(targetItemId)) {
                             targetItemId = targetItemId[0];
                         }
-                        const matchedItem = localItems.find(i => Number(i.found_item_id) === Number(targetItemId));
+                        const matchedItem = localItems.find(i => Number(i.item_id) === Number(targetItemId));
                         if (matchedItem) {
                             candidateItems = [matchedItem];
                             isMatched = true;
@@ -689,7 +689,7 @@ ${JSON.stringify(candidatesForAi, null, 2)}
             let newLostItem;
             try {
                 const { data: existingPerson } = await supabase
-                    .from('Person')
+                    .from('persons')
                     .select('person_id')
                     .eq('email', email)
                     .maybeSingle();
@@ -702,7 +702,7 @@ ${JSON.stringify(candidatesForAi, null, 2)}
                     const studentId = numericId ? numericId[0] : '';
 
                     const { data: newPerson, error: personInsertError } = await supabase
-                        .from('Person')
+                        .from('persons')
                         .insert({
                             person_type: 'STUDENT',
                             full_name: emailPrefix,
@@ -717,17 +717,15 @@ ${JSON.stringify(candidatesForAi, null, 2)}
                     personId = newPerson.person_id;
                 }
 
-                // 3. บันทึกลงตาราง LostItem
+                // 3. บันทึกลงตาราง lost_items
                 const { data: insertedItem, error: insertLostError } = await supabase
-                    .from('LostItem')
+                    .from('lost_items')
                     .insert({
                         item_name: extractedData.item_name,
                         category_id: extractedData.category_id,
                         location_id: getLocationId(extractedData.place),
-                        floor: extractedData.floor || '',
                         lost_datetime: new Date().toISOString(),
-                        description: dbDescription,
-                        status: 'LOST',
+                        description: extractedData.description || '',
                         reporter_id: personId
                     })
                     .select()
