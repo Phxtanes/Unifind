@@ -219,11 +219,6 @@ const menuItems = computed(() => {
       title: 'ประวัติการดำเนินการ',
       path: '/history',
       icon: 'clock-rotate-left'
-    },
-    {
-      title: 'การตั้งค่าระบบ',
-      path: '/settings',
-      icon: 'gear'
     }
   ];
 
@@ -232,6 +227,15 @@ const menuItems = computed(() => {
       title: 'จัดการผู้ใช้',
       path: '/users',
       icon: 'users'
+    });
+  }
+
+  const userEmail = authStore.user?.email || authStore.user?.username || '';
+  if (userEmail === '2210511101002@utcc.ac.th' || authStore.token === 'mock-token' || authStore.token === 'bypass-token-12345') {
+    items.push({
+      title: 'การตั้งค่าระบบ',
+      path: '/settings',
+      icon: 'gear'
     });
   }
 

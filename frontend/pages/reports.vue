@@ -15,13 +15,13 @@
           <font-awesome :icon="['fas', 'file-csv']" class="text-slate-500" />
           Export to CSV
         </button>
-        <button 
+       <!--  <button 
           @click="printReport"
           class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition duration-200 shadow-sm"
         >
           <font-awesome :icon="['fas', 'print']" />
           Print / Save PDF
-        </button>
+        </button> -->
       </div>
     </div>
 
@@ -547,9 +547,9 @@ const exportToCSV = () => {
 }
 
 // Print / Save to PDF Trigger
-const printReport = () => {
+/* const printReport = () => {
   window.print()
-}
+} */
 </script>
 
 <style scoped>

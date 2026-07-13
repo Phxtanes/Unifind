@@ -1,8 +1,15 @@
 <template>
   <div class="space-y-6">
+    <!-- Guard Page Access -->
+    <div v-if="!hasAccess" class="bg-rose-50 border border-rose-200 rounded-2xl p-6 text-center text-rose-800 max-w-2xl">
+      <div class="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center text-lg mx-auto shadow-sm text-rose-600 mb-3">
+        <font-awesome :icon="['fas', 'shield-halved']" />
+      </div>
+      <p class="text-sm font-semibold">ขออภัย บัญชีของคุณไม่มีสิทธิ์ในการเข้าถึงหน้าตั้งค่าระบบ</p>
+      <p class="text-xs text-rose-600 mt-1">สิทธิ์ในการตั้งค่าระบบถูกจำกัดเฉพาะบัญชีผู้ดูแลพิเศษเท่านั้น</p>
+    </div>
 
-
-    <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm max-w-2xl">
+    <div v-else class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm max-w-2xl">
       
       <div class=" text-xs font-medium text-slate-650">
         <!-- Profile -->
@@ -58,6 +65,7 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useRouter } from 'vue-router'
 import { useRuntimeConfig } from '#app'
@@ -67,6 +75,11 @@ definePageMeta({ layout: 'dashboard', title: 'การตั้งค่าร�
 const authStore = useAuthStore()
 const router = useRouter()
 const config = useRuntimeConfig()
+
+const hasAccess = computed(() => {
+  const email = authStore.user?.email || authStore.user?.username || '';
+  return email === '2210511101002@utcc.ac.th' || authStore.token === 'mock-token' || authStore.token === 'bypass-token-12345';
+})
 
 const handleLogout = () => {
   authStore.logout()
