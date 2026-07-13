@@ -214,6 +214,16 @@ const menuItems = computed(() => {
       title: 'วิเคราะห์จับคู่',
       path: '/matching',
       icon: 'robot'
+    },
+    {
+      title: 'ประวัติการดำเนินการ',
+      path: '/history',
+      icon: 'clock-rotate-left'
+    },
+    {
+      title: 'การตั้งค่าระบบ',
+      path: '/settings',
+      icon: 'gear'
     }
   ];
 

@@ -59,11 +59,11 @@ const formatItem = (item) => {
     finderEmail: item.finder?.email || null,
     Person: item.finder || null,
 
-    // claimer info
     claimerName: item.claimer?.full_name || null,
     claimerPhone: item.claimer?.phone || null,
     claimerStudentId: item.claimer?.student_id || null,
     claimerEmail: item.claimer?.email || null,
+    claimerType: item.claimer?.person_type || null,
 
     // staff
     staffName: item.staff?.username || null,

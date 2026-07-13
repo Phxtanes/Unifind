@@ -297,7 +297,9 @@ const filteredLostItems = computed(() => {
     const q = lostSearchQuery.value.toLowerCase().trim()
     list = list.filter(item => 
       item.name.toLowerCase().includes(q) || 
-      (item.place && item.place.toLowerCase().includes(q))
+      (item.place && item.place.toLowerCase().includes(q)) ||
+      String(item.id).includes(q) ||
+      getMockCode(item).toLowerCase().includes(q)
     )
   }
   return list
@@ -313,7 +315,9 @@ const filteredFoundItems = computed(() => {
     const q = foundSearchQuery.value.toLowerCase().trim()
     list = list.filter(item => 
       item.name.toLowerCase().includes(q) || 
-      (item.place && item.place.toLowerCase().includes(q))
+      (item.place && item.place.toLowerCase().includes(q)) ||
+      String(item.id).includes(q) ||
+      getMockCode(item).toLowerCase().includes(q)
     )
   }
   return list
@@ -339,18 +343,6 @@ const runAIPairMatching = async () => {
   matchResult.value = null
   const config = useRuntimeConfig()
 
-  if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-    // Simulated delay & mock response
-    setTimeout(() => {
-      isAnalyzing.value = false
-      matchResult.value = {
-        matched: true,
-        confidence: 88,
-        reason: `[จำลองผลสำเร็จ] ข้อมูลสิ่งของชิ้นใหม่และของหายที่ระบุมีความใกล้เคียงกันสูงในหมวดหมู่ ${translateCategory(selectedLost.value.category)} ทั้งชื่อรายการ ตำหนิการใช้งาน และช่วงเวลาจัดเก็บสอดคล้องกัน`
-      }
-    }, 1500)
-    return
-  }
 
   try {
     const headers = { Authorization: `Bearer ${authStore.token}` }

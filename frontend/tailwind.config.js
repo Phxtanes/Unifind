@@ -12,6 +12,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Kanit', 'sans-serif'],
+        sarabun: ['Sarabun', 'sans-serif'],
       },
       colors: {
         brand: {

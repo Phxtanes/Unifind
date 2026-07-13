@@ -5,9 +5,9 @@
 ---
 
 ## 📌 ภาพรวม (Overview)
-ฐานข้อมูลประกอบด้วย 14 ตารางหลัก โดยสามารถแบ่งออกเป็นกลุ่มได้ดังนี้:
+ฐานข้อมูลประกอบด้วย 13 ตารางหลัก โดยสามารถแบ่งออกเป็นกลุ่มได้ดังนี้:
 1. **ระบบผู้ใช้งาน (Authentication):** `User`
-2. **ข้อมูลหลัก (Master Data):** `Person`, `Category`, `Building`, `Location`, `Locker`, `FoundItemStatus`, `LostItemStatus`
+2. **ข้อมูลหลัก (Master Data):** `Person`, `Category`, `Building`, `Location`, `FoundItemStatus`, `LostItemStatus`
 3. **ข้อมูลสิ่งของ (Item Data):** `FoundItem`, `LostItem`, `ItemPhoto`
 4. **ระบบการจัดการ (Process Data):** `Match`, `Claim`, `AuditLog`
 

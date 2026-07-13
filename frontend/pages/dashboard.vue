@@ -1,8 +1,8 @@
 <template>
-  <div class="space-y-8">
+  <div class="space-y-6">
 
     <!-- Header Area -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 pb-2 border-b border-slate-100">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3.5 pb-2 border-b border-slate-100">
       <div>
         <h1 class="text-xl font-bold text-slate-800">ภาพรวมระบบ Lost & Found</h1>
         <p class="text-xs text-slate-500 mt-0.5">ภาพรวมสถานะและสถิติของระบบ</p>
@@ -60,82 +60,82 @@
     </div>
 
     <!-- Horizontal Statistics Cards -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-5">
       <!-- All Items Stat Card -->
-      <NuxtLink to="/items" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition duration-300 group">
-        <div class="space-y-1">
-          <p class="text-slate-450 text-[10px] font-bold uppercase tracking-wider">รายการทั้งหมด</p>
-          <p class="text-3xl font-black text-blue-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ filteredAllCount }}</p>
+      <NuxtLink to="/items" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+        <div class="space-y-1.5">
+          <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">รายการทั้งหมด</p>
+          <p class="text-3xl font-extrabold text-slate-800 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredAllCount }}</p>
         </div>
-        <div class="w-14 h-14 rounded-2xl bg-blue-500 flex items-center justify-center text-2xl text-white shadow-md shadow-blue-200/60">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-50/50 flex items-center justify-center text-xl text-indigo-600 border border-indigo-100/50 shadow-sm">
           <font-awesome :icon="['fas', 'boxes-stacked']" />
         </div>
       </NuxtLink>
 
       <!-- Lost Items Stat Card -->
-      <NuxtLink to="/lost" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition duration-300 group">
-        <div class="space-y-1">
-          <p class="text-slate-450 text-[10px] font-bold uppercase tracking-wider">ของหาย (Lost)</p>
-          <p class="text-3xl font-black text-rose-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ filteredLostCount }}</p>
+      <NuxtLink to="/lost" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+        <div class="space-y-1.5">
+          <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">ของหาย (Lost)</p>
+          <p class="text-3xl font-extrabold text-rose-650 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredLostCount }}</p>
         </div>
-        <div class="w-14 h-14 rounded-2xl bg-rose-500 flex items-center justify-center text-2xl text-white shadow-md shadow-rose-200/60">
+        <div class="w-12 h-12 rounded-2xl bg-rose-50/50 flex items-center justify-center text-xl text-rose-650 border border-rose-100/50 shadow-sm">
           <font-awesome :icon="['fas', 'briefcase']" />
         </div>
       </NuxtLink>
       
       <!-- Stored Items Stat Card -->
-      <NuxtLink to="/found" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition duration-300 group">
-        <div class="space-y-1">
-          <p class="text-slate-455 text-[10px] font-bold uppercase tracking-wider">ของพบ / ยังไม่เคลม</p>
-          <p class="text-3xl font-black text-purple-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ filteredFoundCount }}</p>
+      <NuxtLink to="/found" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+        <div class="space-y-1.5">
+          <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">ของพบ / ยังไม่เคลม</p>
+          <p class="text-3xl font-extrabold text-amber-500 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredFoundCount }}</p>
         </div>
-        <div class="w-14 h-14 rounded-2xl bg-purple-500 flex items-center justify-center text-2xl text-white shadow-md shadow-purple-200/60">
+        <div class="w-12 h-12 rounded-2xl bg-amber-50/50 flex items-center justify-center text-xl text-amber-600 border border-amber-100/50 shadow-sm">
           <font-awesome :icon="['fas', 'box-archive']" />
         </div>
       </NuxtLink>
       
       <!-- Claimed Items Stat Card -->
-      <NuxtLink to="/claimed" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition duration-300 group">
-        <div class="space-y-1">
-          <p class="text-slate-455 text-[10px] font-bold uppercase tracking-wider">ส่งคืนแล้ว (Claimed)</p>
-          <p class="text-3xl font-black text-emerald-600 group-hover:scale-105 transition-transform duration-150 inline-block">{{ filteredClaimedCount }}</p>
+      <NuxtLink to="/claimed" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+        <div class="space-y-1.5">
+          <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">ส่งคืนแล้ว (Claimed)</p>
+          <p class="text-3xl font-extrabold text-emerald-650 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredClaimedCount }}</p>
         </div>
-        <div class="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center text-2xl text-white shadow-md shadow-emerald-200/60">
+        <div class="w-12 h-12 rounded-2xl bg-emerald-50/50 flex items-center justify-center text-xl text-emerald-650 border border-emerald-100/50 shadow-sm">
           <font-awesome :icon="['fas', 'circle-check']" />
         </div>
       </NuxtLink>
     </section>
 
     <!-- Middle Layout Section: Status Overview & Trend Chart -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
       
       <!-- Status Donut Chart Overview -->
-      <div class="col-span-12 lg:col-span-5 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-        <div class="flex justify-between items-center mb-4">
+      <div class="col-span-12 lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+        <div class="flex justify-between items-center mb-3">
           <div>
-            <h3 class="text-sm font-semibold text-[#0B132B] uppercase tracking-wider">สถานะรายการ</h3>
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">สถานะรายการ</h3>
           </div>
         </div>
         
-        <div class="flex flex-col sm:flex-row items-center gap-8 md:gap-12 flex-1 py-2">
+        <div class="flex flex-col sm:flex-row items-center gap-8 md:gap-10 flex-1 py-1.5">
           <!-- Chart Left -->
-          <div class="relative flex items-center justify-center shrink-0 w-36 h-36">
+          <div class="relative flex items-center justify-center shrink-0 w-32 h-32">
             <canvas ref="donutChartCanvas"></canvas>
             <div class="absolute flex flex-col items-center justify-center text-center pointer-events-none">
               <span class="text-3xl font-black text-slate-800 leading-none">{{ totalChartCount }}</span>
-              <span class="text-[10px] text-slate-450 font-semibold mt-1">รายการ</span>
-              <span class="text-[10px] text-slate-450 font-semibold leading-none">ทั้งหมด</span>
+              <span class="text-[10px] text-slate-400 font-bold mt-0.5">รายการ</span>
+              <span class="text-[10px] text-slate-400 font-bold leading-none">ทั้งหมด</span>
             </div>
           </div>
           
           <!-- Legends Right -->
-          <div class="flex-1 space-y-3.5 w-full">
-            <div v-for="seg in chartSegments" :key="seg.label" class="flex items-center justify-between text-xs border-b border-slate-50 pb-2">
-              <div class="flex items-center gap-2.5">
+          <div class="flex-1 space-y-3 w-full">
+            <div v-for="seg in chartSegments" :key="seg.label" class="flex items-center justify-between text-xs border-b border-slate-50 pb-1.5">
+              <div class="flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
-                <span class="font-semibold text-slate-650">{{ seg.label }}</span>
+                <span class="font-semibold text-slate-600 text-xs">{{ seg.label }}</span>
               </div>
-              <div class="text-right font-semibold text-slate-800 flex items-center gap-4 font-mono">
+              <div class="text-right font-semibold text-slate-800 flex items-center gap-4 font-mono text-xs">
                 <span>{{ seg.count }}</span>
                 <span class="text-[10px] text-slate-400 font-medium font-sans w-10 text-right">{{ seg.percent }}%</span>
               </div>
@@ -145,22 +145,18 @@
       </div>
       
       <!-- Monthly Statistics Chart -->
-      <div class="col-span-12 lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between relative animate-fade-in">
-        <div class="flex justify-between items-center mb-4">
+      <div class="col-span-12 lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between relative animate-fade-in">
+        <div class="flex justify-between items-center mb-2">
           <div>
-            <h3 class="text-sm font-semibold text-[#0B132B] uppercase tracking-wider">สถิติรายเดือน</h3>
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">สถิติรายเดือน</h3>
           </div>
-          <!-- Period Badge -->
-          <!-- <span class="px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-100 text-[10px] font-semibold text-slate-500">
-            เทรนด์ 6 เดือนล่าสุด
-          </span> -->
         </div>
         
-        <div class="h-44 w-full pt-2 relative">
+        <div class="h-32 w-full pt-1 relative">
           <canvas ref="lineChartCanvas"></canvas>
         </div>
         
-        <div class="flex justify-start gap-6 items-center text-[10px] text-slate-500 mt-4 border-t border-slate-50 pt-3">
+        <div class="flex justify-start gap-4 items-center text-[9px] text-slate-500 mt-2 border-t border-slate-50 pt-2">
           <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#EF4444] shadow-sm shadow-red-200"></span> ของหาย (Lost)</span>
           <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#3B82F6] shadow-sm shadow-blue-200"></span> ของพบ / ยังไม่เคลม</span>
           <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#10B981] shadow-sm shadow-green-200"></span> ส่งคืนแล้ว (Claimed)</span>
@@ -169,14 +165,14 @@
     </section>
 
     <!-- Bottom Layout Section: Recent Items & Recent Activity -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
       
       <!-- Latest Items Card Grid -->
-      <div class="col-span-12 lg:col-span-8 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
-        <div class="flex justify-between items-center mb-5">
+      <div class="col-span-12 lg:col-span-8 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
+        <div class="flex justify-between items-center mb-4">
           <div>
-            <h3 class="text-sm font-semibold text-[#0B132B] uppercase tracking-wider">รายการล่าสุด</h3>
-            <p class="text-xs text-slate-400 mt-0.5">รายการของหายและของพบล่าสุด</p>
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">รายการล่าสุด</h3>
+            <p class="text-[10px] text-slate-400 mt-0.5">รายการของหายและของพบล่าสุด</p>
           </div>
           <NuxtLink to="/items" class="text-xs font-semibold text-indigo-650 hover:text-indigo-700 hover:underline">ดูทั้งหมด</NuxtLink>
         </div>
@@ -186,39 +182,39 @@
           <div v-for="item in latestItems" :key="item.id" class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col p-3 hover:shadow-md transition group relative overflow-hidden">
             
             <!-- Image Area -->
-            <div class="relative w-full h-28 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center border border-slate-100">
+            <div class="relative w-full h-24 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center border border-slate-100">
               <!-- Type Badge -->
-              <span class="absolute top-2 left-2 z-10 px-2 py-0.5 text-[8px] font-semibold rounded text-white shadow-sm" :class="item.type === 'lost' ? 'bg-[#EF4444]' : 'bg-[#8B5CF6]'">
+              <span class="absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 text-[8px] font-semibold rounded text-white shadow-sm" :class="item.type === 'lost' ? 'bg-[#EF4444]' : 'bg-[#8B5CF6]'">
                 {{ item.type === 'lost' ? 'ของหาย' : 'ของพบ' }}
               </span>
               <img v-if="item.image_url || getItemImageSrc(item)" :src="item.image_url || getItemImageSrc(item)" class="w-full h-full object-cover" />
-              <font-awesome v-else :icon="item.status === 'lost' ? ['fas', 'briefcase'] : ['fas', 'puzzle-piece']" class="text-2xl text-slate-300" />
+              <font-awesome v-else :icon="item.status === 'lost' ? ['fas', 'briefcase'] : ['fas', 'puzzle-piece']" class="text-xl text-slate-300" />
             </div>
 
             <!-- Content Area -->
-            <div class="mt-3 flex-1 flex flex-col justify-between space-y-2">
-              <div class="space-y-1">
+            <div class="mt-2.5 flex-1 flex flex-col justify-between space-y-1.5">
+              <div class="space-y-0.5">
                 <!-- Item Name -->
-                <h4 class="text-xs font-semibold text-slate-800 line-clamp-1 group-hover:text-indigo-650 transition" :title="item.name">
+                <h4 class="text-xs font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-650 transition" :title="item.name">
                   {{ item.name }}
                 </h4>
                 
                 <!-- Location with pin icon -->
-                <div class="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
+                <div class="flex items-center gap-1 text-[9px] text-slate-500 font-medium">
                   <font-awesome :icon="['fas', 'location-dot']" class="text-slate-400" />
-                  <span class="truncate max-w-[110px]">{{ item.place }}</span>
+                  <span class="truncate max-w-[100px]">{{ item.place }}</span>
                 </div>
                 
                 <!-- Date/Time -->
-                <div class="text-[9px] text-slate-400 font-normal flex items-center gap-1">
+                <div class="text-[8px] text-slate-400 font-normal flex items-center gap-1">
                   <font-awesome :icon="['fas', 'calendar-days']" class="text-slate-350" />
                   <span>{{ item.formattedDate }}</span>
                 </div>
               </div>
 
               <!-- Bottom Status Badge -->
-              <div class="pt-1">
-                <span :class="(item.status === 'claimed' || item.status === 'returned') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'" class="inline-block px-2 py-0.5 text-[9px] font-bold rounded border uppercase tracking-wider">
+              <div class="pt-0.5">
+                <span :class="(item.status === 'claimed' || item.status === 'returned') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'" class="inline-block px-1.5 py-0.5 text-[8px] font-bold rounded border uppercase tracking-wider">
                   {{ (item.status === 'claimed' || item.status === 'returned') ? 'ส่งคืนแล้ว' : 'รอดำเนินการ' }}
                 </span>
               </div>
@@ -226,23 +222,23 @@
           </div>
         </div>
         
-        <div v-if="latestItems.length === 0" class="py-12 text-center text-slate-400">
-          <div class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center text-lg mx-auto shadow-sm">
+        <div v-if="latestItems.length === 0" class="py-8 text-center text-slate-400">
+          <div class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-lg mx-auto shadow-sm">
             <font-awesome :icon="['fas', 'magnifying-glass']" />
           </div>
-          <p class="text-xs mt-3 font-semibold text-slate-700">ไม่มีรายการสิ่งของล่าสุด</p>
+          <p class="text-xs mt-2 font-semibold text-slate-700">ไม่มีรายการสิ่งของล่าสุด</p>
         </div>
       </div>
 
       <!-- Latest Activity Timeline Card -->
-      <div class="col-span-12 lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+      <div class="col-span-12 lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
         <div>
-          <div class="flex justify-between items-center mb-5">
-            <h3 class="text-sm font-semibold text-[#0B132B] uppercase tracking-wider">กิจกรรมล่าสุด</h3>
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">กิจกรรมล่าสุด</h3>
             <NuxtLink to="/items" class="text-xs font-semibold text-indigo-650 hover:text-indigo-755 hover:underline">ดูทั้งหมด</NuxtLink>
           </div>
           
-          <div class="relative pl-6 space-y-6 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+          <div class="relative pl-6 space-y-5 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
             <div v-for="act in latestActivities" :key="act.id" class="relative flex items-start gap-3">
               <!-- Timeline circle/icon -->
               <div :class="act.colorClass" class="absolute -left-[21px] w-5 h-5 rounded-full flex items-center justify-center text-[9px] shadow-sm z-10">
@@ -252,10 +248,10 @@
               <!-- Content -->
               <div class="flex-1 flex justify-between items-start gap-2 pl-3">
                 <div>
-                  <p class="text-xs font-semibold text-slate-800 leading-snug">
+                  <p class="text-[11px] font-semibold text-slate-800 leading-snug">
                     {{ act.title }}
                   </p>
-                  <p v-if="act.subtitle" class="text-[10px] text-slate-400 font-medium mt-0.5">
+                  <p v-if="act.subtitle" class="text-[9px] text-slate-400 font-medium mt-0.5">
                     {{ act.subtitle }}
                   </p>
                 </div>

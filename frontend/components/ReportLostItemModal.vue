@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4 backdrop-blur-sm">
+  <div v-if="show" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4 ">
     <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden max-w-6xl w-full transition-all duration-300 transform scale-100 flex flex-col max-h-[90vh]">
       
       <!-- Header -->
@@ -46,7 +46,12 @@
 
               <!-- หมวดหมู่สิ่งของ -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">หมวดหมู่สิ่งของ <span class="text-red-500">*</span></label>
+                <div class="flex justify-between items-center mb-1.5">
+                  <label class="block text-xs font-bold text-slate-650">หมวดหมู่สิ่งของ <span class="text-red-500">*</span></label>
+                  <button type="button" @click="showAddCategory = true" class="text-[10px] font-extrabold text-rose-600 hover:text-rose-800 transition flex items-center gap-1">
+                    <font-awesome :icon="['fas', 'plus']" class="text-[9px]" /> เพิ่มประเภท
+                  </button>
+                </div>
                 <div class="relative">
                   <select v-model="form.category_id" required class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
                     <option value="" disabled>เลือกประเภทหมวดหมู่</option>
@@ -62,7 +67,12 @@
 
               <!-- สถานที่สูญหาย -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">สถานที่สูญหาย (ตึก/อาคาร)</label>
+                <div class="flex justify-between items-center mb-1.5">
+                  <label class="block text-xs font-bold text-slate-650">สถานที่สูญหาย (ตึก/อาคาร)</label>
+                  <button type="button" @click="showAddLocation = true" class="text-[10px] font-extrabold text-rose-600 hover:text-rose-800 transition flex items-center gap-1">
+                    <font-awesome :icon="['fas', 'plus']" class="text-[9px]" /> เพิ่มสถานที่
+                  </button>
+                </div>
                 <div class="relative">
                   <select v-model="form.location_id" class="w-full pl-4 pr-12 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
                     <option value="">ไม่ระบุสถานที่ (หรือยังไม่ทราบ)</option>
@@ -271,12 +281,37 @@
       </form>
     </div>
   </div>
+
+  <!-- Add Category Modal -->
+  <AddCategoryModal :show="showAddCategory" @close="showAddCategory = false" @success="onCategoryAdded" />
+
+  <!-- Add Location Modal -->
+  <AddLocationModal :show="showAddLocation" @close="showAddLocation = false" @success="onLocationAdded" />
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
 import dayjs from 'dayjs'
 import { useItemsStore } from '~/stores/items'
+import AddCategoryModal from './AddCategoryModal.vue'
+import AddLocationModal from './AddLocationModal.vue'
+
+const showAddCategory = ref(false)
+const showAddLocation = ref(false)
+
+const onCategoryAdded = (newCat) => {
+  showAddCategory.value = false
+  if (newCat && newCat.category_id) {
+    form.value.category_id = newCat.category_id
+  }
+}
+
+const onLocationAdded = (newLoc) => {
+  showAddLocation.value = false
+  if (newLoc && newLoc.location_id) {
+    form.value.location_id = newLoc.location_id
+  }
+}
 
 const props = defineProps({
   show: Boolean,

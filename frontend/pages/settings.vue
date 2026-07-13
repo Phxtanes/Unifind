@@ -8,15 +8,9 @@
         <!-- Profile -->
         <div class="border-b border-slate-100 pb-4">
           <h4 class="text-xs font-bold text-slate-800 mb-3 uppercase tracking-wider">ข้อมูลผู้ใช้งาน</h4>
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <p class="text-[10px] text-slate-400">ชื่อเจ้าหน้าที่:</p>
-              <p class="text-slate-800 font-semibold mt-0.5">{{ authStore.user?.username || 'Admin Staff' }}</p>
-            </div>
-            <div>
-              <p class="text-[10px] text-slate-400">บทบาทสิทธิ์การใช้งาน:</p>
-              <p class="text-emerald-600 font-semibold mt-0.5">ผู้ดูแลระบบคลัง (System Staff)</p>
-            </div>
+          <div>
+            <p class="text-[10px] text-slate-400">อีเมลผู้ใช้งาน:</p>
+            <p class="text-slate-800 font-semibold mt-0.5">2210511101002@utcc.ac.th</p>
           </div>
         </div>
         

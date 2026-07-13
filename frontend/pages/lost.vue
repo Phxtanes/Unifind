@@ -2,17 +2,45 @@
   <div class="space-y-6">
 
     <!-- Controls & Search Card -->
-    <div class="bg-white rounded-xl py-3 px-4 border border-slate-200/80 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <div class="relative flex-1 max-w-xs">
-        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">
-          <font-awesome :icon="['fas', 'magnifying-glass']" />
-        </span>
-        <input v-model="searchQuery" type="text" id="search-lost"
-          placeholder="ค้นหา..." 
-          class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-1 focus:ring-rose-500 focus:border-rose-500 outline-none text-xs text-slate-700 transition" />
+    <div class="bg-white rounded-xl py-3 px-4 border border-slate-200/80 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
+        <!-- Search Input -->
+        <div class="relative flex-1 max-w-xs">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">
+            <font-awesome :icon="['fas', 'magnifying-glass']" />
+          </span>
+          <input v-model="searchQuery" type="text" id="search-lost"
+            placeholder="ค้นหา (ชื่อ, สถานที่, ID)..." 
+            class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-1 focus:ring-rose-500 focus:border-rose-500 outline-none text-xs text-slate-700 transition" />
+        </div>
+
+        <!-- Category Dropdown Filter -->
+        <div class="flex items-center gap-2">
+          <label for="category-filter" class="text-[10px] font-bold text-slate-400 uppercase shrink-0">หมวดหมู่:</label>
+          <select id="category-filter" v-model="selectedCategory" class="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-2.5 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-rose-500 focus:border-rose-500 transition">
+            <option value="">ทั้งหมด</option>
+            <option value="Electronics">อุปกรณ์อิเล็กทรอนิกส์</option>
+            <option value="Documents">เอกสารสำคัญ</option>
+            <option value="Clothing">เสื้อผ้า / เครื่องแต่งกาย</option>
+            <option value="Accessories">เครื่องประดับ / ของใช้ส่วนตัว</option>
+            <option value="Other">อื่นๆ</option>
+          </select>
+        </div>
+
+        <!-- Locker Dropdown Filter -->
+        <div class="flex items-center gap-2">
+          <label for="locker-filter" class="text-[10px] font-bold text-slate-400 uppercase shrink-0">ตู้ล็อกเกอร์:</label>
+          <select id="locker-filter" v-model="selectedLocker" class="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-2.5 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-rose-500 focus:border-rose-500 transition">
+            <option value="">ทั้งหมด</option>
+            <option v-for="locker in uniqueLockers" :key="locker" :value="locker">
+              {{ locker }}
+            </option>
+          </select>
+        </div>
       </div>
-      <div class="flex items-center gap-2">
-        <span class="text-[10px] font-bold text-slate-455 uppercase tracking-wider">หมวดหมู่:</span>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <span class="text-[10px] font-bold text-slate-455 uppercase tracking-wider">ประเภท:</span>
         <span class="bg-rose-50 text-rose-700 text-[10px] font-bold px-2 py-1 rounded-md border border-rose-100 uppercase">ของหาย (Lost)</span>
       </div>
     </div>
@@ -37,8 +65,8 @@
                 @click="openItemDetail(item)"
                 class="hover:bg-indigo-50/30 text-xs transition duration-150 cursor-pointer">
               <td class="py-3 px-6 flex items-center gap-3">
-                <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="w-10 h-10 rounded-xl object-cover border border-slate-155 shadow-sm" />
-                <div v-else class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-400 border border-rose-100 shadow-sm">
+                <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="w-12 h-12 rounded-xl object-cover border border-slate-155 shadow-sm" />
+                <div v-else class="w-12 h-12 rounded-xl bg-rose-50 flex items-center justify-center text-rose-400 border border-rose-100 shadow-sm">
                   <font-awesome :icon="['fas', 'briefcase']" />
                 </div>
                 <div>
@@ -96,6 +124,7 @@
       :show="showDetailModal" 
       :item="selectedItem" 
       @close="closeItemDetail" 
+      @edit="(item) => { closeItemDetail(); openEditModal(item) }"
     />
 
     <!-- Edit Lost Item Modal -->
@@ -132,8 +161,18 @@ const itemsStore = useItemsStore()
 const { translateCategory, getMockCode, getItemImageSrc, formatDateShort, formatFullDate, changeStatus, deleteItem } = useItemHelpers()
 
 const searchQuery = ref('')
+const selectedCategory = ref('')
+const selectedLocker = ref('')
 const currentPage = ref(1)
 const limit = ref(8)
+
+const uniqueLockers = computed(() => {
+  const lockers = itemsStore.items
+    .filter(item => item.status === 'lost')
+    .map(item => item.locker)
+    .filter((l): l is string => typeof l === 'string' && l.trim() !== '')
+  return [...new Set(lockers)].sort()
+})
 
 const showDetailModal = ref(false)
 const selectedItem = ref<any>(null)
@@ -189,16 +228,27 @@ const handleEditSubmit = async (data: any, imageFile: any) => {
   }
 }
 
-watch(searchQuery, () => { currentPage.value = 1 })
+watch([searchQuery, selectedCategory, selectedLocker], () => { currentPage.value = 1 })
 
 const filteredItems = computed(() => {
   let result = itemsStore.items.filter(item => item.status === 'lost')
+  
+  if (selectedCategory.value) {
+    result = result.filter(item => item.category === selectedCategory.value)
+  }
+  
+  if (selectedLocker.value) {
+    result = result.filter(item => item.locker === selectedLocker.value)
+  }
+
   if (searchQuery.value.trim() !== '') {
     const q = searchQuery.value.toLowerCase().trim()
     result = result.filter(item =>
       item.name.toLowerCase().includes(q) ||
       (item.place && item.place.toLowerCase().includes(q)) ||
-      (item.category && item.category.toLowerCase().includes(q))
+      (item.category && item.category.toLowerCase().includes(q)) ||
+      String(item.id).includes(q) ||
+      getMockCode(item).toLowerCase().includes(q)
     )
   }
   return result

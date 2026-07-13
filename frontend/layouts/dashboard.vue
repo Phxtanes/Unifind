@@ -90,7 +90,7 @@
     </div>
 
     <!-- AI Matching Result Modal -->
-    <div v-if="showMatchModal && matchDetails" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div v-if="showMatchModal && matchDetails" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/70  flex items-center justify-center p-4">
       <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden max-w-2xl w-full animate-scale-up">
         <!-- Header -->
         <div class="bg-gradient-to-r from-indigo-650 to-indigo-700 px-6 py-5 text-white flex justify-between items-center">

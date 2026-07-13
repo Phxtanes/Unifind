@@ -362,18 +362,7 @@ const newUserForm = ref({
 const fetchUsersData = async () => {
   const config = useRuntimeConfig()
   
-  if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-    // Generate Mock Users
-    staffUsers.value = [
-      { user_id: 1, username: 'admin', email: 'admin@unifind.local', role: 'ADMIN', status: 'Active', created_at: new Date().toISOString() },
-      { user_id: 2, username: 'somchai', email: 'somchai@unifind.local', role: 'STAFF', status: 'Active', created_at: new Date(Date.now() - 5 * 24 * 3600 * 1000).toISOString() },
-      { user_id: 3, username: 'somsri', email: 'somsri@unifind.local', role: 'STAFF', status: 'Suspended', created_at: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString() }
-    ]
-    pendingUsers.value = [
-      { user_id: 4, username: 'tanakorn', email: 'tanakorn@student.utcc.ac.th', role: 'MEMBER', status: 'Pending', created_at: new Date(Date.now() - 1 * 24 * 3600 * 1000).toISOString() }
-    ]
-    return
-  }
+
 
   try {
     const headers = { Authorization: `Bearer ${authStore.token}` }
@@ -424,21 +413,7 @@ const createNewUser = async () => {
   isSubmittingUser.value = true
   const config = useRuntimeConfig()
 
-  if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-    const newId = staffUsers.value.length + pendingUsers.value.length + 1
-    staffUsers.value.push({
-      user_id: newId,
-      username: newUserForm.value.username,
-      email: newUserForm.value.email,
-      role: newUserForm.value.role,
-      status: newUserForm.value.status,
-      created_at: new Date().toISOString()
-    })
-    showAddModal.value = false
-    newUserForm.value = { username: '', email: '', password: '', role: 'STAFF', status: 'Active' }
-    isSubmittingUser.value = false
-    return
-  }
+
 
   try {
     const headers = { Authorization: `Bearer ${authStore.token}` }
@@ -457,11 +432,7 @@ const createNewUser = async () => {
 // Actions
 const activateUserAccount = async (userId: number) => {
   const config = useRuntimeConfig()
-  if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-    const u = staffUsers.value.find(user => user.user_id === userId)
-    if (u) u.status = 'Active'
-    return
-  }
+
 
   try {
     const headers = { Authorization: `Bearer ${authStore.token}` }
@@ -483,10 +454,7 @@ const deactivateUserAccount = async (userId: number) => {
     return
   }
 
-  if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-    if (userToEdit) userToEdit.status = 'Suspended'
-    return
-  }
+
 
   try {
     const headers = { Authorization: `Bearer ${authStore.token}` }
@@ -508,10 +476,7 @@ const deleteUserAccount = async (userId: number) => {
 
   if (!confirm('คุณแน่ใจว่าต้องการลบบัญชีผู้ใช้งานนี้ออกจากระบบอย่างถาวร?')) return
 
-  if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-    staffUsers.value = staffUsers.value.filter(user => user.user_id !== userId)
-    return
-  }
+
 
   try {
     const headers = { Authorization: `Bearer ${authStore.token}` }
@@ -525,21 +490,7 @@ const deleteUserAccount = async (userId: number) => {
 
 const approveRequest = async (userId: number) => {
   const config = useRuntimeConfig()
-  if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-    const pending = pendingUsers.value.find(user => user.user_id === userId)
-    if (pending) {
-      staffUsers.value.push({
-        user_id: pending.user_id,
-        username: pending.username,
-        email: pending.email,
-        role: 'STAFF',
-        status: 'Active',
-        created_at: new Date().toISOString()
-      })
-      pendingUsers.value = pendingUsers.value.filter(user => user.user_id !== userId)
-    }
-    return
-  }
+
 
   try {
     const headers = { Authorization: `Bearer ${authStore.token}` }
@@ -555,10 +506,7 @@ const rejectRequest = async (userId: number) => {
   const config = useRuntimeConfig()
   if (!confirm('คุณแน่ใจว่าต้องการปฏิเสธคำขอนี้? ข้อมูลบัญชีจะถูกลบออกจากคิวการรับสมัคร')) return
 
-  if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-    pendingUsers.value = pendingUsers.value.filter(user => user.user_id !== userId)
-    return
-  }
+
 
   try {
     const headers = { Authorization: `Bearer ${authStore.token}` }

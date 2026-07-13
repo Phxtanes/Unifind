@@ -70,19 +70,6 @@ export const useItemHelpers = () => {
         dbStatus = newStatus === 'lost' ? 'FOUND' : newStatus === 'found' ? 'STORED' : 'CLAIMED'
       }
 
-      if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-        if (isLost) {
-          const idx = itemsStore.lostItems.findIndex(i => i.lost_item_id === id)
-          if (idx !== -1) itemsStore.lostItems[idx].status = dbStatus
-        } else {
-          const idx = itemsStore.foundItems.findIndex(i => i.item_id === id)
-          if (idx !== -1) {
-            itemsStore.foundItems[idx].status = dbStatus
-          }
-        }
-        return
-      }
-
       const body: any = { status: dbStatus }
       if (reason && !isLost) {
         const currentDesc = item.description || ''
@@ -117,15 +104,6 @@ export const useItemHelpers = () => {
 
       const isLost = item.type === 'lost'
       const endpoint = isLost ? 'lost-items' : 'items'
-
-      if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-        if (isLost) {
-          itemsStore.lostItems = itemsStore.lostItems.filter(i => i.lost_item_id !== id)
-        } else {
-          itemsStore.foundItems = itemsStore.foundItems.filter(i => i.item_id !== id)
-        }
-        return
-      }
 
       await axios.delete(`${config.public.apiBaseUrl}/${endpoint}/${id}`, {
         headers: { Authorization: `Bearer ${authStore.token}` }

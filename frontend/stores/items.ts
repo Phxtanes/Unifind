@@ -106,11 +106,6 @@ export const useItemsStore = defineStore('items', {
       const config    = useRuntimeConfig()
       const authStore = useAuthStore()
 
-      if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-        this.foundItems = []
-        return
-      }
-
       try {
         const response = await axios.get(`${config.public.apiBaseUrl}/items`, {
           params: { page: 1, limit: 1000 },
@@ -127,11 +122,6 @@ export const useItemsStore = defineStore('items', {
     async fetchLostItems() {
       const config    = useRuntimeConfig()
       const authStore = useAuthStore()
-
-      if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-        this.lostItems = []
-        return
-      }
 
       try {
         const response = await axios.get(`${config.public.apiBaseUrl}/lost-items`, {
@@ -166,10 +156,6 @@ export const useItemsStore = defineStore('items', {
       const config    = useRuntimeConfig()
       const authStore = useAuthStore()
 
-      if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-        return { person_id: Date.now() }
-      }
-
       const response = await axios.post(
         `${config.public.apiBaseUrl}/master/persons/find-or-create`,
         personData,
@@ -184,12 +170,6 @@ export const useItemsStore = defineStore('items', {
       const config    = useRuntimeConfig()
       const authStore = useAuthStore()
 
-      if (authStore.token === 'bypass-token-12345' || authStore.token === 'mock-token') {
-        const newLoc = { location_id: Date.now(), location_name: locationName }
-        this.locations.push(newLoc)
-        return newLoc
-      }
-
       const response = await axios.post(
         `${config.public.apiBaseUrl}/master/locations`,
         { location_name: locationName, building_id: buildingId, description: 'สร้างจากระบบ' },
@@ -197,6 +177,22 @@ export const useItemsStore = defineStore('items', {
       )
       const locRes = await axios.get(`${config.public.apiBaseUrl}/master/locations`)
       this.locations = locRes.data || []
+      return response.data
+    },
+
+    // ── Categories ────────────────────────────────────────────────────────────
+
+    async createCategory(categoryName: string, description: string = 'สร้างจากระบบ') {
+      const config    = useRuntimeConfig()
+      const authStore = useAuthStore()
+
+      const response = await axios.post(
+        `${config.public.apiBaseUrl}/master/categories`,
+        { category_name: categoryName, description },
+        { headers: { Authorization: `Bearer ${authStore.token}` } },
+      )
+      const catRes = await axios.get(`${config.public.apiBaseUrl}/master/categories`)
+      this.categories = catRes.data || []
       return response.data
     },
 
@@ -382,6 +378,10 @@ export const useItemsStore = defineStore('items', {
         finderEmail:    item.finderEmail || item.Person?.email || '',
         claimer_id:     item.claimer_id || null,
         claimerName:    item.claimerName || null,
+        claimerPhone:   item.claimerPhone || null,
+        claimerStudentId: item.claimerStudentId || null,
+        claimerEmail:   item.claimerEmail || null,
+        claimerType:    item.claimerType || null,
         claim_date:     item.claim_date || null,
         remark:         item.remark || null,
         staffName:      item.staffName || item.namereport || null,

@@ -1,6 +1,7 @@
 <template>
-  <div v-if="show" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4 backdrop-blur-sm">
-    <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden max-w-6xl w-full transition-all duration-300 transform scale-100 flex flex-col max-h-[90vh]">
+  <transition name="modal">
+    <div v-if="show" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4  transition-all">
+      <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden max-w-6xl w-full flex flex-col max-h-[90vh] modal-card">
       
       <!-- Header -->
       <div class="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white shrink-0 select-none">
@@ -46,7 +47,12 @@
 
               <!-- หมวดหมู่สิ่งของ -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">หมวดหมู่สิ่งของ <span class="text-red-500">*</span></label>
+                <div class="flex justify-between items-center mb-1.5">
+                  <label class="block text-xs font-bold text-slate-650">หมวดหมู่สิ่งของ <span class="text-red-500">*</span></label>
+                  <button type="button" @click="showAddCategory = true" class="text-[10px] font-extrabold text-indigo-650 hover:text-indigo-800 transition flex items-center gap-1">
+                    <font-awesome :icon="['fas', 'plus']" class="text-[9px]" /> เพิ่มประเภท
+                  </button>
+                </div>
                 <div class="relative">
                   <select v-model="form.category_id" required class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
                     <option value="" disabled>เลือกประเภทหมวดหมู่</option>
@@ -62,7 +68,12 @@
 
               <!-- สถานที่พบ -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">สถานที่พบ <span class="text-red-500">*</span></label>
+                <div class="flex justify-between items-center mb-1.5">
+                  <label class="block text-xs font-bold text-slate-650">สถานที่พบ <span class="text-red-500">*</span></label>
+                  <button type="button" @click="showAddLocation = true" class="text-[10px] font-extrabold text-indigo-650 hover:text-indigo-800 transition flex items-center gap-1">
+                    <font-awesome :icon="['fas', 'plus']" class="text-[9px]" /> เพิ่มสถานที่
+                  </button>
+                </div>
                 <div class="relative">
                   <select v-model="form.location_id" required class="w-full pl-4 pr-12 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
                     <option value="" disabled>เลือกสถานที่พบ</option>
@@ -234,18 +245,50 @@
                 </div>
               </div>
 
-              <!-- รหัสตู้ล็อกเกอร์ที่จัดเก็บ -->
+              <!-- ตู้ล็อกเกอร์ที่จัดเก็บ (12 ตู้ตามเดือน × 2 ชั้น) -->
               <div>
                 <label class="block text-xs font-bold text-slate-650 mb-1.5">
-                  รหัสตู้ล็อกเกอร์ที่จัดเก็บ
-                  <span class="text-[10px] text-slate-400 font-normal ml-1">(ถ้ามี เช่น L01, L-03)</span>
+                  ตู้ล็อกเกอร์ที่จัดเก็บ
+                  <span class="text-[10px] text-slate-400 font-normal ml-1">(เดือนจากวันที่พบจะถูกเลือกอัตโนมัติ)</span>
                 </label>
-                <div class="relative">
-                  <input v-model="form.locker_id" type="text" placeholder="เช่น L01, ตู้ A-02"
-                    class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
-                  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
-                    <font-awesome :icon="['fas', 'lock']" class="text-xs" />
+
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                  <!-- Dropdown ตู้ (L01–L12) -->
+                  <div class="relative">
+                    <select v-model="form.locker_number"
+                      class="w-full pl-3 pr-8 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
+                      <option value="">ไม่ระบุตู้</option>
+                      <option v-for="m in lockerMonths" :key="m.num" :value="m.num">L{{ m.num }} – {{ m.name }}</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
+                      <font-awesome :icon="['fas', 'chevron-down']" class="text-[10px]" />
+                    </div>
                   </div>
+
+                  <!-- Toggle ชั้น 01 / 02 -->
+                  <div class="flex gap-2">
+                    <button type="button" @click="form.locker_floor = '01'"
+                      :class="form.locker_floor === '01' ? 'bg-indigo-600 text-white border-transparent shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                      class="flex-1 py-2.5 text-[11px] font-bold rounded-xl border text-center transition">
+                      ชั้น 01
+                    </button>
+                    <button type="button" @click="form.locker_floor = '02'"
+                      :class="form.locker_floor === '02' ? 'bg-indigo-600 text-white border-transparent shadow-md' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'"
+                      class="flex-1 py-2.5 text-[11px] font-bold rounded-xl border text-center transition">
+                      ชั้น 02
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Preview รหัสตู้ที่จะบันทึก -->
+                <div class="flex items-center gap-2 min-h-[22px]">
+                  <template v-if="form.locker_number">
+                    <span class="text-[10px] text-slate-450 font-medium">รหัสตู้ที่จะบันทึก:</span>
+                    <span class="bg-indigo-50 border border-indigo-100 text-indigo-700 font-mono font-bold text-xs px-2.5 py-0.5 rounded-lg">
+                      L{{ form.locker_number }}{{ form.locker_floor }}
+                    </span>
+                  </template>
+                  <span v-else class="text-[10px] text-slate-350 italic">ไม่ระบุตู้ล็อกเกอร์</span>
                 </div>
               </div>
 
@@ -279,12 +322,38 @@
       </form>
     </div>
   </div>
+  </transition>
+
+  <!-- Add Category Modal -->
+  <AddCategoryModal :show="showAddCategory" @close="showAddCategory = false" @success="onCategoryAdded" />
+
+  <!-- Add Location Modal -->
+  <AddLocationModal :show="showAddLocation" @close="showAddLocation = false" @success="onLocationAdded" />
 </template>
 
 <script setup>
 import { ref, watch } from 'vue'
 import dayjs from 'dayjs'
 import { useItemsStore } from '~/stores/items'
+import AddCategoryModal from './AddCategoryModal.vue'
+import AddLocationModal from './AddLocationModal.vue'
+
+const showAddCategory = ref(false)
+const showAddLocation = ref(false)
+
+const onCategoryAdded = (newCat) => {
+  showAddCategory.value = false
+  if (newCat && newCat.category_id) {
+    form.value.category_id = newCat.category_id
+  }
+}
+
+const onLocationAdded = (newLoc) => {
+  showAddLocation.value = false
+  if (newLoc && newLoc.location_id) {
+    form.value.location_id = newLoc.location_id
+  }
+}
 
 const props = defineProps({
   show: Boolean,
@@ -310,6 +379,21 @@ const showDateTimePicker = (event) => {
   }
 }
 
+const lockerMonths = [
+  { num: '01', name: 'มกราคม' },
+  { num: '02', name: 'กุมภาพันธ์' },
+  { num: '03', name: 'มีนาคม' },
+  { num: '04', name: 'เมษายน' },
+  { num: '05', name: 'พฤษภาคม' },
+  { num: '06', name: 'มิถุนายน' },
+  { num: '07', name: 'กรกฎาคม' },
+  { num: '08', name: 'สิงหาคม' },
+  { num: '09', name: 'กันยายน' },
+  { num: '10', name: 'ตุลาคม' },
+  { num: '11', name: 'พฤศจิกายน' },
+  { num: '12', name: 'ธันวาคม' }
+]
+
 const form = ref({
   item_name: '',
   category_id: '',
@@ -317,7 +401,8 @@ const form = ref({
   found_date: '',
   description: '',
   status: 'STORED',
-  locker_id: '',
+  locker_number: '',  // '01'–'12' (เดือน)
+  locker_floor: '01', // '01' หรือ '02'
   finder_name: '',
   finder_type: 'STAFF',
   finder_phoneNumber: '',
@@ -337,6 +422,15 @@ watch(() => props.show, (newVal) => {
       itemsStore.fetchMasterData()
     }
     if (props.editItem) {
+      // Parse locker_id เช่น 'L0102' → locker_number='01', locker_floor='02'
+      let lockerNum = ''
+      let lockerFloor = '01'
+      const existingLockerId = props.editItem.locker_id || ''
+      const lockerMatch = existingLockerId.match(/^L(\d{2})(\d{2})$/)
+      if (lockerMatch) {
+        lockerNum = lockerMatch[1]
+        lockerFloor = lockerMatch[2]
+      }
       form.value = {
         item_name: props.editItem.name || '',
         category_id: props.editItem.category_id || '',
@@ -344,7 +438,8 @@ watch(() => props.show, (newVal) => {
         found_date: dayjs(props.editItem.date).format('YYYY-MM-DDTHH:mm'),
         description: props.editItem.description || '',
         status: props.editItem.status ? props.editItem.status.toUpperCase() : 'STORED',
-        locker_id: props.editItem.locker_id || '',
+        locker_number: lockerNum,
+        locker_floor: lockerFloor,
         finder_name: props.editItem.finderName || '',
         finder_type: props.editItem.finderType || 'STAFF',
         finder_phoneNumber: props.editItem.finderPhone || '',
@@ -362,7 +457,8 @@ watch(() => props.show, (newVal) => {
         found_date: dayjs().format('YYYY-MM-DDTHH:mm'),
         description: '',
         status: 'STORED',
-        locker_id: '',
+        locker_number: dayjs().format('MM'), // auto-select เดือนปัจจุบัน
+        locker_floor: '01',
         finder_name: '',
         finder_type: 'STAFF',
         finder_phoneNumber: '',
@@ -376,6 +472,12 @@ watch(() => props.show, (newVal) => {
   }
 })
 
+// เมื่อวันที่พบเปลี่ยน ให้ auto-select ตู้ตามเดือน (เฉพาะโหมดสร้างใหม่)
+watch(() => form.value.found_date, (newDate) => {
+  if (newDate && !props.editItem) {
+    form.value.locker_number = dayjs(newDate).format('MM')
+  }
+})
 
 const triggerFileInput = () => {
   fileInput.value?.click()
@@ -427,6 +529,11 @@ const submitForm = async () => {
     }
   }
 
+  // สร้าง locker_id จาก locker_number + locker_floor เช่น '07' + '02' → 'L0702'
+  const computedLockerId = form.value.locker_number
+    ? `L${form.value.locker_number}${form.value.locker_floor}`
+    : null
+
   const itemData = {
     item_name: form.value.item_name,
     category_id: parseInt(form.value.category_id),
@@ -434,7 +541,7 @@ const submitForm = async () => {
     found_date: form.value.found_date,
     description: form.value.description,
     status: form.value.status,
-    locker_id: form.value.locker_id || null  // VARCHAR — send as-is
+    locker_id: computedLockerId
   }
 
   const finderData = {
@@ -450,6 +557,27 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-enter-active .modal-card,
+.modal-leave-active .modal-card {
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .modal-card,
+.modal-leave-to .modal-card {
+  transform: translateY(20px) scale(0.97);
+  opacity: 0;
+}
+
 .fade-enter-active, .fade-leave-active {
   transition: opacity 0.2s ease;
 }
