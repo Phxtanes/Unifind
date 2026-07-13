@@ -40,5 +40,8 @@ export default defineNuxtConfig({
   experimental: {
     appManifest: false
   },
+  nitro: {
+    preset: 'static'
+  },
   devtools: { enabled: false }
 })
