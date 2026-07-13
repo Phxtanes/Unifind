@@ -258,7 +258,7 @@
                     <select v-model="form.locker_number"
                       class="w-full pl-3 pr-8 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
                       <option value="">ไม่ระบุตู้</option>
-                      <option v-for="m in lockerMonths" :key="m.num" :value="m.num">L{{ m.num }} – {{ m.name }}</option>
+                      <option v-for="locker in allLockers" :key="locker.num" :value="locker.num">{{ locker.name }}</option>
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-slate-400">
                       <font-awesome :icon="['fas', 'chevron-down']" class="text-[10px]" />
@@ -332,7 +332,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import dayjs from 'dayjs'
 import { useItemsStore } from '~/stores/items'
 import AddCategoryModal from './AddCategoryModal.vue'
@@ -394,6 +394,30 @@ const lockerMonths = [
   { num: '12', name: 'ธันวาคม' }
 ]
 
+const customLockers = ref([])
+
+const loadCustomLockers = () => {
+  if (process.client) {
+    const saved = localStorage.getItem('unifind_custom_lockers')
+    if (saved) {
+      try {
+        customLockers.value = JSON.parse(saved)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  }
+}
+
+const allLockers = computed(() => {
+  const standard = lockerMonths.map(m => ({ num: m.num, name: `L${m.num} – ${m.name}` }))
+  const custom = customLockers.value.map(cl => {
+    const rawNum = cl.lockerId.replace('L', '')
+    return { num: rawNum, name: `${cl.lockerId} – ${cl.label || 'ตู้เพิ่มเติม'}` }
+  })
+  return [...standard, ...custom]
+})
+
 const form = ref({
   item_name: '',
   category_id: '',
@@ -417,6 +441,7 @@ const customLocationName = ref('')
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
+    loadCustomLockers()
     // Ensure master data is fetched from the database
     if (itemsStore.categories.length === 0 || itemsStore.locations.length === 0) {
       itemsStore.fetchMasterData()
@@ -426,7 +451,7 @@ watch(() => props.show, (newVal) => {
       let lockerNum = ''
       let lockerFloor = '01'
       const existingLockerId = props.editItem.locker_id || ''
-      const lockerMatch = existingLockerId.match(/^L(\d{2})(\d{2})$/)
+      const lockerMatch = existingLockerId.match(/^L(\d+)(\d{2})$/)
       if (lockerMatch) {
         lockerNum = lockerMatch[1]
         lockerFloor = lockerMatch[2]

@@ -2,9 +2,18 @@
   <div class="space-y-6">
 
     <div class="bg-white pt-0 px-6 pb-6 rounded-2xl border border-slate-200/80 shadow-sm">
-      <div class="pt-6 mb-6">
-        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">ผังการจัดเก็บตู้ล็อกเกอร์ (Locker Room Map)</h3>
-        <p class="text-xs text-slate-400 mt-1">ตู้ L01–L12 ตามเดือน — แต่ละตู้มี 2 ชั้น (01, 02) รวม 24 ช่อง — คลิกชั้นเพื่อดูรายการสิ่งของ</p>
+      <div class="pt-6 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">ผังการจัดเก็บตู้ล็อกเกอร์ (Locker Room Map)</h3>
+          <p class="text-xs text-slate-400 mt-1">ตู้ L01–L12 ตามเดือน และตู้เพิ่มเติม —แต่ละตู้มี 2 ชั้น (01, 02) — คลิกชั้นเพื่อดูรายการสิ่งของ</p>
+        </div>
+        <button
+          @click="addLocker"
+          class="px-4 py-2 bg-gradient-to-r from-violet-500 to-indigo-500 hover:from-violet-600 hover:to-indigo-600 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-500/10 transition flex items-center justify-center gap-1.5 self-start sm:self-auto"
+        >
+          <font-awesome :icon="['fas', 'plus']" class="text-[10px]" />
+          เพิ่มตู้ล็อกเกอร์
+        </button>
       </div>
 
       <!-- Summary Stats -->
@@ -18,12 +27,12 @@
           <p class="text-xs text-amber-700 font-semibold mt-1">ช่องที่ใช้งาน</p>
         </div>
         <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 text-center">
-          <p class="text-2xl font-black text-slate-700">24</p>
-          <p class="text-xs text-slate-600 font-semibold mt-1">ช่องทั้งหมด (12 ตู้ × 2 ชั้น)</p>
+          <p class="text-2xl font-black text-slate-700">{{ lockersList.length * 2 }}</p>
+          <p class="text-xs text-slate-600 font-semibold mt-1">ช่องทั้งหมด ({{ lockersList.length }} ตู้ × 2 ชั้น)</p>
         </div>
       </div>
 
-      <!-- 12 Lockers Grid (L01–L12) -->
+      <!-- Lockers Grid -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         <div
           v-for="locker in lockersList"
@@ -41,12 +50,22 @@
                 <p class="text-[9px] text-slate-400 font-medium">{{ locker.monthName }}</p>
               </div>
             </div>
-            <span
-              :class="locker.floors.some(f => f.status === 'occupied') ? 'text-amber-500' : 'text-emerald-500'"
-              class="text-[9px] font-bold uppercase tracking-wider"
-            >
-              {{ locker.floors.filter(f => f.status === 'occupied').length }}/2
-            </span>
+            <div class="flex items-center gap-2">
+              <button
+                v-if="locker.isCustom && locker.floors.every(f => f.items.length === 0)"
+                @click.stop="removeLocker(locker.lockerId)"
+                class="text-slate-300 hover:text-rose-500 p-1 hover:bg-rose-50 rounded transition"
+                title="ลบตู้ล็อกเกอร์นี้"
+              >
+                <font-awesome :icon="['fas', 'trash-can']" class="text-[10px]" />
+              </button>
+              <span
+                :class="locker.floors.some(f => f.status === 'occupied') ? 'text-amber-500' : 'text-emerald-500'"
+                class="text-[9px] font-bold uppercase tracking-wider"
+              >
+                {{ locker.floors.filter(f => f.status === 'occupied').length }}/2
+              </span>
+            </div>
           </div>
 
           <!-- 2 Floor Slots -->
@@ -178,11 +197,100 @@
         </div>
       </div>
     </div>
+
+    <!-- Add Locker Modal -->
+    <div
+      v-if="showAddLockerModal"
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in"
+      @click.self="closeAddLockerModal"
+    >
+      <div class="bg-white rounded-2xl max-w-md w-full shadow-xl border border-slate-100 overflow-hidden animate-scale-up">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 border border-indigo-100 text-indigo-650">
+              <font-awesome :icon="['fas', 'plus']" class="text-xs" />
+            </span>
+            <div>
+              <h3 class="text-xs font-bold text-slate-800">เพิ่มตู้ล็อกเกอร์ใหม่</h3>
+              <p class="text-[9px] text-slate-400 font-medium">เพิ่มพื้นที่จัดเก็บใหม่ให้กับระบบ</p>
+            </div>
+          </div>
+          <button @click="closeAddLockerModal" class="text-slate-450 hover:text-slate-650 hover:bg-slate-100 p-1.5 rounded-lg transition">
+            <font-awesome :icon="['fas', 'xmark']" />
+          </button>
+        </div>
+
+        <!-- Modal Content (Form) -->
+        <form @submit.prevent="submitAddLocker" class="p-6 space-y-4">
+          <div>
+            <label for="new-locker-number" class="block text-xs font-bold text-slate-650 mb-1.5">รหัสตู้ล็อกเกอร์ <span class="text-red-500">*</span></label>
+            <div class="flex rounded-xl overflow-hidden border border-slate-200 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-100 transition bg-slate-50/50 hover:bg-slate-50/85">
+              <span class="inline-flex items-center px-4 bg-slate-100 border-r border-slate-200 text-xs font-black text-slate-500 select-none">
+                L
+              </span>
+              <input
+                id="new-locker-number"
+                v-model="newLockerNumber"
+                type="text"
+                required
+                placeholder="กรอกหมายเลขตู้ เช่น 13, 14, 15"
+                @input="newLockerNumber = newLockerNumber.replace(/\D/g, '')"
+                class="flex-1 min-w-0 pl-3 pr-4 py-2.5 bg-transparent outline-none text-xs text-slate-700 font-semibold transition"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label for="new-locker-label" class="block text-xs font-bold text-slate-650 mb-1.5">ป้ายกำกับ / คำอธิบายตู้ <span class="text-red-500">*</span></label>
+            <div class="relative">
+              <select
+                id="new-locker-label"
+                v-model="newLockerLabel"
+                required
+                class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition"
+              >
+                <option value="" disabled>เลือกเดือนหรือป้ายกำกับ</option>
+                <option v-for="m in MONTH_NAMES" :key="m" :value="m">{{ m }}</option>
+                <option value="ตู้เพิ่มเติม">ตู้เพิ่มเติม</option>
+                <option value="ตู้เก็บของพิเศษ">ตู้เก็บของพิเศษ</option>
+              </select>
+              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
+                <font-awesome :icon="['fas', 'chevron-down']" class="text-[10px]" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Alert error message if any -->
+          <p v-if="addLockerError" class="text-[10px] text-rose-500 font-bold flex items-center gap-1">
+            <font-awesome :icon="['fas', 'circle-exclamation']" />
+            {{ addLockerError }}
+          </p>
+
+          <!-- Modal Footer -->
+          <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+            <button
+              type="button"
+              @click="closeAddLockerModal"
+              class="px-4 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition duration-150"
+            >
+              ยกเลิก
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-1.5 bg-gradient-to-r from-violet-500 to-indigo-500 hover:from-violet-600 hover:to-indigo-600 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-500/10 transition"
+            >
+              บันทึกตู้ใหม่
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
 
@@ -205,6 +313,79 @@ const MONTH_NAMES = [
   'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
 ]
 
+const customLockers = ref<{ lockerId: string; label: string }[]>([])
+const showAddLockerModal = ref(false)
+const newLockerNumber = ref('')
+const newLockerLabel = ref('')
+const addLockerError = ref('')
+
+onMounted(() => {
+  if (process.client) {
+    const saved = localStorage.getItem('unifind_custom_lockers')
+    if (saved) {
+      try {
+        customLockers.value = JSON.parse(saved)
+      } catch (e) {
+        console.error(e)
+      }
+    }
+  }
+})
+
+const addLocker = () => {
+  newLockerNumber.value = ''
+  newLockerLabel.value = ''
+  addLockerError.value = ''
+  showAddLockerModal.value = true
+}
+
+const closeAddLockerModal = () => {
+  showAddLockerModal.value = false
+}
+
+const submitAddLocker = () => {
+  addLockerError.value = ''
+  const num = newLockerNumber.value.trim()
+  if (!num) {
+    addLockerError.value = 'กรุณากรอกหมายเลขตู้'
+    return
+  }
+
+  // Auto pad single digit, e.g. '3' -> '03', '13' -> '13'
+  const paddedNum = num.padStart(2, '0')
+  const code = `L${paddedNum}`
+
+  const allIds = new Set<string>()
+  for (let i = 1; i <= 12; i++) {
+    allIds.add(`L${String(i).padStart(2, '0')}`)
+  }
+  customLockers.value.forEach(cl => allIds.add(cl.lockerId))
+
+  if (allIds.has(code)) {
+    addLockerError.value = `รหัสตู้ล็อกเกอร์ ${code} มีอยู่ในระบบแล้ว`
+    return
+  }
+
+  customLockers.value.push({
+    lockerId: code,
+    label: newLockerLabel.value.trim()
+  })
+
+  if (process.client) {
+    localStorage.setItem('unifind_custom_lockers', JSON.stringify(customLockers.value))
+  }
+  showAddLockerModal.value = false
+}
+
+const removeLocker = (lockerId: string) => {
+  if (!confirm(`ต้องการลบตู้ล็อกเกอร์ ${lockerId} หรือไม่?`)) return
+  customLockers.value = customLockers.value.filter(l => l.lockerId !== lockerId)
+  if (process.client) {
+    localStorage.setItem('unifind_custom_lockers', JSON.stringify(customLockers.value))
+  }
+}
+
+
 const lockersList = computed(() => {
   // Build a lookup map: locker_id → items (only stored/found status)
   const lockerMap: Record<string, any[]> = {}
@@ -216,23 +397,25 @@ const lockersList = computed(() => {
     }
   }
 
-  // Always build all 12 lockers (L01–L12), each with 2 floors (01, 02)
-  return Array.from({ length: 12 }, (_, i) => {
+  // 12 Standard monthly lockers
+  const list: any[] = Array.from({ length: 12 }, (_, i) => {
     const num = String(i + 1).padStart(2, '0')
-    const slot01 = lockerMap[`L${num}01`] || []
-    const slot02 = lockerMap[`L${num}02`] || []
+    const lockerId = `L${num}`
+    const slot01 = lockerMap[`${lockerId}01`] || []
+    const slot02 = lockerMap[`${lockerId}02`] || []
     return {
-      lockerId: `L${num}`,
+      lockerId,
       monthName: MONTH_NAMES[i],
+      isCustom: false,
       floors: [
         {
-          floorId: `L${num}01`,
+          floorId: `${lockerId}01`,
           floorNum: '01',
           items: slot01,
           status: slot01.length > 0 ? 'occupied' : 'empty'
         },
         {
-          floorId: `L${num}02`,
+          floorId: `${lockerId}02`,
           floorNum: '02',
           items: slot02,
           status: slot02.length > 0 ? 'occupied' : 'empty'
@@ -240,6 +423,61 @@ const lockersList = computed(() => {
       ]
     }
   })
+
+  // Merge with custom lockers in localStorage + dynamically discovered from items
+  const registeredCustomIds = new Set(customLockers.value.map(l => l.lockerId))
+  
+  // Discover from items
+  for (const item of itemsStore.items) {
+    if (item.locker_id) {
+      const match = item.locker_id.match(/^L(\d+)(\d{2})$/)
+      if (match) {
+        const id = `L${match[1]}`
+        const numVal = parseInt(match[1], 10)
+        if (numVal > 12 && !registeredCustomIds.has(id)) {
+          // Add dynamically so they display even if not in localStorage of this user
+          customLockers.value.push({ lockerId: id, label: `ตู้เพิ่มเติม ${id}` })
+          registeredCustomIds.add(id)
+          if (process.client) {
+            localStorage.setItem('unifind_custom_lockers', JSON.stringify(customLockers.value))
+          }
+        }
+      }
+    }
+  }
+
+  // Sort custom lockers by ID numerically
+  const sortedCustom = [...customLockers.value].sort((a, b) => {
+    const numA = parseInt(a.lockerId.replace('L', ''), 10)
+    const numB = parseInt(b.lockerId.replace('L', ''), 10)
+    return numA - numB
+  })
+
+  sortedCustom.forEach(cl => {
+    const slot01 = lockerMap[`${cl.lockerId}01`] || []
+    const slot02 = lockerMap[`${cl.lockerId}02`] || []
+    list.push({
+      lockerId: cl.lockerId,
+      monthName: cl.label,
+      isCustom: true,
+      floors: [
+        {
+          floorId: `${cl.lockerId}01`,
+          floorNum: '01',
+          items: slot01,
+          status: slot01.length > 0 ? 'occupied' : 'empty'
+        },
+        {
+          floorId: `${cl.lockerId}02`,
+          floorNum: '02',
+          items: slot02,
+          status: slot02.length > 0 ? 'occupied' : 'empty'
+        }
+      ]
+    })
+  })
+
+  return list
 })
 
 const totalOccupiedSlots = computed(() =>

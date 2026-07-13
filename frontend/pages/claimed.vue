@@ -65,12 +65,12 @@
                 @click="openItemDetail(item)"
                 class="hover:bg-indigo-50/30 text-xs transition duration-150 cursor-pointer">
               <td class="py-3 px-6 flex items-center gap-3">
-                <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="w-12 h-12 rounded-xl object-cover border border-slate-155 shadow-sm" />
-                <div v-else class="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-150 shadow-sm">
+                <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="w-16 h-16 rounded-xl object-cover border border-slate-155 shadow-sm" />
+                <div v-else class="w-16 h-16 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-150 shadow-sm">
                   <font-awesome :icon="['fas', 'clock-rotate-left']" />
                 </div>
                 <div>
-                  <h4 class="font-bold text-slate-800 truncate max-w-[180px]" :title="item.name">{{ item.name }}</h4>
+                  <h4 class="font-bold text-slate-800 break-words max-w-[220px]" :title="item.name">{{ item.name }}</h4>
                   <p class="text-[9px] text-slate-400 font-mono mt-0.5">ID: {{ getMockCode(item) }}</p>
                 </div>
               </td>
@@ -81,7 +81,7 @@
                   คืนสำเร็จ
                 </span>
               </td>
-              <td class="py-3 px-6 text-slate-600 font-medium truncate max-w-[140px]" :title="item.place">{{ item.place }}</td>
+              <td class="py-3 px-6 text-slate-600 font-medium break-words max-w-[200px]" :title="item.place">{{ item.place }}</td>
               <td class="py-3 px-6 text-slate-450 font-medium" :title="formatFullDate(item.date)">{{ formatDateShort(item.date) }}</td>
               <td class="py-3 px-6 text-slate-600 font-mono font-medium">{{ item.locker || '-' }}</td>
               <td class="py-3 px-6">
@@ -113,11 +113,21 @@
       <!-- Pagination -->
       <div v-if="totalPages > 1" class="mt-4 flex justify-between items-center text-xs font-medium text-slate-500 pt-4 border-t border-slate-100">
         <span>แสดงหน้า <strong class="text-slate-800">{{ currentPage }}</strong> จากทั้งหมด <strong class="text-slate-800">{{ totalPages }}</strong> หน้า ({{ filteredItems.length }} รายการ)</span>
-        <div class="flex gap-2">
+        <div class="flex items-center gap-1.5">
           <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1"
-            class="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-355 hover:bg-slate-50/50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm">ก่อนหน้า</button>
+            class="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-slate-355 hover:bg-slate-50/50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm">ก่อนหน้า</button>
+          
+          <template v-for="page in paginationRange" :key="page">
+            <span v-if="page === '...'" class="px-2 py-1 text-slate-400">...</span>
+            <button v-else @click="currentPage = Number(page)" 
+              :class="currentPage === page ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50/50'"
+              class="px-2.5 py-1 border rounded-lg transition shadow-sm font-semibold">
+              {{ page }}
+            </button>
+          </template>
+
           <button @click="currentPage = Math.min(totalPages, currentPage + 1)" :disabled="currentPage === totalPages"
-            class="px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-355 hover:bg-slate-50/50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm">ถัดไป</button>
+            class="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-slate-355 hover:bg-slate-50/50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm">ถัดไป</button>
         </div>
       </div>
     </div>
@@ -273,5 +283,31 @@ const totalPages = computed(() => Math.ceil(filteredItems.value.length / limit.v
 const paginatedItems = computed(() => {
   const start = (currentPage.value - 1) * limit.value
   return filteredItems.value.slice(start, start + limit.value)
+})
+
+const paginationRange = computed(() => {
+  const range: (number | string)[] = []
+  const maxVisiblePages = 5
+  if (totalPages.value <= maxVisiblePages) {
+    for (let i = 1; i <= totalPages.value; i++) {
+      range.push(i)
+    }
+  } else {
+    const start = Math.max(2, currentPage.value - 1)
+    const end = Math.min(totalPages.value - 1, currentPage.value + 1)
+    
+    range.push(1)
+    if (start > 2) {
+      range.push('...')
+    }
+    for (let i = start; i <= end; i++) {
+      range.push(i)
+    }
+    if (end < totalPages.value - 1) {
+      range.push('...')
+    }
+    range.push(totalPages.value)
+  }
+  return range
 })
 </script>
