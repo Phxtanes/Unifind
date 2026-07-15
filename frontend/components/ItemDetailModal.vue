@@ -91,14 +91,16 @@
                   </div>
                 </div>
 
-                <!-- Staff Card -->
+                <!-- Staff Card / Reporter Card -->
                 <div class="bg-white border border-slate-100 rounded-2xl p-4 flex items-center gap-3.5 shadow-sm hover:shadow transition duration-150">
                   <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
                     <font-awesome :icon="['fas', 'user']" class="text-blue-500 text-sm" />
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">เจ้าหน้าที่ผู้บันทึก</p>
-                    <p class="text-xs font-bold text-slate-800 truncate" :title="item.staffName">{{ item.staffName || 'Admin' }}</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ item.type === 'lost' ? 'ผู้แจ้งหาย' : 'เจ้าหน้าที่ผู้บันทึก' }}</p>
+                    <p class="text-xs font-bold text-slate-800 truncate" :title="item.type === 'lost' ? item.reporterName : item.staffName">
+                      {{ item.type === 'lost' ? (item.reporterName || 'ไม่ระบุ') : (item.staffName || 'Admin') }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -221,14 +223,16 @@
                 </div>
               </div>
 
-              <!-- Staff Card -->
+              <!-- Staff Card / Reporter Card -->
               <div class="bg-white border border-slate-100 rounded-2xl p-4 flex items-center gap-3.5 shadow-sm hover:shadow transition duration-150">
                 <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
                   <font-awesome :icon="['fas', 'user']" class="text-blue-500 text-sm" />
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">เจ้าหน้าที่ผู้บันทึก</p>
-                  <p class="text-xs font-bold text-slate-800 truncate" :title="item.staffName">{{ item.staffName || 'Admin' }}</p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ item.type === 'lost' ? 'ผู้แจ้งหาย' : 'เจ้าหน้าที่ผู้บันทึก' }}</p>
+                  <p class="text-xs font-bold text-slate-800 truncate" :title="item.type === 'lost' ? item.reporterName : item.staffName">
+                    {{ item.type === 'lost' ? (item.reporterName || 'ไม่ระบุ') : (item.staffName || 'Admin') }}
+                  </p>
                 </div>
               </div>
             </div>

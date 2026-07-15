@@ -153,7 +153,6 @@
                   <select v-model="form.finder_type" required class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
                     <option value="STUDENT">นักศึกษา</option>
                     <option value="STAFF">พนักงาน / อาจารย์</option>
-                    <option value="EXTERNAL">บุคคลภายนอก</option>
                   </select>
                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                     <font-awesome :icon="['fas', 'chevron-down']" class="text-[10px]" />
@@ -572,8 +571,8 @@ const submitForm = async () => {
   const finderData = {
     person_type: form.value.finder_type,
     full_name: form.value.finder_name,
-    student_id: form.value.finder_type === 'STAFF' ? form.value.finder_studentId : null,
-    email: form.value.finder_type === 'STAFF' ? form.value.finder_universityEmail : null,
+    student_id: form.value.finder_type === 'STUDENT' ? form.value.finder_studentId : null,
+    email: form.value.finder_type === 'STUDENT' ? form.value.finder_universityEmail : null,
     phone: form.value.finder_phoneNumber
   }
 

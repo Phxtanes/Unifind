@@ -463,7 +463,7 @@ const totalChartCount = computed(() => {
 // Latest Items computed list
 const latestItems = computed(() => {
   return [...filteredItems.value]
-    .sort((a, b) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime())
+    .sort((a, b) => new Date(b.date || b.created_at || 0).getTime() - new Date(a.date || a.created_at || 0).getTime())
     .map(item => {
       let statusLabel = 'กำลังตามหา'
       let badgeClass = 'bg-[#FBBF24] text-white' // Yellow
@@ -487,7 +487,7 @@ const latestItems = computed(() => {
 // Latest Activity computed timeline list
 const latestActivities = computed(() => {
   const list = []
-  const dbItems = [...filteredItems.value].sort((a, b) => new Date(b.date || b.created_at).getTime() - new Date(a.date || a.created_at).getTime())
+  const dbItems = [...filteredItems.value].sort((a, b) => new Date(b.date || b.created_at || 0).getTime() - new Date(a.date || a.created_at || 0).getTime())
 
   for (const item of dbItems) {
     const timeStr = dayjs(item.date).format('HH:mm') + ' น.'
@@ -495,7 +495,7 @@ const latestActivities = computed(() => {
     if (item.status === 'claimed' || item.status === 'returned') {
       list.push({
         id: `db-act-claim-${item.id}`,
-        title: `ส่งคืน "${item.name}" ให้${item.receiver || 'เจ้าของ'}`,
+        title: `ส่งคืน "${item.name}" ให้${item.claimerName || 'เจ้าของ'}`,
         subtitle: `โดย ${staff}`,
         time: timeStr,
         icon: 'circle-check',
@@ -618,7 +618,7 @@ const initCharts = () => {
           tooltip: {
             enabled: true,
             callbacks: {
-              label: (context) => {
+              label: (context: any) => {
                 const count = context.raw as number
                 const percent = total > 0 ? Math.round((count / total) * 100) : 0
                 return ` ${context.label}: ${count} รายการ (${percent}%)`

@@ -162,7 +162,6 @@
                   <select v-model="form.reporter_type" required class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
                     <option value="STUDENT">นักศึกษา</option>
                     <option value="STAFF">พนักงาน / อาจารย์</option>
-                    <option value="EXTERNAL">บุคคลภายนอก</option>
                   </select>
                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                     <font-awesome :icon="['fas', 'chevron-down']" class="text-[10px]" />
@@ -461,8 +460,8 @@ const submitForm = async () => {
   const reporterData = {
     person_type: form.value.reporter_type,
     full_name: form.value.reporter_name,
-    student_id: form.value.reporter_type === 'STAFF' ? form.value.reporter_studentId : null,
-    email: form.value.reporter_type === 'STAFF' ? form.value.reporter_universityEmail : null,
+    student_id: form.value.reporter_type === 'STUDENT' ? form.value.reporter_studentId : null,
+    email: form.value.reporter_type === 'STUDENT' ? form.value.reporter_universityEmail : null,
     phone: form.value.reporter_phoneNumber
   }
 

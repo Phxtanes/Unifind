@@ -294,6 +294,20 @@ import { computed, ref, onMounted } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
 
+interface LockerFloor {
+  floorId: string
+  floorNum: string
+  items: any[]
+  status: 'occupied' | 'empty'
+}
+
+interface Locker {
+  lockerId: string
+  monthName: string
+  isCustom: boolean
+  floors: LockerFloor[]
+}
+
 definePageMeta({ layout: 'dashboard', title: 'ตู้เก็บของ (Lockers)', icon: 'database' })
 
 const itemsStore = useItemsStore()
@@ -398,7 +412,7 @@ const lockersList = computed(() => {
   }
 
   // 12 Standard monthly lockers
-  const list: any[] = Array.from({ length: 12 }, (_, i) => {
+  const list: Locker[] = Array.from({ length: 12 }, (_, i) => {
     const num = String(i + 1).padStart(2, '0')
     const lockerId = `L${num}`
     const slot01 = lockerMap[`${lockerId}01`] || []
