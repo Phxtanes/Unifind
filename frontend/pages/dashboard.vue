@@ -1,8 +1,8 @@
 <template>
-  <div class="space-y-6">
+  <div class="lg:h-full lg:flex lg:flex-col lg:gap-4 lg:overflow-hidden space-y-4 lg:space-y-0">
 
     <!-- Header Area -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3.5 pb-2 border-b border-slate-100">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3.5 pb-2 border-b border-slate-100 flex-shrink-0">
       <div>
         <h1 class="text-xl font-bold text-slate-800">{{ $t('ภาพรวมระบบ Lost & Found') }}</h1>
         <p class="text-xs text-slate-500 mt-0.5">{{ $t('ภาพรวมสถานะและสถิติของระบบ') }}</p>
@@ -60,9 +60,9 @@
     </div>
 
     <!-- Horizontal Statistics Cards -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-5">
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-shrink-0">
       <!-- All Items Stat Card -->
-      <NuxtLink to="/items" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+      <NuxtLink to="/items" class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
         <div class="space-y-1.5">
           <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{{ $t('รายการทั้งหมด') }}</p>
           <p class="text-3xl font-extrabold text-slate-800 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredAllCount }}</p>
@@ -73,7 +73,7 @@
       </NuxtLink>
 
       <!-- Lost Items Stat Card -->
-      <NuxtLink to="/lost" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+      <NuxtLink to="/lost" class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
         <div class="space-y-1.5">
           <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{{ $t('ของหาย (Lost)') }}</p>
           <p class="text-3xl font-extrabold text-rose-650 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredLostCount }}</p>
@@ -84,7 +84,7 @@
       </NuxtLink>
       
       <!-- Stored Items Stat Card -->
-      <NuxtLink to="/found" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+      <NuxtLink to="/found" class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
         <div class="space-y-1.5">
           <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{{ $t('ของพบ / ยังไม่เคลม') }}</p>
           <p class="text-3xl font-extrabold text-amber-500 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredFoundCount }}</p>
@@ -95,7 +95,7 @@
       </NuxtLink>
       
       <!-- Claimed Items Stat Card -->
-      <NuxtLink to="/claimed" class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+      <NuxtLink to="/claimed" class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
         <div class="space-y-1.5">
           <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{{ $t('ส่งคืนแล้ว (Claimed)') }}</p>
           <p class="text-3xl font-extrabold text-emerald-650 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredClaimedCount }}</p>
@@ -107,19 +107,19 @@
     </section>
 
     <!-- Middle Layout Section: Status Overview & Trend Chart -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:flex-1 lg:min-h-0">
       
       <!-- Status Donut Chart Overview -->
-      <div class="col-span-12 lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+      <div class="col-span-12 lg:col-span-5 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between lg:h-full lg:min-h-0">
         <div class="flex justify-between items-center mb-3">
           <div>
             <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">{{ $t('สถานะรายการ') }}</h3>
           </div>
         </div>
         
-        <div class="flex flex-col sm:flex-row items-center gap-8 md:gap-10 flex-1 py-1.5">
+        <div class="flex flex-col sm:flex-row items-center gap-6 lg:gap-8 flex-1 py-1 lg:py-0 min-h-0">
           <!-- Chart Left -->
-          <div class="relative flex items-center justify-center shrink-0 w-32 h-32">
+          <div class="relative flex items-center justify-center shrink-0 w-32 h-32 lg:w-28 lg:h-28">
             <canvas ref="donutChartCanvas"></canvas>
             <div class="absolute flex flex-col items-center justify-center text-center pointer-events-none">
               <span class="text-3xl font-black text-slate-800 leading-none">{{ totalChartCount }}</span>
@@ -145,18 +145,18 @@
       </div>
       
       <!-- Monthly Statistics Chart -->
-      <div class="col-span-12 lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between relative animate-fade-in">
-        <div class="flex justify-between items-center mb-2">
+      <div class="col-span-12 lg:col-span-7 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between relative animate-fade-in lg:h-full lg:min-h-0">
+        <div class="flex justify-between items-center mb-1 flex-shrink-0">
           <div>
             <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">{{ $t('สถิติรายเดือน') }}</h3>
           </div>
         </div>
         
-        <div class="h-32 w-full pt-1 relative">
+        <div class="flex-1 w-full pt-1 relative min-h-0">
           <canvas ref="lineChartCanvas"></canvas>
         </div>
         
-        <div class="flex justify-start gap-4 items-center text-[9px] text-slate-500 mt-2 border-t border-slate-50 pt-2 font-sans">
+        <div class="flex justify-start gap-4 items-center text-[9px] text-slate-500 mt-2 border-t border-slate-50 pt-2 font-sans flex-shrink-0">
           <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#EF4444] shadow-sm shadow-red-200"></span> {{ $t('ของหาย (Lost)') }}</span>
           <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#3B82F6] shadow-sm shadow-blue-200"></span> {{ $t('ของพบ / ยังไม่เคลม') }}</span>
           <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#10B981] shadow-sm shadow-green-200"></span> {{ $t('ส่งคืนแล้ว (Claimed)') }}</span>
@@ -165,11 +165,11 @@
     </section>
 
     <!-- Bottom Layout Section: Recent Items & Recent Activity -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:flex-1 lg:min-h-0">
       
       <!-- Latest Items Card Grid -->
-      <div class="col-span-12 lg:col-span-8 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm">
-        <div class="flex justify-between items-center mb-4">
+      <div class="col-span-12 lg:col-span-8 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col lg:h-full lg:min-h-0">
+        <div class="flex justify-between items-center mb-3 flex-shrink-0">
           <div>
             <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">{{ $t('รายการล่าสุด') }}</h3>
             <p class="text-[10px] text-slate-400 mt-0.5">{{ $t('รายการของหายและของพบล่าสุด') }}</p>
@@ -178,11 +178,11 @@
         </div>
         
         <!-- Cards List -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          <div v-for="item in latestItems" :key="item.id" class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col p-3 hover:shadow-md transition group relative overflow-hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 flex-1 lg:min-h-0">
+          <div v-for="item in latestItems" :key="item.id" class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col p-2.5 hover:shadow-md transition group relative overflow-hidden lg:h-full lg:min-h-0 justify-between">
             
             <!-- Image Area -->
-            <div class="relative w-full h-24 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center border border-slate-100">
+            <div class="relative w-full h-20 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center border border-slate-100">
               <!-- Type Badge -->
               <span class="absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 text-[8px] font-semibold rounded text-white shadow-sm" :class="item.type === 'lost' ? 'bg-[#EF4444]' : 'bg-[#8B5CF6]'">
                 {{ item.type === 'lost' ? $t('ของหาย') : $t('พบของ') }}
@@ -231,14 +231,14 @@
       </div>
 
       <!-- Latest Activity Timeline Card -->
-      <div class="col-span-12 lg:col-span-4 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-        <div>
-          <div class="flex justify-between items-center mb-4">
+      <div class="col-span-12 lg:col-span-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col lg:h-full lg:min-h-0 justify-between">
+        <div class="flex flex-col lg:h-full lg:min-h-0">
+          <div class="flex justify-between items-center mb-3 flex-shrink-0">
             <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">{{ $t('กิจกรรมล่าสุด') }}</h3>
             <NuxtLink to="/items" class="text-xs font-semibold text-indigo-650 hover:text-indigo-755 hover:underline font-sans">{{ $t('ดูทั้งหมด') }}</NuxtLink>
           </div>
           
-          <div class="relative pl-6 space-y-5 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100">
+          <div class="relative pl-6 space-y-4 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 flex-1 lg:min-h-0 lg:overflow-y-auto pr-1">
             <div v-for="act in latestActivities" :key="act.id" class="relative flex items-start gap-3">
               <!-- Timeline circle/icon -->
               <div :class="act.colorClass" class="absolute -left-[21px] w-5 h-5 rounded-full flex items-center justify-center text-[9px] shadow-sm z-10">

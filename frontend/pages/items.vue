@@ -53,7 +53,7 @@
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
-        <span class="text-[10px] font-bold text-slate-450 uppercase tracking-wider font-sans">{{ $t('ประเภท') }}:</span>
+        <span class="text-[10px] font-bold text-slate-455 uppercase tracking-wider font-sans">{{ $t('ประเภท') }}:</span>
         <span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-1 rounded-md border border-indigo-100 uppercase font-sans">{{ $t('ทั้งหมด') }}</span>
       </div>
     </div>
@@ -74,7 +74,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            <tr v-for="item in paginatedItems" :key="item.id" class="hover:bg-indigo-50/30 text-xs transition duration-150">
+            <tr v-for="item in paginatedItems" :key="item.id" @click="openItemDetail(item)" class="hover:bg-indigo-50/30 text-xs transition duration-150 cursor-pointer">
               <td class="py-3 px-6 flex items-center gap-3">
                 <img v-if="getItemImageSrc(item)" :src="getItemImageSrc(item)" class="w-16 h-16 rounded-xl object-cover border border-slate-155 shadow-sm" />
                 <div v-else class="w-16 h-16 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 border border-slate-150 font-bold shadow-sm">
@@ -105,7 +105,10 @@
               <td class="py-3 px-6 text-slate-600 font-mono font-medium">{{ item.locker || '-' }}</td>
               <td class="py-3 px-6">
                 <div class="flex items-center justify-center gap-2">
-                  <button @click="deleteItem(item.id)" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg border border-transparent hover:border-rose-100 hover:bg-rose-50 transition">
+                  <button @click.stop="openItemDetail(item)" class="text-slate-400 hover:text-indigo-650 hover:bg-indigo-50 p-1.5 rounded-lg border border-transparent hover:border-indigo-100/50 transition" :title="$t('ดูรายละเอียด')">
+                    <font-awesome :icon="['fas', 'eye']" />
+                  </button>
+                  <button @click.stop="deleteItem(item.id)" class="text-slate-400 hover:text-rose-650 p-1.5 rounded-lg border border-transparent hover:border-rose-100 hover:bg-rose-50 transition" :title="$t('ลบ')">
                     <font-awesome :icon="['fas', 'trash-can']" />
                   </button>
                 </div>
@@ -153,6 +156,40 @@
       </div>
     </div>
 
+    <!-- Item Detail Modal Component -->
+    <ItemDetailModal 
+      :show="showDetailModal" 
+      :item="selectedItem" 
+      @close="closeItemDetail" 
+      @edit="handleEditClick"
+    />
+
+    <!-- Edit Found Item Modal -->
+    <CreateItemModal 
+      :show="showEditFoundModal" 
+      :is-submitting="isSubmitting" 
+      :edit-item="editingItem"
+      @close="closeEditFoundModal" 
+      @submit="handleEditFoundSubmit" 
+    />
+
+    <!-- Edit Lost Item Modal -->
+    <ReportLostItemModal 
+      :show="showEditLostModal" 
+      :is-submitting="isSubmitting" 
+      :edit-item="editingItem"
+      @close="closeEditLostModal" 
+      @submit="handleEditLostSubmit" 
+    />
+
+    <!-- Success Modal -->
+    <SuccessModal 
+      :show="showSuccessModal" 
+      :title="successModalTitle" 
+      :message="successModalMessage" 
+      @close="showSuccessModal = false" 
+    />
+
   </div>
 </template>
 
@@ -161,6 +198,10 @@ import { ref, computed, watch } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
 import { useLangStore } from '~/stores/lang'
+import ItemDetailModal from '~/components/ItemDetailModal.vue'
+import CreateItemModal from '~/components/CreateItemModal.vue'
+import ReportLostItemModal from '~/components/ReportLostItemModal.vue'
+import SuccessModal from '~/components/SuccessModal.vue'
 
 definePageMeta({ layout: 'dashboard', title: 'รายการทั้งหมด', icon: 'clipboard-list' })
 
@@ -175,6 +216,89 @@ const selectedStatus = ref('')
 const selectedLocker = ref('')
 const currentPage = ref(1)
 const limit = ref(8)
+
+// Modals State
+const showDetailModal = ref(false)
+const selectedItem = ref<any>(null)
+
+const showEditFoundModal = ref(false)
+const showEditLostModal = ref(false)
+const editingItem = ref<any>(null)
+const isSubmitting = ref(false)
+
+const showSuccessModal = ref(false)
+const successModalTitle = ref('บันทึกสำเร็จ!')
+const successModalMessage = ref('')
+
+const triggerSuccess = (title: string, message: string) => {
+  successModalTitle.value = title
+  successModalMessage.value = message
+  showSuccessModal.value = true
+}
+
+const openItemDetail = (item: any) => {
+  selectedItem.value = item
+  showDetailModal.value = true
+}
+
+const closeItemDetail = () => {
+  showDetailModal.value = false
+  setTimeout(() => { selectedItem.value = null }, 300)
+}
+
+const handleEditClick = (item: any) => {
+  closeItemDetail()
+  editingItem.value = item
+  if (item.type === 'lost' || item.status === 'lost') {
+    showEditLostModal.value = true
+  } else {
+    showEditFoundModal.value = true
+  }
+}
+
+const closeEditFoundModal = () => {
+  showEditFoundModal.value = false
+  setTimeout(() => { editingItem.value = null }, 300)
+}
+
+const closeEditLostModal = () => {
+  showEditLostModal.value = false
+  setTimeout(() => { editingItem.value = null }, 300)
+}
+
+const handleEditFoundSubmit = async (data: any, imageFile: any) => {
+  isSubmitting.value = true
+  try {
+    if (editingItem.value) {
+      await itemsStore.updateFoundItem(editingItem.value.id, data.itemData, data.finderData, imageFile)
+      showEditFoundModal.value = false
+      triggerSuccess('แก้ไขข้อมูลสำเร็จ!', 'บันทึกการแก้ไขข้อมูลสิ่งของพบเจอเรียบร้อยแล้ว!')
+    }
+  } catch (error) {
+    console.error('Error updating found item:', error)
+    alert('เกิดข้อผิดพลาดในการบันทึกการแก้ไข')
+  } finally {
+    isSubmitting.value = false
+    editingItem.value = null
+  }
+}
+
+const handleEditLostSubmit = async (data: any, imageFile: any) => {
+  isSubmitting.value = true
+  try {
+    if (editingItem.value) {
+      await itemsStore.updateLostItem(editingItem.value.id, data.itemData, data.reporterData, imageFile)
+      showEditLostModal.value = false
+      triggerSuccess('แก้ไขข้อมูลสำเร็จ!', 'บันทึกการแก้ไขข้อมูลของหายเรียบร้อยแล้ว!')
+    }
+  } catch (error) {
+    console.error('Error updating lost item:', error)
+    alert('เกิดข้อผิดพลาดในการบันทึกการแก้ไข')
+  } finally {
+    isSubmitting.value = false
+    editingItem.value = null
+  }
+}
 
 const uniqueLockers = computed(() => {
   const lockers = itemsStore.items
