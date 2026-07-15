@@ -1,29 +1,35 @@
-const axios = require('axios');
-const { GoogleGenAI } = require('@google/genai');
-const supabase = require('../config/supabase');
-const lineBindings = require('../config/lineBindings');
-const fs = require('fs');
-const path = require('path');
+const axios = require("axios");
+const { GoogleGenAI } = require("@google/genai");
+const supabase = require("../config/supabase");
+const lineBindings = require("../config/lineBindings");
+const fs = require("fs");
+const path = require("path");
 
-const localDbPath = path.resolve(__dirname, '../../uploads/local_db.json');
+const localDbPath = path.resolve(__dirname, "../../uploads/local_db.json");
 
 function loadLocalDb() {
   try {
     if (fs.existsSync(localDbPath)) {
-      const data = fs.readFileSync(localDbPath, 'utf8');
-      return JSON.parse(data || '{}');
+      const data = fs.readFileSync(localDbPath, "utf8");
+      return JSON.parse(data || "{}");
     }
   } catch (e) {
-    console.error('Error loading local DB in matchingService:', e);
+    console.error("Error loading local DB in matchingService:", e);
   }
   return { lost_items: [], items: [] };
 }
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Fallback function to generate content from AI models
 async function generateContentWithFallback(aiClient, options) {
-  const models = ['gemini-2.5-flash-lite', 'gemini-2.0-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-3.5-flash'];
+  const models = [
+    "gemini-3.1-flash-lite",
+    "gemini-1.5-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-2.0-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-3.5-flash",
+  ];
   let lastError;
 
   for (const model of models) {
@@ -31,7 +37,7 @@ async function generateContentWithFallback(aiClient, options) {
       console.log(`🤖 Matching model check: ${model}`);
       const response = await aiClient.models.generateContent({
         ...options,
-        model: model
+        model: model,
       });
       return response;
     } catch (err) {
@@ -42,135 +48,155 @@ async function generateContentWithFallback(aiClient, options) {
   throw lastError;
 }
 
-// Helper to parse description plain text
 function parseDescriptionText(desc) {
   try {
     const parsed = JSON.parse(desc);
-    if (parsed && typeof parsed === 'object' && ('textDescription' in parsed)) {
-      return parsed.textDescription || 'ไม่มีระบุ';
+    if (parsed && typeof parsed === "object" && "textDescription" in parsed) {
+      return parsed.textDescription || "ไม่มีระบุ";
     }
-  } catch (e) { }
-  return desc || 'ไม่มีระบุ';
+  } catch (e) {}
+  return desc || "ไม่มีระบุ";
 }
 
-// Helper to parse student email from description
 function parseDescriptionEmail(desc) {
   try {
     const parsed = JSON.parse(desc);
-    if (parsed && typeof parsed === 'object' && parsed.finder_universityEmail) {
+    if (parsed && typeof parsed === "object" && parsed.finder_universityEmail) {
       return parsed.finder_universityEmail;
     }
-  } catch (e) { }
+  } catch (e) {}
   return null;
 }
 
-// Send LINE Push Notification
 async function sendPushToLine(lineUserId, text) {
   try {
     await axios.post(
-      'https://api.line.me/v2/bot/message/push',
+      "https://api.line.me/v2/bot/message/push",
       {
         to: lineUserId,
-        messages: [{ type: 'text', text: text }]
+        messages: [{ type: "text", text: text }],
       },
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`
-        }
-      }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.LINE_CHANNEL_ACCESS_TOKEN}`,
+        },
+      },
     );
     console.log(`✉️ LINE Push Sent to ${lineUserId}`);
   } catch (error) {
-    console.error('❌ LINE Push Error:', error.response ? error.response.data : error.message);
+    console.error(
+      "❌ LINE Push Error:",
+      error.response ? error.response.data : error.message,
+    );
   }
 }
 
 exports.sendPushToLine = sendPushToLine;
 
-/**
- * Check if a newly registered FoundItem matches any existing LostItem
- * @param {Object} foundItem - The new FoundItem record
- */
 exports.checkFoundItemMatch = async (foundItem) => {
   try {
-    console.log(`🔍 Checking matches for Found Item: "${foundItem.item_name}" (ID: ${foundItem.item_id})`);
+    console.log(
+      `🔍 Checking matches for Found Item: "${foundItem.item_name}" (ID: ${foundItem.item_id})`,
+    );
 
-    // Fetch active LostItems in the same category
     let lostItems = [];
     try {
-      // Filter by status_code LOST via join
       const { data: statusData } = await supabase
-        .from('lost_item_statuses')
-        .select('status_id')
-        .eq('status_code', 'LOST')
+        .from("lost_item_statuses")
+        .select("status_id")
+        .eq("status_code", "LOST")
         .maybeSingle();
       const lostStatusId = statusData?.status_id;
 
       const query = supabase
-        .from('lost_items')
-        .select('*, reporter:persons!lost_items_reporter_id_fkey(full_name, email, phone)')
-        .eq('category_id', foundItem.category_id);
-      if (lostStatusId) query.eq('status_id', lostStatusId);
+        .from("lost_items")
+        .select(
+          "*, locations(location_name, floor), reporter:persons!lost_items_reporter_id_fkey(full_name, email, phone)",
+        )
+        .eq("category_id", foundItem.category_id);
+      if (lostStatusId) query.eq("status_id", lostStatusId);
 
       const { data, error } = await query;
       if (error) throw error;
       lostItems = data || [];
     } catch (err) {
-      console.warn('Supabase offline in checkFoundItemMatch, using local JSON database fallback');
+      console.warn(
+        "Supabase offline in checkFoundItemMatch, using local JSON database fallback",
+      );
       const db = loadLocalDb();
-      lostItems = (db.lost_items || []).filter(item =>
-        Number(item.category_id) === Number(foundItem.category_id)
+      lostItems = (db.lost_items || []).filter(
+        (item) => Number(item.category_id) === Number(foundItem.category_id),
       );
     }
 
     if (!lostItems || lostItems.length === 0) {
-      console.log('ℹ️ No active lost items found in this category.');
+      console.log("ℹ️ No active lost items found in this category.");
       return;
     }
 
-    const candidates = lostItems.map(item => ({
+    // Get found item location string
+    let foundLocation = "ไม่ระบุ";
+    if (foundItem.locations) {
+      foundLocation = foundItem.locations.location_name + (foundItem.locations.floor ? ` ชั้น ${foundItem.locations.floor}` : "");
+    } else if (foundItem.location_id) {
+      try {
+        const { data: locData } = await supabase
+          .from("locations")
+          .select("location_name, floor")
+          .eq("location_id", foundItem.location_id)
+          .maybeSingle();
+        if (locData) {
+          foundLocation = locData.location_name + (locData.floor ? ` ชั้น ${locData.floor}` : "");
+        }
+      } catch (e) {
+        console.warn("Failed to fetch location name for foundItem in checkFoundItemMatch:", e.message);
+      }
+    }
+
+    const candidates = lostItems.map((item) => ({
       id: item.lost_item_id,
       name: item.item_name,
-      description: item.description || ''
+      description: item.description || "",
+      lost_datetime: item.lost_datetime || item.created_at,
+      location: item.locations
+        ? item.locations.location_name + (item.locations.floor ? ` ชั้น ${item.locations.floor}` : "")
+        : "ไม่ระบุ",
     }));
 
-    const prompt = `คุณคือระบบวิเคราะห์สิ่งของสูญหายอัจฉริยะ (AI Lost & Found Matcher) ของ Unifind
-จงเปรียบเทียบสิ่งของที่เพิ่งพบเจอ (Found Item) ด้านล่างนี้ กับรายการของที่ผู้ใช้แจ้งหายไว้ (Lost Items Candidates) ในหมวดหมู่เดียวกัน
+    const prompt = `คุณคือระบบวิเคราะห์สิ่งของสูญหายอัจฉริยะ (AI Lost & Found Matcher) ของ Unifind ประจำมหาวิทยาลัยหอการค้าไทย (UTCC)
+หน้าที่ของคุณ: เปรียบเทียบของที่เพิ่งเก็บได้ (Found Item) กับรายการสิ่งของที่ผู้ใช้แจ้งหายไว้ (Lost Items Candidates) เพื่อวิเคราะห์ว่ามีชิ้นใดเป็นของชิ้นเดียวกันที่มีความเป็นไปได้สูงที่สุด
 
-ของที่พบล่าสุด (Found Item):
+ข้อมูลของที่พบล่าสุด (Found Item):
 - ชื่อ: "${foundItem.item_name}"
-- รายละเอียด: "${foundItem.description || ''}"
+- รายละเอียด: "${foundItem.description || ""}"
+- วันที่พบ: "${foundItem.found_date || foundItem.created_at}"
+- สถานที่พบ: "${foundLocation}"
 
-รายการของที่ผู้ใช้แจ้งหายไว้ (Lost Items Candidates):
+รายการสิ่งของที่ผู้ใช้แจ้งหายไว้ (Lost Items Candidates):
 ${JSON.stringify(candidates, null, 2)}
 
-หน้าที่ของคุณ:
-1. วิเคราะห์ว่าของที่พบใหม่นี้ ตรงหรือมีความคล้ายคลึงจนน่าจะเป็น "ชิ้นเดียวกัน" กับของในรายการใดใน Candidates หรือไม่ (ความมั่นใจระดับ 75% ขึ้นไป)
-2. ตอบกลับเป็น JSON ในรูปแบบนี้เท่านั้น:
-   {
-     "matched": true,
-     "matchId": [ใส่ ID ของชิ้นที่ตรงกันจาก Candidates],
-     "confidence": [เปอร์เซ็นต์ความมั่นใจ เช่น 85],
-     "reason": "อธิบายสั้นๆ เป็นภาษาไทยว่าวิเคราะห์ลักษณะกายภาพ/คำอธิบายแล้วทำไมจึงแมตช์กัน"
-   }
-3. หากวิเคราะห์แล้วไม่มีของชิ้นใดในคลังข้อมูลที่น่าจะตรงกัน ให้ตอบกลับเป็น JSON รูปแบบนี้:
-   {
-     "matched": false,
-     "matchId": null,
-     "confidence": 0,
-     "reason": "ไม่มีของที่ตรงกัน"
-   }
+เกณฑ์ในการประเมินและเปรียบเทียบเชิงลึก:
+1. **ความเข้ากันได้ของประเภทสิ่งของ**: สิ่งของต้องเป็นชนิดเดียวกันหรือใกล้เคียงกันมาก (เช่น แก้วน้ำ/กระบอกน้ำ, ไอแพด/iPad, หูฟัง/AirPods) หากชนิดของสิ่งของขัดแย้งกันอย่างสิ้นเชิง (เช่น ร่ม กับ โทรศัพท์) ให้ปัดตกทันที (confidence = 0)
+2. **ลักษณะทางกายภาพ สี และยี่ห้อ**: ตรวจสอบสีและแบรนด์ (เช่น สีแดง/สีชมพูเข้ม, สีดำ/สีกรมท่า, ยี่ห้อ Apple/Samsung) จุดสังเกตเฉพาะตัว เช่น ลวดลาย พวงกุญแจที่ห้อย สติกเกอร์ เคสโทรศัพท์ หรือร่องรอยพิเศษ
+3. **การประเมินด้านเวลา**: วันที่ที่พบ (Found Item Date) ต้องเกิดขึ้นหลังจากหรืออยู่ในเวลาใกล้เคียงกันกับวันที่สิ่งของชิ้นนั้นหาย (Lost Item Date) การพบก่อนวันที่แจ้งหายเป็นเวลานานมากมีความเป็นไปได้ต่ำ
+4. **ความเข้ากันได้ของสถานที่**: สถานที่พบและสถานที่หายควรเป็นสถานที่เดียวกัน ตึกเดียวกัน หรือพื้นที่รอบข้างที่สอดคล้องกันเชิงเส้นทางเดิน
 
-ห้ามพิมพ์ข้อความเกริ่นนำหรือคำอธิบายใดๆ นอกเหนือจากรูปแบบ JSON ที่กำหนด`;
+กรุณาตอบกลับเป็น JSON รูปแบบด้านล่างนี้เท่านั้น โดยไม่มีข้อความเกริ่นนำ ข้อความสรุป หรือเครื่องหมาย markdown อื่นๆ นอกเหนือโครงสร้าง JSON นี้เด็ดขาด:
+{
+  "matched": true/false,
+  "matchId": [ใส่ ID จาก Candidates ชิ้นที่คิดว่าตรงกันที่สุด หรือใส่ null หากไม่เข้าเกณฑ์หรือมั่นใจต่ำกว่า 75%],
+  "confidence": [คะแนนความมั่นใจระหว่าง 0 ถึง 100],
+  "reason": "สรุปกระชับเป็นภาษาไทยอธิบายจุดที่พิจารณาเปรียบเทียบทั้งสี ลักษณะเด่น สถานที่ และเวลาเพื่ออธิบายเหตุผลในการจับคู่หรือปฏิเสธ"
+}`;
 
     const aiResult = await generateContentWithFallback(ai, {
       contents: prompt,
-      config: { responseMimeType: 'application/json' }
+      config: { responseMimeType: "application/json" },
     });
 
     const matchResult = JSON.parse(aiResult.text.trim());
-    console.log('🤖 AI Matching Result:', matchResult);
+    console.log("🤖 AI Matching Result for FoundItem:", matchResult);
 
     if (matchResult.matched && matchResult.matchId) {
       let targetMatchId = matchResult.matchId;
@@ -179,9 +205,13 @@ ${JSON.stringify(candidates, null, 2)}
       }
       const parsedMatchId = Number(targetMatchId);
 
-      const matchedLost = lostItems.find(item => Number(item.lost_item_id) === parsedMatchId);
+      const matchedLost = lostItems.find(
+        (item) => Number(item.lost_item_id) === parsedMatchId,
+      );
       if (matchedLost) {
-        const ownerEmail = matchedLost.reporter ? matchedLost.reporter.email : null;
+        const ownerEmail = matchedLost.reporter
+          ? matchedLost.reporter.email
+          : null;
         if (ownerEmail) {
           const lineUserId = lineBindings.getLineUserId(ownerEmail);
           if (lineUserId) {
@@ -200,123 +230,159 @@ ${JSON.stringify(candidates, null, 2)}
 
             await sendPushToLine(lineUserId, notificationMessage);
           } else {
-            console.log(`ℹ️ Matched owner email ${ownerEmail} has no bound LINE Account.`);
+            console.log(
+              `ℹ️ Matched owner email ${ownerEmail} has no bound LINE Account.`,
+            );
           }
         }
       }
       return {
         matched: true,
         confidence: matchResult.confidence || 0,
-        reason: matchResult.reason || '',
-        matchedItem: matchedLost ? {
-          id: matchedLost.lost_item_id,
-          name: matchedLost.item_name,
-          description: matchedLost.description || '',
-          date: matchedLost.lost_datetime,
-          reporter: matchedLost.reporter ? matchedLost.reporter.full_name : 'ไม่ได้ระบุ'
-        } : null
+        reason: matchResult.reason || "",
+        matchedItem: matchedLost
+          ? {
+              id: matchedLost.lost_item_id,
+              name: matchedLost.item_name,
+              description: matchedLost.description || "",
+              date: matchedLost.lost_datetime,
+              reporter: matchedLost.reporter
+                ? matchedLost.reporter.full_name
+                : "ไม่ได้ระบุ",
+            }
+          : null,
       };
     }
-    return { matched: false, confidence: 0, reason: 'ไม่มีของที่ตรงกัน', matchedItem: null };
+    return {
+      matched: false,
+      confidence: 0,
+      reason: "ไม่มีของที่ตรงกัน",
+      matchedItem: null,
+    };
   } catch (err) {
-    console.error('❌ checkFoundItemMatch Error:', err);
-    return { matched: false, confidence: 0, reason: 'เกิดข้อผิดพลาดในการตรวจสอบความคล้ายคลึง', error: err.message };
+    console.error("❌ checkFoundItemMatch Error:", err);
+    return {
+      matched: false,
+      confidence: 0,
+      reason: "เกิดข้อผิดพลาดในการตรวจสอบความคล้ายคลึง",
+      error: err.message,
+    };
   }
 };
 
-/**
- * Check if a newly registered LostItem matches any existing FoundItem in storage
- * @param {Object} lostItem - The new LostItem record
- */
 exports.checkLostItemMatch = async (lostItem) => {
   try {
-    console.log(`🔍 Checking matches for LostItem: "${lostItem.item_name}" (ID: ${lostItem.lost_item_id})`);
+    console.log(
+      `🔍 Checking matches for LostItem: "${lostItem.item_name}" (ID: ${lostItem.lost_item_id})`,
+    );
 
-    // Fetch FoundItems that are currently stored/found
     let foundItems = [];
     try {
-      // Filter by status_codes FOUND/STORED via join
       const { data: statusData } = await supabase
-        .from('found_item_statuses')
-        .select('status_id')
-        .in('status_code', ['FOUND', 'STORED']);
-      const storedStatusIds = (statusData || []).map(s => s.status_id);
+        .from("found_item_statuses")
+        .select("status_id")
+        .in("status_code", ["FOUND", "STORED"]);
+      const storedStatusIds = (statusData || []).map((s) => s.status_id);
 
       let query = supabase
-        .from('items')
-        .select('*, finder:persons!items_finder_id_fkey(full_name, email, phone)')
-        .eq('category_id', lostItem.category_id);
-      if (storedStatusIds.length > 0) query = query.in('status_id', storedStatusIds);
+        .from("items")
+        .select(
+          "*, locations(location_name, floor), finder:persons!items_finder_id_fkey(full_name, email, phone)",
+        )
+        .eq("category_id", lostItem.category_id);
+      if (storedStatusIds.length > 0)
+        query = query.in("status_id", storedStatusIds);
 
       const { data, error } = await query;
       if (error) throw error;
       foundItems = data || [];
     } catch (err) {
-      console.warn('Supabase offline in checkLostItemMatch, using local JSON database fallback');
+      console.warn(
+        "Supabase offline in checkLostItemMatch, using local JSON database fallback",
+      );
       const db = loadLocalDb();
-      foundItems = (db.items || []).filter(item =>
-        Number(item.category_id) === Number(lostItem.category_id)
+      foundItems = (db.items || []).filter(
+        (item) => Number(item.category_id) === Number(lostItem.category_id),
       );
     }
 
     if (!foundItems || foundItems.length === 0) {
-      console.log('ℹ️ No matching stored items in database.');
+      console.log("ℹ️ No matching stored items in database.");
       return;
     }
 
-    const candidates = foundItems.map(item => ({
+    // Get lost item location string
+    let lostLocation = "ไม่ระบุ";
+    if (lostItem.locations) {
+      lostLocation = lostItem.locations.location_name + (lostItem.locations.floor ? ` ชั้น ${lostItem.locations.floor}` : "");
+    } else if (lostItem.location_id) {
+      try {
+        const { data: locData } = await supabase
+          .from("locations")
+          .select("location_name, floor")
+          .eq("location_id", lostItem.location_id)
+          .maybeSingle();
+        if (locData) {
+          lostLocation = locData.location_name + (locData.floor ? ` ชั้น ${locData.floor}` : "");
+        }
+      } catch (e) {
+        console.warn("Failed to fetch location name for lostItem in checkLostItemMatch:", e.message);
+      }
+    }
+
+    const candidates = foundItems.map((item) => ({
       id: item.item_id,
       name: item.item_name,
-      description: item.description || ''
+      description: item.description || "",
+      found_date: item.found_date || item.created_at,
+      location: item.locations
+        ? item.locations.location_name + (item.locations.floor ? ` ชั้น ${item.locations.floor}` : "")
+        : "ไม่ระบุ",
     }));
 
-    const prompt = `คุณคือระบบวิเคราะห์สิ่งของสูญหายอัจฉริยะ (AI Lost & Found Matcher) ของ Unifind
-จงเปรียบเทียบสิ่งของที่คุณผู้ใช้แจ้งหายล่าช้า (Lost Item) ด้านล่างนี้ กับรายการของที่เก็บอยู่ในห้องคลัง (Stored Found Items) ในหมวดหมู่เดียวกัน
+    const prompt = `คุณคือระบบวิเคราะห์สิ่งของสูญหายอัจฉริยะ (AI Lost & Found Matcher) ของ Unifind ประจำมหาวิทยาลัยหอการค้าไทย (UTCC)
+หน้าที่ของคุณ: เปรียบเทียบของที่ผู้ใช้เพิ่งแจ้งหาย (Lost Item) กับรายการของที่เก็บอยู่ในคลังสิ่งของพบเจอ (Stored Found Items Candidates) เพื่อวิเคราะห์ว่ามีชิ้นใดเป็นของชิ้นเดียวกันที่มีความเป็นไปได้สูงที่สุด
 
-ของที่แจ้งหายล่าสุด (Lost Item):
+ข้อมูลของที่แจ้งหายล่าสุด (Lost Item):
 - ชื่อ: "${lostItem.item_name}"
-- รายละเอียด: "${lostItem.description || ''}"
+- รายละเอียด: "${lostItem.description || ""}"
+- วันที่หาย: "${lostItem.lost_datetime || lostItem.created_at}"
+- สถานที่หาย: "${lostLocation}"
 
-รายการของที่มีเก็บอยู่ในคลัง (Stored Found Items):
+รายการของที่มีเก็บอยู่ในคลัง (Stored Found Items Candidates):
 ${JSON.stringify(candidates, null, 2)}
 
-หน้าที่ของคุณ:
-1. วิเคราะห์ว่าของที่แจ้งหายนี้ ตรงหรือมีความคล้ายคลึงจนน่าจะเป็น "ชิ้นเดียวกัน" กับของที่มีเก็บไว้ในรายการใด หรือไม่ (ความมั่นใจระดับ 75% ขึ้นไป)
-2. ตอบกลับเป็น JSON ในรูปแบบนี้เท่านั้น:
-   {
-     "matched": true,
-     "matchId": [ใส่ ID ของชิ้นที่ตรงกันจาก Stored Found Items],
-     "confidence": [เปอร์เซ็นต์ความมั่นใจ เช่น 85],
-     "reason": "อธิบายสั้นๆ เป็นภาษาไทยว่าวิเคราะห์ลักษณะกายภาพ/คำอธิบายแล้วทำไมจึงแมตช์กัน"
-   }
-3. หากวิเคราะห์แล้วไม่มีของชิ้นใดในคลังข้อมูลที่น่าจะตรงกัน ให้ตอบกลับเป็น JSON รูปแบบนี้:
-   {
-     "matched": false,
-     "matchId": null,
-     "confidence": 0,
-     "reason": "ไม่มีของที่ตรงกัน"
-   }
+เกณฑ์ในการประเมินและเปรียบเทียบเชิงลึก:
+1. **ความเข้ากันได้ของประเภทสิ่งของ**: สิ่งของต้องเป็นชนิดเดียวกันหรือใกล้เคียงกันมาก (เช่น แก้วน้ำ/กระบอกน้ำ, ไอแพด/iPad, หูฟัง/AirPods) หากชนิดของสิ่งของขัดแย้งกันอย่างสิ้นเชิง (เช่น ร่ม กับ โทรศัพท์) ให้ปัดตกทันที (confidence = 0)
+2. **ลักษณะทางกายภาพ สี และยี่ห้อ**: ตรวจสอบสีและแบรนด์ (เช่น สีแดง/สีชมพูเข้ม, สีดำ/สีกรมท่า, ยี่ห้อ Apple/Samsung) จุดสังเกตเฉพาะตัว เช่น ลวดลาย พวงกุญแจที่ห้อย สติกเกอร์ เคสโทรศัพท์ หรือร่องรอยพิเศษ
+3. **การประเมินด้านเวลา**: วันที่พบสิ่งของ (Found Item Date) ต้องเกิดขึ้นหลังจากหรืออยู่ในช่วงเวลาที่ใกล้เคียงกันกับวันที่สิ่งของชิ้นนั้นสูญหาย (Lost Item Date)
+4. **ความเข้ากันได้ของสถานที่**: สถานที่พบและสถานที่หายควรเป็นสถานที่เดียวกัน ตึกเดียวกัน หรือพื้นที่รอบข้างที่สอดคล้องกันเชิงเส้นทางเดิน
 
-ห้ามพิมพ์ข้อความเกริ่นนำหรือคำอธิบายใดๆ นอกเหนือจากรูปแบบ JSON ที่กำหนด`;
+กรุณาตอบกลับเป็น JSON รูปแบบด้านล่างนี้เท่านั้น โดยไม่มีข้อความเกริ่นนำ ข้อความสรุป หรือเครื่องหมาย markdown อื่นๆ นอกเหนือโครงสร้าง JSON นี้เด็ดขาด:
+{
+  "matched": true/false,
+  "matchId": [ใส่ ID จาก Candidates ชิ้นที่คิดว่าตรงกันที่สุด หรือใส่ null หากไม่เข้าเกณฑ์หรือมั่นใจต่ำกว่า 75%],
+  "confidence": [คะแนนความมั่นใจระหว่าง 0 ถึง 100],
+  "reason": "สรุปกระชับเป็นภาษาไทยอธิบายจุดที่พิจารณาเปรียบเทียบทั้งสี ลักษณะเด่น สถานที่ และเวลาเพื่ออธิบายเหตุผลในการจับคู่หรือปฏิเสธ"
+}`;
 
     const aiResult = await generateContentWithFallback(ai, {
       contents: prompt,
-      config: { responseMimeType: 'application/json' }
+      config: { responseMimeType: "application/json" },
     });
 
     const matchResult = JSON.parse(aiResult.text.trim());
-    console.log('🤖 AI Matching Result for LostItem:', matchResult);
+    console.log("🤖 AI Matching Result for LostItem:", matchResult);
 
     if (matchResult.matched && matchResult.matchId) {
       let ownerEmail = parseDescriptionEmail(lostItem.description);
 
       if (!ownerEmail) {
-        // Find reporter email to notify
         try {
           const { data: reporter, error: userError } = await supabase
-            .from('persons')
-            .select('*')
-            .eq('person_id', lostItem.reporter_id)
+            .from("persons")
+            .select("*")
+            .eq("person_id", lostItem.reporter_id)
             .single();
 
           if (userError) throw userError;
@@ -324,9 +390,13 @@ ${JSON.stringify(candidates, null, 2)}
             ownerEmail = reporter.email;
           }
         } catch (err) {
-          console.warn('Supabase offline or error fetching Person in checkLostItemMatch, using local DB fallback');
+          console.warn(
+            "Supabase offline or error fetching Person in checkLostItemMatch, using local DB fallback",
+          );
           const db = loadLocalDb();
-          const localPerson = (db.persons || []).find(p => p.person_id === lostItem.reporter_id);
+          const localPerson = (db.persons || []).find(
+            (p) => p.person_id === lostItem.reporter_id,
+          );
           if (localPerson) {
             ownerEmail = localPerson.email;
           }
@@ -342,7 +412,9 @@ ${JSON.stringify(candidates, null, 2)}
           }
           const parsedMatchId = Number(targetMatchId);
 
-          const matchedFound = foundItems.find(item => Number(item.item_id) === parsedMatchId);
+          const matchedFound = foundItems.find(
+            (item) => Number(item.item_id) === parsedMatchId,
+          );
           if (matchedFound) {
             const notificationMessage = `[แจ้งเตือนด่วนจากระบบ Unifind] 🔍
 
@@ -350,7 +422,7 @@ ${JSON.stringify(candidates, null, 2)}
 
 📌 ของที่คุณแจ้งหาย: "${lostItem.item_name}"
 📍 ของที่มีผู้เก็บได้ในคลัง: "${matchedFound.item_name}"
-📝 รายละเอียดที่พบ: ${matchedFound.description || ''}
+📝 รายละเอียดที่พบ: ${matchedFound.description || ""}
 
 ✨ รายละเอียดที่ตรงกัน: ${matchResult.reason}
 
@@ -359,79 +431,128 @@ ${JSON.stringify(candidates, null, 2)}
             await sendPushToLine(lineUserId, notificationMessage);
           }
         } else {
-          console.log(`ℹ️ Owner email ${ownerEmail} has no bound LINE Account.`);
+          console.log(
+            `ℹ️ Owner email ${ownerEmail} has no bound LINE Account.`,
+          );
         }
       }
       return {
         matched: true,
         confidence: matchResult.confidence || 0,
-        reason: matchResult.reason || '',
-        matchedItem: matchedFound ? {
-          id: matchedFound.item_id,
-          name: matchedFound.item_name,
-          description: matchedFound.description || '',
-          date: matchedFound.found_date,
-          founder: matchedFound.finder ? matchedFound.finder.full_name : 'ไม่ได้ระบุ'
-        } : null
+        reason: matchResult.reason || "",
+        matchedItem: matchedFound
+          ? {
+              id: matchedFound.item_id,
+              name: matchedFound.item_name,
+              description: matchedFound.description || "",
+              date: matchedFound.found_date,
+              founder: matchedFound.finder
+                ? matchedFound.finder.full_name
+                : "ไม่ได้ระบุ",
+            }
+          : null,
       };
     }
-    return { matched: false, confidence: 0, reason: 'ไม่มีของที่ตรงกัน', matchedItem: null };
+    return {
+      matched: false,
+      confidence: 0,
+      reason: "ไม่มีของที่ตรงกัน",
+      matchedItem: null,
+    };
   } catch (err) {
-    console.error('❌ checkLostItemMatch Error:', err);
-    return { matched: false, confidence: 0, reason: 'เกิดข้อผิดพลาดในการตรวจสอบความคล้ายคลึง', error: err.message };
+    console.error("❌ checkLostItemMatch Error:", err);
+    return {
+      matched: false,
+      confidence: 0,
+      reason: "เกิดข้อผิดพลาดในการตรวจสอบความคล้ายคลึง",
+      error: err.message,
+    };
   }
 };
 
-/**
- * Compare a specific LostItem and FoundItem using Gemini AI
- */
 exports.analyzeMatchBetweenItems = async (lostItem, foundItem) => {
   try {
     const lostDesc = parseDescriptionText(lostItem.description);
     const foundDesc = parseDescriptionText(foundItem.description);
 
-    const prompt = `คุณคือระบบวิเคราะห์สิ่งของสูญหายอัจฉริยะ (AI Lost & Found Matcher) ของ Unifind
-จงเปรียบเทียบสิ่งของที่ผู้ใช้แจ้งหาย (Lost Item) กับของที่มีผู้พบเจอ (Found Item) ว่ามีโอกาสที่จะเป็น "ของชิ้นเดียวกัน" มากน้อยเพียงใด
+    let lostLocation = "ไม่ระบุ";
+    if (lostItem.locations) {
+      lostLocation = lostItem.locations.location_name + (lostItem.locations.floor ? ` ชั้น ${lostItem.locations.floor}` : "");
+    } else if (lostItem.location_id) {
+      try {
+        const { data: locData } = await supabase
+          .from("locations")
+          .select("location_name, floor")
+          .eq("location_id", lostItem.location_id)
+          .maybeSingle();
+        if (locData) {
+          lostLocation = locData.location_name + (locData.floor ? ` ชั้น ${locData.floor}` : "");
+        }
+      } catch (e) {}
+    }
+
+    let foundLocation = "ไม่ระบุ";
+    if (foundItem.locations) {
+      foundLocation = foundItem.locations.location_name + (foundItem.locations.floor ? ` ชั้น ${foundItem.locations.floor}` : "");
+    } else if (foundItem.location_id) {
+      try {
+        const { data: locData } = await supabase
+          .from("locations")
+          .select("location_name, floor")
+          .eq("location_id", foundItem.location_id)
+          .maybeSingle();
+        if (locData) {
+          foundLocation = locData.location_name + (locData.floor ? ` ชั้น ${locData.floor}` : "");
+        }
+      } catch (e) {}
+    }
+
+    const prompt = `คุณคือระบบวิเคราะห์สิ่งของสูญหายอัจฉริยะ (AI Lost & Found Matcher) ของ Unifind ประจำมหาวิทยาลัยหอการค้าไทย (UTCC)
+จงเปรียบเทียบสิ่งของที่ผู้ใช้แจ้งหาย (Lost Item) กับของที่มีผู้พบเจอ (Found Item) ว่ามีโอกาสที่จะเป็นของชิ้นเดียวกันมากน้อยเพียงใด
 
 สิ่งของที่แจ้งหาย (Lost Item):
 - ชื่อ: "${lostItem.item_name}"
 - รายละเอียด: "${lostDesc}"
 - วันที่หาย: "${lostItem.lost_datetime || lostItem.created_at}"
-- สถานที่: "${lostItem.locations ? lostItem.locations.location_name + (lostItem.locations.floor ? ' ชั้น ' + lostItem.locations.floor : '') : 'ไม่ระบุ'}"
+- สถานที่หาย: "${lostLocation}"
 
 สิ่งของที่มีผู้พบเจอ (Found Item):
 - ชื่อ: "${foundItem.item_name}"
 - รายละเอียด: "${foundDesc}"
 - วันที่พบ: "${foundItem.found_date || foundItem.created_at}"
-- สถานที่: "${foundItem.locations ? foundItem.locations.location_name + (foundItem.locations.floor ? ' ชั้น ' + foundItem.locations.floor : '') : 'ไม่ระบุ'}"
+- สถานที่พบ: "${foundLocation}"
 
 หน้าที่ของคุณ:
-1. วิเคราะห์เปรียบเทียบความคล้ายคลึงทางกายภาพ สี ยี่ห้อ จุดสังเกต และสถานที่/เวลา
+1. วิเคราะห์เปรียบเทียบความคล้ายคลึงทางกายภาพ สี ยี่ห้อ จุดสังเกต ยืนยันเรื่องวันที่ (วันที่พบควรเป็นวันเดียวหรือหลังจากวันที่แจ้งหาย) และสถานที่ (อาคารหรือทิศทางเดียวกัน)
 2. ตอบกลับเป็น JSON ในรูปแบบนี้เท่านั้น:
    {
      "matched": true,
      "confidence": 85,
-     "reason": "อธิบายการเปรียบเทียบสั้นๆ เป็นภาษาไทยว่าทำไมถึงแมตช์หรือทำไมไม่ตรงกัน"
+     "reason": "อธิบายสั้นๆ เป็นภาษาไทยวิเคราะห์ลักษณะกายภาพ สถานที่ และเวลาเพื่ออธิบายว่าทำไมถึงแมตช์กัน"
    }
-3. หากไม่แมตช์หรือคะแนนความมั่นใจน้อยกว่า 50% ให้ตอบ:
+3. หากไม่แมตช์หรือคะแนนความมั่นใจน้อยกว่า 75% ให้ตอบ:
    {
      "matched": false,
      "confidence": 30,
-     "reason": "ระบุเหตุผลที่ไม่ตรงกัน"
+     "reason": "ระบุเหตุผลที่ไม่ตรงกันหรือเงื่อนไขด้านสี/ประเภท/เวลา/สถานที่ขัดแย้งกัน"
    }
    
 ห้ามพิมพ์ข้อความเกริ่นนำหรือคำอธิบายใดๆ นอกเหนือจากรูปแบบ JSON ที่กำหนด`;
 
     const aiResult = await generateContentWithFallback(ai, {
       contents: prompt,
-      config: { responseMimeType: 'application/json' }
+      config: { responseMimeType: "application/json" },
     });
 
     const matchResult = JSON.parse(aiResult.text.trim());
-    console.log('🤖 AI Manual Pair Matching Result:', matchResult);
+    console.log("🤖 AI Manual Pair Matching Result:", matchResult);
     return matchResult;
   } catch (err) {
-    console.error('❌ analyzeMatchBetweenItems Error:', err);
-    return { matched: false, confidence: 0, reason: 'เกิดข้อผิดพลาดในการวิเคราะห์ด้วย AI: ' + err.message };
+    console.error("❌ analyzeMatchBetweenItems Error:", err);
+    return {
+      matched: false,
+      confidence: 0,
+      reason: "เกิดข้อผิดพลาดในการวิเคราะห์ด้วย AI: " + err.message,
+    };
   }
 };

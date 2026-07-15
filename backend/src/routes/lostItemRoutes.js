@@ -1,13 +1,23 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const controller = require('../controllers/lostItemController');
-const { verifyToken } = require('../middleware/authMiddleware');
-const upload = require('../middleware/uploadMiddleware');
+const controller = require("../controllers/lostItemController");
+const { verifyToken } = require("../middleware/authMiddleware");
+const upload = require("../middleware/uploadMiddleware");
 
-router.get('/',     controller.getLostItems);
-router.get('/:id',  controller.getLostItemById);
-router.post('/',    verifyToken, upload.single('image'), controller.createLostItem);
-router.put('/:id',  verifyToken, upload.single('image'), controller.updateLostItem);
-router.delete('/:id', verifyToken, controller.deleteLostItem);
+router.get("/", controller.getLostItems);
+router.get("/:id", controller.getLostItemById);
+router.post(
+  "/",
+  verifyToken,
+  upload.single("image"),
+  controller.createLostItem,
+);
+router.put(
+  "/:id",
+  verifyToken,
+  upload.single("image"),
+  controller.updateLostItem,
+);
+router.delete("/:id", verifyToken, controller.deleteLostItem);
 
 module.exports = router;

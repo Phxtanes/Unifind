@@ -1,8 +1,10 @@
 <template>
   <!-- TOP NAVBAR -->
-  <nav :class="['h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-40 bg-white/90 shrink-0', noMargin ? '' : '-mx-4 -mt-4 mb-6']">
+  <nav
+    :class="['h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-40 bg-white/90 shrink-0', noMargin ? '' : '-mx-4 -mt-4 mb-6']">
     <div class="flex items-center gap-3">
-      <div v-if="icon" class="w-8 h-8 rounded-lg bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-600 shrink-0">
+      <div v-if="icon"
+        class="w-8 h-8 rounded-lg bg-brand-50 border border-brand-100 flex items-center justify-center text-brand-600 shrink-0">
         <font-awesome :icon="['fas', icon]" class="text-xs" />
       </div>
       <h1 class="text-base font-bold text-slate-800 tracking-tight">
@@ -25,7 +27,8 @@
       <div v-if="username" class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
       <!-- User Profile Card -->
-      <div v-if="username" class="flex items-center gap-3 pr-1 pl-3 py-1 rounded-full hover:bg-slate-50 transition-colors select-none">
+      <div v-if="username"
+        class="flex items-center gap-3 pr-1 pl-3 py-1 rounded-full hover:bg-slate-50 transition-colors select-none">
         <!-- Info -->
         <div class="hidden sm:flex flex-col text-right">
           <span class="text-slate-700 text-xs font-semibold leading-tight">
@@ -36,8 +39,9 @@
           </span>
         </div>
         <!-- Avatar with initials -->
-        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-brand-600 to-brand-500 flex items-center justify-center text-white font-bold text-sm shadow-sm"
-             :title="username">
+        <div
+          class="w-9 h-9 rounded-full bg-gradient-to-tr from-brand-600 to-brand-500 flex items-center justify-center text-white font-bold text-sm shadow-sm"
+          :title="username">
           {{ getUserInitials(username) }}
         </div>
       </div>
@@ -79,9 +83,10 @@ defineProps({
 const authStore = useAuthStore();
 const langStore = useLangStore();
 const router = useRouter();
-const username = computed(() => authStore.user?.username);
+const username = computed(() => authStore.user?.full_name || authStore.user?.username);
 
 onMounted(() => {
+  authStore.initAuth();
   langStore.initLocale();
 });
 

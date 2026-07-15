@@ -463,8 +463,8 @@ const submitForm = async () => {
   const reporterData = {
     person_type: form.value.reporter_type,
     full_name: form.value.reporter_name,
-    student_id: form.value.reporter_type === 'STAFF' ? form.value.reporter_studentId : null,
-    email: form.value.reporter_type === 'STAFF' ? form.value.reporter_universityEmail : null,
+    student_id: form.value.reporter_type === 'STUDENT' ? form.value.reporter_studentId : null,
+    email: form.value.reporter_type === 'STUDENT' ? form.value.reporter_universityEmail : null,
     phone: form.value.reporter_phoneNumber
   }
 
