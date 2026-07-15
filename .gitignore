@@ -21,3 +21,5 @@ backend/uploads/
 uploads/
 *.exe
 *.old
+frontend/.output/
+brain/

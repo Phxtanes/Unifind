@@ -1,7 +1,7 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
-const filePath = path.join(__dirname, '../../uploads/line_bindings.json');
+const filePath = path.join(__dirname, "../../uploads/line_bindings.json");
 
 function loadBindings() {
   try {
@@ -9,10 +9,10 @@ function loadBindings() {
       fs.writeFileSync(filePath, JSON.stringify({}));
       return {};
     }
-    const data = fs.readFileSync(filePath, 'utf8');
-    return JSON.parse(data || '{}');
+    const data = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(data || "{}");
   } catch (error) {
-    console.error('Error loading LINE bindings:', error);
+    console.error("Error loading LINE bindings:", error);
     return {};
   }
 }
@@ -21,7 +21,7 @@ function saveBindings(bindings) {
   try {
     fs.writeFileSync(filePath, JSON.stringify(bindings, null, 2));
   } catch (error) {
-    console.error('Error saving LINE bindings:', error);
+    console.error("Error saving LINE bindings:", error);
   }
 }
 
