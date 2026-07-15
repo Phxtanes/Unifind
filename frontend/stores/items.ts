@@ -61,6 +61,47 @@ interface LostItem {
   updated_at: string | null
 }
 
+export interface UnifiedItem {
+  id: number
+  dbId: number
+  type: 'found' | 'lost'
+  name: string
+  category: string
+  category_id: number | null
+  place: string
+  location_id: number | null
+  date: string | null
+  description: string | null
+  status: string
+  statusName: string | null
+  locker: string
+  locker_id: string | null
+  image_url: string | null
+  finder_id: number | null
+  finderName: string | null
+  finderPhone: string | null
+  finderType: string | null
+  finderStudentId: string | null
+  finderEmail: string | null
+  claimer_id: number | null
+  claimerName: string | null
+  claimerPhone: string | null
+  claimerStudentId: string | null
+  claimerEmail: string | null
+  claimerType: string | null
+  claim_date: string | null
+  remark: string | null
+  reporter_id: number | null
+  reporterName: string | null
+  reporterPhone: string | null
+  reporterType: string | null
+  reporterStudentId: string | null
+  reporterEmail: string | null
+  staffName: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useItemsStore = defineStore('items', {
@@ -353,8 +394,8 @@ export const useItemsStore = defineStore('items', {
 
   getters: {
     // Unified item list used by dashboard/found/lost pages
-    items: (state) => {
-      const mappedFound = state.foundItems.map((item: any) => ({
+    items: (state): UnifiedItem[] => {
+      const mappedFound = state.foundItems.map((item: any): UnifiedItem => ({
         id:         item.item_id || item.id,
         dbId:       item.item_id || item.id,
         type:       'found',
@@ -364,13 +405,13 @@ export const useItemsStore = defineStore('items', {
         place:      item.locationName || item.place || 'ไม่ระบุ',
         location_id: item.location_id,
         date:       item.found_date || item.date,
-        description: item.description,
+        description: item.description || '',
         status:     (item.status || '').toLowerCase(),
         statusName: item.statusName || null,
         locker:     item.locker_id || '-',
         locker_id:  item.locker_id || null,
         image_url:  item.image_url || item.picture || null,
-        finder_id:  item.finder_id,
+        finder_id:  item.finder_id || null,
         finderName:     item.finderName || item.Person?.full_name || null,
         finderPhone:    item.finderPhone || item.Person?.phone || null,
         finderType:     item.finderType  || item.Person?.person_type || 'STUDENT',
@@ -384,12 +425,18 @@ export const useItemsStore = defineStore('items', {
         claimerType:    item.claimerType || null,
         claim_date:     item.claim_date || null,
         remark:         item.remark || null,
+        reporter_id:    null,
+        reporterName:   null,
+        reporterPhone:  null,
+        reporterType:   null,
+        reporterStudentId: null,
+        reporterEmail:  null,
         staffName:      item.staffName || item.namereport || null,
         created_at:     item.created_at || null,
         updated_at:     item.updated_at || null,
       }))
 
-      const mappedLost = state.lostItems.map((item: any) => ({
+      const mappedLost = state.lostItems.map((item: any): UnifiedItem => ({
         id:         item.lost_item_id || item.id,
         dbId:       item.lost_item_id || item.id,
         type:       'lost',
@@ -405,6 +452,20 @@ export const useItemsStore = defineStore('items', {
         locker:     '-',
         locker_id:  null,
         image_url:  item.image_url || item.picture || null,
+        finder_id:      null,
+        finderName:     null,
+        finderPhone:    null,
+        finderType:     null,
+        finderStudentId: null,
+        finderEmail:    null,
+        claimer_id:     null,
+        claimerName:    null,
+        claimerPhone:   null,
+        claimerStudentId: null,
+        claimerEmail:   null,
+        claimerType:    null,
+        claim_date:     null,
+        remark:         null,
         reporter_id:    item.reporter_id,
         reporterName:   item.reporterName || item.Person?.full_name || null,
         reporterPhone:  item.reporterPhone || item.Person?.phone || null,

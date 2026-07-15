@@ -1,20 +1,17 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const controller = require('../controllers/itemController');
-const { verifyToken } = require('../middleware/authMiddleware');
-const upload = require('../middleware/uploadMiddleware');
+const controller = require("../controllers/itemController");
+const { verifyToken } = require("../middleware/authMiddleware");
+const upload = require("../middleware/uploadMiddleware");
 
-// CRUD
-router.get('/',     controller.getItems);
-router.get('/:id',  controller.getItemById);
-router.post('/',    verifyToken, upload.single('image'), controller.createItem);
-router.put('/:id',  verifyToken, upload.single('image'), controller.updateItem);
-router.delete('/:id', verifyToken, controller.deleteItem);
+router.get("/", controller.getItems);
+router.get("/:id", controller.getItemById);
+router.post("/", verifyToken, upload.single("image"), controller.createItem);
+router.put("/:id", verifyToken, upload.single("image"), controller.updateItem);
+router.delete("/:id", verifyToken, controller.deleteItem);
 
-// Claim (บันทึกการรับคืนสิ่งของ)
-router.post('/:id/claim', verifyToken, controller.claimItem);
+router.post("/:id/claim", verifyToken, controller.claimItem);
 
-// AI match analysis
-router.post('/analyze-match', verifyToken, controller.analyzeItemsMatch);
+router.post("/analyze-match", verifyToken, controller.analyzeItemsMatch);
 
 module.exports = router;

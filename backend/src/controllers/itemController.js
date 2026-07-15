@@ -1,3 +1,12 @@
+/**
+ * =========================================================================
+ * 📦 FOUND ITEM CONTROLLER (ตัวจัดการข้อมูลสิ่งของพบเจอ)
+ * =========================================================================
+ * ทำหน้าที่ประมวลผลคำขอเกี่ยวกับสิ่งของพบเจอ (Found Items) ทั้งการดึงข้อมูล,
+ * การลงทะเบียนสิ่งของใหม่โดยเจ้าหน้าที่, การรับของคืน (Claim), 
+ * รวมถึงการเชื่อมต่อระบบวิเคราะห์คู่แมตช์อัตโนมัติ (AI Matching Process)
+ */
+
 const supabase = require('../config/supabase');
 
 // ──────────────────────────────────────────────────
@@ -211,6 +220,7 @@ exports.createItem = async (req, res) => {
 
     res.status(201).json(formatItem(data));
   } catch (error) {
+    console.error("❌ Error in createItem:", error);
     res.status(500).json({ message: error.message });
   }
 };

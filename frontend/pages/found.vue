@@ -206,7 +206,7 @@
             <input type="text" v-model="returnForm.full_name" required placeholder="เช่น สมชาย รักดี" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition" />
           </div>
 
-          <!-- Person Type -->
+          <!-- Receiver Person Type -->
           <div>
             <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">{{ $t('ประเภทบุคคล') }} <span style="color: red;">*</span></label>
             <div class="grid grid-cols-3 gap-2">
