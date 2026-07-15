@@ -22,7 +22,7 @@ const formatUser = (user) => {
 
 exports.register = async (req, res) => {
   try {
-    const { username, email, password, full_name } = req.body;
+    const { username, email, password, full_name, nickname } = req.body;
 
     const { data: existingUser } = await supabase
       .from("users")
@@ -172,6 +172,7 @@ exports.createUser = async (req, res) => {
         email,
         password_hash: hashedPassword,
         full_name: full_name || username,
+        nickname: nickname || null,
         role: role.toUpperCase(),
         status,
       })

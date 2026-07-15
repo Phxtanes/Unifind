@@ -24,6 +24,7 @@
 | `username` | VARCHAR | ชื่อผู้ใช้สำหรับ Login (*UNIQUE*) |
 | `password_hash` | VARCHAR | รหัสผ่านที่เข้ารหัสแล้ว (bcrypt) |
 | `full_name` | VARCHAR | ชื่อเจ้าหน้าที่ |
+| `nickname` | VARCHAR | ชื่อเล่น |
 | `email` | VARCHAR | อีเมล |
 | `role` | ENUM | สิทธิ์การใช้งาน (`ADMIN`, `STAFF`) |
 | `status` | ENUM | สถานะบัญชี (`Active`, `Inactive`) |

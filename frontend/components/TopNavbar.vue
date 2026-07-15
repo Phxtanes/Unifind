@@ -13,6 +13,14 @@
     <div class="flex items-center gap-2">
       <slot></slot>
 
+      <!-- Language Switcher Button -->
+      <button @click="langStore.toggleLocale()"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-slate-150 border border-slate-200 transition-all select-none text-xs font-semibold text-slate-700 hover:scale-105 active:scale-95 shadow-sm bg-white"
+        title="Switch Language / เปลี่ยนภาษา">
+        <span class="mr-0.5 text-slate-700">{{ langStore.locale === 'th' ? 'th' : 'en' }}</span>
+        <span>{{ langStore.locale === 'th' ? 'TH' : 'EN' }}</span>
+      </button>
+
       <!-- Divider -->
       <div v-if="username" class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
 
@@ -40,7 +48,7 @@
       <!-- Logout Button -->
       <button v-if="username" @click="logout"
         class="flex items-center justify-center w-9 h-9 rounded-full text-slate-500 hover:text-red-500 hover:bg-red-50 transition-colors"
-        title="Logout">
+        :title="langStore.t('topNav.logout')">
         <font-awesome :icon="['fas', 'right-from-bracket']" class="text-sm" />
       </button>
     </div>
@@ -48,9 +56,10 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { useRouter } from 'vue-router';
+import { useLangStore } from '~/stores/lang';
 
 defineProps({
   title: {
@@ -68,8 +77,13 @@ defineProps({
 });
 
 const authStore = useAuthStore();
+const langStore = useLangStore();
 const router = useRouter();
 const username = computed(() => authStore.user?.username);
+
+onMounted(() => {
+  langStore.initLocale();
+});
 
 const logout = () => {
   authStore.logout();

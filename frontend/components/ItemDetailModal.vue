@@ -1,6 +1,6 @@
 <template>
   <transition name="modal">
-    <div v-if="show && item" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4 sm:p-6 transition-all font-sarabun" @click.self="$emit('close')">
+    <div v-if="show && item" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4 sm:p-6 transition-all font-sans" @click.self="$emit('close')">
       <div :class="[
         (item.status === 'claimed' || item.status === 'returned') ? 'max-w-7xl' : 'max-w-5xl'
       ]" class="bg-white rounded-3xl shadow-2xl overflow-hidden w-full flex flex-col border border-slate-100 modal-card transition-all duration-300">
@@ -47,7 +47,7 @@
                     </span>
                     <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50/60 text-emerald-750 border border-emerald-100/50 rounded-full text-[11px] font-extrabold border">
                       <font-awesome :icon="['fas', 'circle-check']" class="text-emerald-600 text-[10px]" />
-                      ส่งคืนแล้ว (CLAIMED)
+                      {{ $t('ส่งคืนแล้ว (CLAIMED)') }}
                     </span>
                   </div>
                 </div>
@@ -64,7 +64,7 @@
                     <font-awesome :icon="['fas', 'location-dot']" class="text-rose-500 text-sm" />
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">สถานที่ที่พบ</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ $t('สถานที่ที่พบ') }}</p>
                     <p class="text-xs font-bold text-slate-800 truncate" :title="item.place">{{ item.place || '-' }}</p>
                   </div>
                 </div>
@@ -75,7 +75,7 @@
                     <font-awesome :icon="['fas', 'calendar-days']" class="text-indigo-500 text-sm" />
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">วันที่และเวลาบันทึกของ</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ $t('วันที่และเวลาบันทึกของ') }}</p>
                     <p class="text-xs font-bold text-slate-800 truncate" :title="formatFullDate(item.date)">{{ formatFullDate(item.date) }}</p>
                   </div>
                 </div>
@@ -86,7 +86,7 @@
                     <font-awesome :icon="['fas', 'box']" class="text-amber-500 text-sm" />
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">ตู้ล็อกเกอร์จัดเก็บ</p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ $t('ตู้ล็อกเกอร์จัดเก็บ') }}</p>
                     <p class="text-xs font-bold text-slate-800 truncate" :title="item.locker">{{ item.locker || '-' }}</p>
                   </div>
                 </div>
@@ -97,10 +97,8 @@
                     <font-awesome :icon="['fas', 'user']" class="text-blue-500 text-sm" />
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ item.type === 'lost' ? 'ผู้แจ้งหาย' : 'เจ้าหน้าที่ผู้บันทึก' }}</p>
-                    <p class="text-xs font-bold text-slate-800 truncate" :title="item.type === 'lost' ? item.reporterName : item.staffName">
-                      {{ item.type === 'lost' ? (item.reporterName || 'ไม่ระบุ') : (item.staffName || 'Admin') }}
-                    </p>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ $t('เจ้าหน้าที่ผู้บันทึก') }}</p>
+                    <p class="text-xs font-bold text-slate-800 truncate" :title="item.staffName">{{ item.staffName || 'Admin' }}</p>
                   </div>
                 </div>
               </div>
@@ -109,7 +107,7 @@
               <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
                 <div class="flex items-center gap-2 mb-2 text-slate-700">
                   <font-awesome :icon="['fas', 'file-lines']" class="text-slate-400 text-sm" />
-                  <p class="text-[10px] font-bold uppercase tracking-wider text-slate-555">รายละเอียดเพิ่มเติม</p>
+                  <p class="text-[10px] font-bold uppercase tracking-wider text-slate-555">{{ $t('รายละเอียดเพิ่มเติม') }}</p>
                 </div>
                 <div class="bg-slate-50/70 border border-slate-100 rounded-xl p-3 min-h-[70px]">
                   <p class="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed">{{ formatDescription(item.description) }}</p>
@@ -121,37 +119,37 @@
             <div class="lg:col-span-5 bg-emerald-50 border border-emerald-200/60 p-6 rounded-3xl space-y-4 self-stretch shadow-sm shadow-emerald-100/10 flex flex-col justify-start">
               <div class="flex items-center gap-2 text-emerald-700">
                 <font-awesome :icon="['fas', 'hand-holding-hand']" class="text-emerald-600 text-sm" />
-                <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-800">ข้อมูลการรับคืนสิ่งของ</p>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-800">{{ $t('ข้อมูลการรับคืนสิ่งของ') }}</p>
               </div>
               <div class="divide-y divide-emerald-200/50 text-xs flex-1">
                 <div class="flex justify-between py-2.5">
-                  <span class="text-emerald-800/75 font-semibold">ผู้รับคืน</span>
+                  <span class="text-emerald-800/75 font-semibold">{{ $t('ผู้รับคืน') }}</span>
                   <span class="font-extrabold text-emerald-950">{{ item.claimerName || '-' }}</span>
                 </div>
                 <div class="flex justify-between py-2.5">
-                  <span class="text-emerald-800/75 font-semibold">ประเภทบุคคล</span>
+                  <span class="text-emerald-800/75 font-semibold">{{ $t('ประเภทบุคคล') }}</span>
                   <span class="font-extrabold text-emerald-950">
-                    {{ item.claimerType === 'STUDENT' ? 'นักศึกษา' : item.claimerType === 'STAFF' ? 'บุคลากร' : 'บุคคลภายนอก' }}
+                    {{ item.claimerType === 'STUDENT' ? $t('นักศึกษา') : item.claimerType === 'STAFF' ? $t('บุคลากร') : item.claimerType === 'MAID' ? $t('แม่บ้าน') : item.claimerType === 'SECURITY' ? $t('เจ้าหน้าที่รักษาความปลอดภัย') : $t('บุคคลภายนอก') }}
                   </span>
                 </div>
                 <div v-if="item.claimerStudentId" class="flex justify-between py-2.5">
-                  <span class="text-emerald-800/75 font-semibold">รหัสนักศึกษา</span>
+                  <span class="text-emerald-800/75 font-semibold">{{ $t('รหัสนักศึกษา') }}</span>
                   <span class="font-extrabold text-emerald-950 font-mono">{{ item.claimerStudentId }}</span>
                 </div>
                 <div class="flex justify-between py-2.5">
-                  <span class="text-emerald-800/75 font-semibold">เบอร์โทรศัพท์</span>
+                  <span class="text-emerald-800/75 font-semibold">{{ $t('เบอร์โทรศัพท์') }}</span>
                   <span class="font-extrabold text-emerald-950 font-mono">{{ item.claimerPhone || '-' }}</span>
                 </div>
                 <div v-if="item.claimerEmail" class="flex justify-between py-2.5">
-                  <span class="text-emerald-800/75 font-semibold">อีเมล</span>
+                  <span class="text-emerald-800/75 font-semibold">{{ $t('อีเมล') }}</span>
                   <span class="font-extrabold text-emerald-950 font-mono">{{ item.claimerEmail }}</span>
                 </div>
                 <div class="flex justify-between py-2.5">
-                  <span class="text-emerald-800/75 font-semibold">วันที่รับคืน</span>
+                  <span class="text-emerald-800/75 font-semibold">{{ $t('วันที่รับคืน') }}</span>
                   <span class="font-extrabold text-emerald-950">{{ formatFullDate(item.claim_date) }}</span>
                 </div>
                 <div v-if="item.remark" class="flex flex-col py-2.5 gap-1.5">
-                  <span class="text-emerald-800/75 font-semibold">หมายเหตุ / บันทึกเพิ่มเติม</span>
+                  <span class="text-emerald-800/75 font-semibold">{{ $t('หมายเหตุ / บันทึกเพิ่มเติม') }}</span>
                   <span class="font-semibold text-emerald-900 bg-white/70 p-2.5 rounded-xl border border-emerald-200/50 leading-relaxed">{{ item.remark }}</span>
                 </div>
               </div>
@@ -177,7 +175,7 @@
                     'bg-emerald-50/60 text-emerald-750 border-emerald-100/50': item.status === 'found' || item.status === 'stored'
                   }" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold border">
                     <font-awesome :icon="item.status === 'lost' ? ['fas', 'circle-xmark'] : ['fas', 'circle-check']" :class="item.status === 'lost' ? 'text-rose-500' : 'text-emerald-500'" class="text-[10px]" />
-                    {{ item.status === 'lost' ? 'ของหาย (LOST)' : 'พบเจอ (FOUND)' }}
+                    {{ item.status === 'lost' ? $t('ของหาย (LOST)') : $t('พบเจอ (FOUND)') }}
                   </span>
                 </div>
               </div>
@@ -196,7 +194,7 @@
                   <font-awesome :icon="['fas', 'location-dot']" class="text-rose-500 text-sm" />
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">สถานที่{{ item.type === 'lost' ? 'หาย' : 'ที่พบ' }}</p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ $t('สถานที่') }}{{ item.type === 'lost' ? $t('หาย') : $t('ที่พบ') }}</p>
                   <p class="text-xs font-bold text-slate-800 truncate" :title="item.place">{{ item.place || '-' }}</p>
                 </div>
               </div>
@@ -207,7 +205,7 @@
                   <font-awesome :icon="['fas', 'calendar-days']" class="text-indigo-500 text-sm" />
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">วันที่และเวลาบันทึกของ</p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ $t('วันที่และเวลาบันทึกของ') }}</p>
                   <p class="text-xs font-bold text-slate-800 truncate" :title="formatFullDate(item.date)">{{ formatFullDate(item.date) }}</p>
                 </div>
               </div>
@@ -218,7 +216,7 @@
                   <font-awesome :icon="['fas', 'box']" class="text-amber-500 text-sm" />
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">ตู้ล็อกเกอร์จัดเก็บ</p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ $t('ตู้ล็อกเกอร์จัดเก็บ') }}</p>
                   <p class="text-xs font-bold text-slate-800 truncate" :title="item.locker">{{ item.locker || '-' }}</p>
                 </div>
               </div>
@@ -229,10 +227,8 @@
                   <font-awesome :icon="['fas', 'user']" class="text-blue-500 text-sm" />
                 </div>
                 <div class="min-w-0">
-                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ item.type === 'lost' ? 'ผู้แจ้งหาย' : 'เจ้าหน้าที่ผู้บันทึก' }}</p>
-                  <p class="text-xs font-bold text-slate-800 truncate" :title="item.type === 'lost' ? item.reporterName : item.staffName">
-                    {{ item.type === 'lost' ? (item.reporterName || 'ไม่ระบุ') : (item.staffName || 'Admin') }}
-                  </p>
+                  <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ $t('เจ้าหน้าที่ผู้บันทึก') }}</p>
+                  <p class="text-xs font-bold text-slate-800 truncate" :title="item.staffName">{{ item.staffName || 'Admin' }}</p>
                 </div>
               </div>
             </div>
@@ -241,7 +237,7 @@
             <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
               <div class="flex items-center gap-2 mb-2 text-slate-700">
                 <font-awesome :icon="['fas', 'file-lines']" class="text-slate-400 text-sm" />
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-555">รายละเอียดเพิ่มเติม</p>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-555">{{ $t('รายละเอียดเพิ่มเติม') }}</p>
               </div>
               <div class="bg-slate-50/70 border border-slate-100 rounded-xl p-3 min-h-[70px]">
                 <p class="text-xs text-slate-600 whitespace-pre-wrap leading-relaxed">{{ formatDescription(item.description) }}</p>
@@ -252,15 +248,15 @@
             <div class="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
               <div class="flex items-center gap-2 text-slate-700">
                 <font-awesome :icon="['fas', 'box-open']" class="text-indigo-500 text-sm" />
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-555">ข้อมูลการจัดเก็บ</p>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-555">{{ $t('ข้อมูลการจัดเก็บ') }}</p>
               </div>
               <div class="divide-y divide-slate-100 text-xs">
                 <div class="flex justify-between py-2.5">
-                  <span class="text-slate-455 font-medium">วันที่จัดเก็บ</span>
+                  <span class="text-slate-455 font-medium">{{ $t('วันที่จัดเก็บ') }}</span>
                   <span class="font-bold text-slate-800">{{ formatFullDate(item.date) }}</span>
                 </div>
                 <div class="flex justify-between py-2.5">
-                  <span class="text-slate-455 font-medium">ตู้ล็อกเกอร์จัดเก็บ</span>
+                  <span class="text-slate-455 font-medium">{{ $t('ตู้ล็อกเกอร์จัดเก็บ') }}</span>
                   <span class="font-bold text-slate-800">{{ item.locker || '-' }}</span>
                 </div>
               </div>
@@ -274,11 +270,11 @@
       <div class="bg-slate-50 px-8 py-4 border-t border-slate-100 flex items-center justify-between select-none">
         <button @click="$emit('close')" class="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-550 hover:text-slate-700 text-xs font-extrabold rounded-xl transition duration-150 shadow-sm">
           <font-awesome :icon="['fas', 'arrow-left']" />
-            ย้อนกลับ
+            {{ $t('ย้อนกลับ') }}
         </button>
         <button v-if="item.status !== 'claimed' && item.status !== 'returned'" @click="$emit('edit', item)" class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold rounded-xl transition duration-150 shadow-md shadow-indigo-600/10">
           <font-awesome :icon="['fas', 'pen']" />
-          แก้ไขข้อมูล
+          {{ $t('แก้ไขข้อมูล') }}
         </button>
       </div>
 

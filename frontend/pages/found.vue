@@ -2,7 +2,7 @@
   <div class="space-y-6">
 
     <!-- Controls & Search Card -->
-    <div class="bg-white rounded-xl py-3 px-4 border border-slate-200/80 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+    <div class="bg-white rounded-xl py-3 px-4 border border-slate-200/80 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4 font-sans">
       <div class="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
         <!-- Search Input -->
         <div class="relative flex-1 max-w-xs">
@@ -10,28 +10,28 @@
             <font-awesome :icon="['fas', 'magnifying-glass']" />
           </span>
           <input v-model="searchQuery" type="text" id="search-found"
-            placeholder="ค้นหา (ชื่อ, สถานที่, ID)..." 
+            :placeholder="$t('ค้นหาด้วยรหัสสิ่งของ หรือ ชื่อสิ่งของ...')" 
             class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-xs text-slate-700 transition" />
         </div>
 
         <!-- Category Dropdown Filter -->
         <div class="flex items-center gap-2">
-          <label for="category-filter" class="text-[10px] font-bold text-slate-400 uppercase shrink-0">หมวดหมู่:</label>
+          <label for="category-filter" class="text-[10px] font-bold text-slate-400 uppercase shrink-0">{{ $t('หมวดหมู่') }}:</label>
           <select id="category-filter" v-model="selectedCategory" class="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-2.5 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition">
-            <option value="">ทั้งหมด</option>
-            <option value="Electronics">อุปกรณ์อิเล็กทรอนิกส์</option>
-            <option value="Documents">เอกสารสำคัญ</option>
-            <option value="Clothing">เสื้อผ้า / เครื่องแต่งกาย</option>
-            <option value="Accessories">เครื่องประดับ / ของใช้ส่วนตัว</option>
-            <option value="Other">อื่นๆ</option>
+            <option value="">{{ $t('ทั้งหมด') }}</option>
+            <option value="Electronics">{{ $t('อุปกรณ์อิเล็กทรอนิกส์') }}</option>
+            <option value="Documents">{{ $t('เอกสารสำคัญ') }}</option>
+            <option value="Clothing">{{ $t('เสื้อผ้า / เครื่องแต่งกาย') }}</option>
+            <option value="Accessories">{{ $t('เครื่องประดับ / ของใช้ส่วนตัว') }}</option>
+            <option value="Other">{{ $t('อื่นๆ') }}</option>
           </select>
         </div>
 
         <!-- Locker Dropdown Filter -->
         <div class="flex items-center gap-2">
-          <label for="locker-filter" class="text-[10px] font-bold text-slate-400 uppercase shrink-0">ตู้ล็อกเกอร์:</label>
+          <label for="locker-filter" class="text-[10px] font-bold text-slate-400 uppercase shrink-0">{{ $t('ตู้จัดเก็บ') }}:</label>
           <select id="locker-filter" v-model="selectedLocker" class="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-2.5 text-xs text-slate-700 outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition">
-            <option value="">ทั้งหมด</option>
+            <option value="">{{ $t('ทั้งหมด') }}</option>
             <option v-for="locker in uniqueLockers" :key="locker" :value="locker">
               {{ locker }}
             </option>
@@ -40,24 +40,24 @@
       </div>
 
       <div class="flex items-center gap-2 shrink-0">
-        <span class="text-[10px] font-bold text-slate-455 uppercase tracking-wider">ประเภท:</span>
-        <span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-100 uppercase">พบของ (Found)</span>
+        <span class="text-[10px] font-bold text-slate-455 uppercase tracking-wider">{{ $t('ประเภท') }}:</span>
+        <span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-1 rounded-md border border-emerald-100 uppercase">{{ $t('พบของ (Found)') }}</span>
       </div>
     </div>
 
     <!-- Items Table Card -->
     <div class="bg-white pt-0 px-6 pb-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between min-h-[480px]">
       <div class="overflow-x-auto -mx-6">
-        <table class="w-full text-left border-collapse min-w-[700px]">
+        <table class="w-full text-left border-collapse min-w-[700px] font-sans">
           <thead>
             <tr class="border-b border-slate-200 text-[10px] font-extrabold text-slate-500 uppercase tracking-widest bg-slate-50/70">
-              <th class="py-4 px-6 font-bold">รายการ</th>
-              <th class="py-4 px-6 font-bold">หมวดหมู่</th>
-              <th class="py-4 px-6 font-bold">สถานะ</th>
-              <th class="py-4 px-6 font-bold">สถานที่</th>
-              <th class="py-4 px-6 font-bold">วันที่บันทึก</th>
-              <th class="py-4 px-6 font-bold">ตู้ล็อกเกอร์</th>
-              <th class="py-4 px-6 font-bold text-center">จัดการ</th>
+              <th class="py-4 px-6 font-bold">{{ $t('รายการ') }}</th>
+              <th class="py-4 px-6 font-bold">{{ $t('หมวดหมู่') }}</th>
+              <th class="py-4 px-6 font-bold">{{ $t('สถานะ') }}</th>
+              <th class="py-4 px-6 font-bold">{{ $t('สถานที่') }}</th>
+              <th class="py-4 px-6 font-bold">{{ $t('วันที่บันทึก') }}</th>
+              <th class="py-4 px-6 font-bold">{{ $t('ตู้จัดเก็บ') }}</th>
+              <th class="py-4 px-6 font-bold text-center">{{ $t('จัดการ') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
@@ -78,10 +78,10 @@
               <td class="py-3 px-6">
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[9px] font-bold rounded-full border uppercase bg-emerald-50/70 text-emerald-700 border-emerald-100/80">
                   <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                  พร้อมคืน
+                  {{ $t('พร้อมคืน') }}
                 </span>
               </td>
-              <td class="py-3 px-6 text-slate-600 font-medium break-words max-w-[200px]" :title="item.place">{{ item.place }}</td>
+              <td class="py-3 px-6 text-slate-650 font-medium break-words max-w-[200px]" :title="item.place">{{ item.place }}</td>
               <td class="py-3 px-6 text-slate-450 font-medium" :title="formatFullDate(item.date)">{{ formatDateShort(item.date) }}</td>
               <td class="py-3 px-6 text-slate-600 font-mono font-medium">{{ item.locker || '-' }}</td>
               <td class="py-3 px-6">
@@ -90,9 +90,9 @@
                     @click.stop="openReturnModal(item)"
                     class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-semibold py-1 px-2.5 rounded-lg transition duration-150 shadow-sm flex items-center gap-1.5 hover:shadow">
                     <font-awesome :icon="['fas', 'hand-holding-hand']" />
-                    คืนของ
+                    {{ $t('คืนของ') }}
                   </button>
-                  <button @click.stop="openEditModal(item)" class="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-transparent hover:border-indigo-100/50 transition" title="แก้ไข">
+                  <button @click.stop="openEditModal(item)" class="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 p-1.5 rounded-lg border border-transparent hover:border-indigo-100/50 transition" :title="$t('แก้ไข')">
                     <font-awesome :icon="['fas', 'pen-to-square']" />
                   </button>
                   <button @click.stop="deleteItem(item.id)" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-lg border border-transparent hover:border-rose-100/50 transition">
@@ -103,10 +103,10 @@
             </tr>
             <tr v-if="paginatedItems.length === 0">
               <td colspan="7" class="text-center py-20 text-slate-455">
-                <div class="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-lg mx-auto shadow-sm">
-                  <font-awesome :icon="['fas', 'puzzle-piece']" />
+                <div class="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center text-lg mx-auto shadow-sm">
+                  <font-awesome :icon="['fas', 'magnifying-glass']" />
                 </div>
-                <p class="text-xs mt-3 font-semibold text-slate-700">ไม่มีรายการสิ่งของที่พบในระบบ</p>
+                <p class="text-xs mt-3 font-semibold text-slate-700">{{ $t('ไม่มีข้อมูล') }}</p>
               </td>
             </tr>
           </tbody>
@@ -114,11 +114,17 @@
       </div>
 
       <!-- Pagination -->
-      <div v-if="totalPages > 1" class="mt-4 flex justify-between items-center text-xs font-medium text-slate-500 pt-4 border-t border-slate-100">
-        <span>แสดงหน้า <strong class="text-slate-800">{{ currentPage }}</strong> จากทั้งหมด <strong class="text-slate-800">{{ totalPages }}</strong> หน้า ({{ filteredItems.length }} รายการ)</span>
+      <div v-if="totalPages > 1" class="mt-4 flex justify-between items-center text-xs font-medium text-slate-500 pt-4 border-t border-slate-100 font-sans">
+        <span>
+          {{ langStore.locale === 'th' ? 'แสดงหน้า' : 'Showing page' }} <strong class="text-slate-800">{{ currentPage }}</strong> 
+          {{ langStore.locale === 'th' ? 'จากทั้งหมด' : 'of' }} <strong class="text-slate-800">{{ totalPages }}</strong> 
+          {{ langStore.locale === 'th' ? 'หน้า' : 'pages' }} ({{ langStore.locale === 'th' ? 'ทั้งหมด' : 'Total' }} {{ filteredItems.length }} {{ langStore.locale === 'th' ? 'รายการ' : 'items' }})
+        </span>
         <div class="flex items-center gap-1.5">
           <button @click="currentPage = Math.max(1, currentPage - 1)" :disabled="currentPage === 1"
-            class="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-slate-355 hover:bg-slate-50/50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm">ก่อนหน้า</button>
+            class="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-slate-350 hover:bg-slate-50/50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm font-sans">
+            {{ langStore.locale === 'th' ? 'ก่อนหน้า' : 'Previous' }}
+          </button>
           
           <template v-for="page in paginationRange" :key="page">
             <span v-if="page === '...'" class="px-2 py-1 text-slate-400">...</span>
@@ -130,7 +136,9 @@
           </template>
 
           <button @click="currentPage = Math.min(totalPages, currentPage + 1)" :disabled="currentPage === totalPages"
-            class="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-slate-355 hover:bg-slate-50/50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm">ถัดไป</button>
+            class="px-2.5 py-1.5 bg-white border border-slate-200 hover:border-slate-350 hover:bg-slate-50/50 rounded-lg disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm font-sans">
+            {{ langStore.locale === 'th' ? 'ถัดไป' : 'Next' }}
+          </button>
         </div>
       </div>
     </div>
@@ -160,28 +168,27 @@
       @close="showSuccessModal = false" 
     />
 
-    <!-- Return Item Modal -->
-    <div v-if="showReturnModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50  transition-opacity duration-300">
-      <div class="bg-white w-full max-w-md rounded-2xl border border-slate-100 shadow-2xl p-6 relative overflow-hidden max-h-[90vh] flex flex-col animate-fade-in">
-        
-        <!-- Header -->
-        <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-          <div class="flex items-center gap-2">
-            <div class="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-650 text-sm">
-              <font-awesome :icon="['fas', 'hand-holding-hand']" />
-            </div>
+    <!-- Return Item Form Modal -->
+    <div v-if="showReturnModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 animate-fade-in" @click.self="closeReturnModal">
+      <div class="bg-white rounded-2xl max-w-md w-full shadow-xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
+        <!-- Modal Header -->
+        <div class="px-6 py-4 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 border border-indigo-100 text-indigo-650">
+              <font-awesome :icon="['fas', 'hand-holding-hand']" class="text-sm" />
+            </span>
             <div>
-              <h3 class="text-sm font-bold text-slate-800">ทำรายการส่งคืนสิ่งของ</h3>
-              <p class="text-[10px] text-slate-450 mt-0.5">กรอกข้อมูลผู้รับสิ่งของเพื่อบันทึกประวัติการส่งคืน</p>
+              <h3 class="text-xs font-bold text-slate-800">{{ $t('ส่งคืนสิ่งของ') }}</h3>
+              <p class="text-[9px] text-slate-400 font-medium font-sans">{{ $t('ข้อมูลผู้รับของ') }}</p>
             </div>
           </div>
-          <button @click="closeReturnModal" class="text-slate-400 hover:text-slate-650 transition p-1">
+          <button @click="closeReturnModal" class="text-slate-450 hover:text-slate-650 hover:bg-slate-100 p-1.5 rounded-lg transition">
             <font-awesome :icon="['fas', 'xmark']" />
           </button>
         </div>
 
         <!-- Form content -->
-        <form @submit.prevent="handleReturnSubmit" class="space-y-4 overflow-y-auto flex-1 pr-1">
+        <form @submit.prevent="handleReturnSubmit" class="space-y-4 overflow-y-auto flex-1 pr-1 p-6 font-sans">
           <div class="p-3 bg-indigo-50/50 border border-indigo-100/50 rounded-xl flex items-center gap-3">
             <img v-if="getItemImageSrc(returnItem)" :src="getItemImageSrc(returnItem)" class="w-12 h-12 rounded-lg object-cover border border-slate-200" />
             <div v-else class="w-12 h-12 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-400 text-lg">
@@ -189,55 +196,56 @@
             </div>
             <div>
               <p class="text-xs font-bold text-slate-800 line-clamp-1">{{ returnItem?.name }}</p>
-              <p class="text-[9px] text-slate-500 font-medium">ตู้ล็อกเกอร์: {{ returnItem?.locker || '-' }}</p>
+              <p class="text-[9px] text-slate-500 font-medium">{{ $t('ตู้จัดเก็บ') }}: {{ returnItem?.locker || '-' }}</p>
             </div>
           </div>
 
           <!-- Receiver Full Name -->
           <div>
-            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">ชื่อ-นามสกุล ผู้รับคืน <span style="color: red;">*</span></label>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">{{ $t('ชื่อ-นามสกุล ผู้รับคืน') }} <span style="color: red;">*</span></label>
             <input type="text" v-model="returnForm.full_name" required placeholder="เช่น สมชาย รักดี" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition" />
           </div>
 
           <!-- Receiver Person Type -->
           <div>
-            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">ประเภทบุคคล <span style="color: red;">*</span></label>
-            <div class="grid grid-cols-2 gap-2">
-              <button type="button" @click="returnForm.person_type = 'STUDENT'" :class="returnForm.person_type === 'STUDENT' ? 'bg-indigo-600 text-white font-bold border-transparent' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'" class="py-2 text-[10px] rounded-xl border text-center transition">นักศึกษา</button>
-              <button type="button" @click="returnForm.person_type = 'STAFF'" :class="returnForm.person_type === 'STAFF' ? 'bg-indigo-600 text-white font-bold border-transparent' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'" class="py-2 text-[10px] rounded-xl border text-center transition">บุคลากร</button>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">{{ $t('ประเภทบุคคล') }} <span style="color: red;">*</span></label>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" @click="returnForm.person_type = 'STUDENT'" :class="returnForm.person_type === 'STUDENT' ? 'bg-indigo-600 text-white font-bold border-transparent' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'" class="py-2 text-[10px] rounded-xl border text-center transition">{{ $t('นักศึกษา') }}</button>
+              <button type="button" @click="returnForm.person_type = 'STAFF'" :class="returnForm.person_type === 'STAFF' ? 'bg-indigo-600 text-white font-bold border-transparent' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'" class="py-2 text-[10px] rounded-xl border text-center transition">{{ $t('บุคลากร') }}</button>
+              <button type="button" @click="returnForm.person_type = 'EXTERNAL'" :class="returnForm.person_type === 'EXTERNAL' ? 'bg-indigo-600 text-white font-bold border-transparent' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'" class="py-2 text-[10px] rounded-xl border text-center transition">{{ $t('บุคคลภายนอก') }}</button>
             </div>
           </div>
 
           <!-- Student ID (if student) -->
           <div v-if="returnForm.person_type === 'STUDENT'">
-            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">รหัสนักศึกษา <span style="color: red;">*</span></label>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">{{ $t('รหัสนักศึกษา') }} <span style="color: red;">*</span></label>
             <input type="text" v-model="returnForm.student_id" required placeholder="เช่น 660110xxxx" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition" />
           </div>
 
           <!-- Phone Number -->
           <div>
-            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">เบอร์โทรศัพท์ติดต่อ <span style="color: red;">*</span></label>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">{{ $t('เบอร์โทรศัพท์ติดต่อ') }} <span style="color: red;">*</span></label>
             <input type="text" v-model="returnForm.phone" required placeholder="เช่น 089xxxxxxx" maxlength="10" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition" />
           </div>
 
           <!-- Email -->
           <div>
-            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">อีเมล (ถ้ามี)</label>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">{{ $t('อีเมล (ถ้ามี)') }}</label>
             <input type="email" v-model="returnForm.email" placeholder="เช่น somchai@utcc.ac.th" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition" />
           </div>
 
           <!-- Relationship -->
           <div>
-            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">ความสัมพันธ์กับสิ่งของ <span style="color: red;">*</span></label>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">{{ $t('ความสัมพันธ์กับสิ่งของ') }} <span style="color: red;">*</span></label>
             <select v-model="returnForm.relationship" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition">
-              <option value="owner">เป็นเจ้าของสิ่งของ (Owner)</option>
-              <option value="representative">เป็นผู้แทนมารับคืน (Representative)</option>
+              <option value="owner">{{ $t('เป็นเจ้าของสิ่งของ (Owner)') }}</option>
+              <option value="representative">{{ $t('เป็นผู้แทนมารับคืน (Representative)') }}</option>
             </select>
           </div>
 
           <!-- Notes -->
           <div>
-            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">หมายเหตุ / บันทึกการส่งมอบ</label>
+            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">{{ $t('หมายเหตุ / บันทึกการส่งมอบ') }}</label>
             <textarea v-model="returnForm.remark" rows="2" placeholder="เช่น ตรวจสอบภาพถ่ายหรือหลักฐานเรียบร้อยแล้ว" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition resize-none"></textarea>
           </div>
 
@@ -261,13 +269,15 @@
 import { ref, computed, watch } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
+import { useLangStore } from '~/stores/lang'
 
 import ItemDetailModal from '~/components/ItemDetailModal.vue'
 import CreateItemModal from '~/components/CreateItemModal.vue'
 
-definePageMeta({ layout: 'dashboard', title: 'รายการพบของ', icon: 'box-open' })
+definePageMeta({ layout: 'dashboard', title: 'พบของ (Found Items)', icon: 'box-open' })
 
 const itemsStore = useItemsStore()
+const langStore = useLangStore()
 const { translateCategory, getMockCode, getItemImageSrc, formatDateShort, formatFullDate, changeStatus, deleteItem } = useItemHelpers()
 
 const searchQuery = ref('')

@@ -4,15 +4,15 @@
     <div class="bg-white pt-0 px-6 pb-6 rounded-2xl border border-slate-200/80 shadow-sm">
       <div class="pt-6 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">ผังการจัดเก็บตู้ล็อกเกอร์ (Locker Room Map)</h3>
-          <p class="text-xs text-slate-400 mt-1">ตู้ L01–L12 ตามเดือน และตู้เพิ่มเติม —แต่ละตู้มี 2 ชั้น (01, 02) — คลิกชั้นเพื่อดูรายการสิ่งของ</p>
+          <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">{{ langStore.t('ผังการจัดเก็บตู้ล็อกเกอร์ (Locker Room Map)') }}</h3>
+          <p class="text-xs text-slate-400 mt-1">{{ langStore.t('ตู้ L01–L12 ตามเดือน และตู้เพิ่มเติม —แต่ละตู้มี 2 ชั้น (01, 02) — คลิกชั้นเพื่อดูรายการสิ่งของ') }}</p>
         </div>
         <button
           @click="addLocker"
           class="px-4 py-2 bg-gradient-to-r from-violet-500 to-indigo-500 hover:from-violet-600 hover:to-indigo-600 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-500/10 transition flex items-center justify-center gap-1.5 self-start sm:self-auto"
         >
           <font-awesome :icon="['fas', 'plus']" class="text-[10px]" />
-          เพิ่มตู้ล็อกเกอร์
+          {{ langStore.t('เพิ่มตู้ล็อกเกอร์') }}
         </button>
       </div>
 
@@ -20,15 +20,17 @@
       <div class="grid grid-cols-3 gap-4 mb-6">
         <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
           <p class="text-2xl font-black text-emerald-600">{{ totalEmptySlots }}</p>
-          <p class="text-xs text-emerald-700 font-semibold mt-1">ช่องว่าง</p>
+          <p class="text-xs text-emerald-700 font-semibold mt-1">{{ langStore.t('ช่องว่าง') }}</p>
         </div>
         <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 text-center">
           <p class="text-2xl font-black text-amber-600">{{ totalOccupiedSlots }}</p>
-          <p class="text-xs text-amber-700 font-semibold mt-1">ช่องที่ใช้งาน</p>
+          <p class="text-xs text-amber-700 font-semibold mt-1">{{ langStore.t('ช่องที่ใช้งาน') }}</p>
         </div>
         <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 text-center">
           <p class="text-2xl font-black text-slate-700">{{ lockersList.length * 2 }}</p>
-          <p class="text-xs text-slate-600 font-semibold mt-1">ช่องทั้งหมด ({{ lockersList.length }} ตู้ × 2 ชั้น)</p>
+          <p class="text-xs text-slate-600 font-semibold mt-1">
+            {{ langStore.t('ช่องทั้งหมด ({count} ตู้ × 2 ชั้น)', { count: lockersList.length }) }}
+          </p>
         </div>
       </div>
 
@@ -47,7 +49,7 @@
               </span>
               <div>
                 <h4 class="text-xs font-black text-slate-800 font-mono">{{ locker.lockerId }}</h4>
-                <p class="text-[9px] text-slate-400 font-medium">{{ locker.monthName }}</p>
+                <p class="text-[9px] text-slate-400 font-medium">{{ getLocalizedLockerLabel(locker.monthName) }}</p>
               </div>
             </div>
             <div class="flex items-center gap-2">
@@ -55,7 +57,7 @@
                 v-if="locker.isCustom && locker.floors.every(f => f.items.length === 0)"
                 @click.stop="removeLocker(locker.lockerId)"
                 class="text-slate-300 hover:text-rose-500 p-1 hover:bg-rose-50 rounded transition"
-                title="ลบตู้ล็อกเกอร์นี้"
+                :title="langStore.t('ลบตู้ล็อกเกอร์นี้')"
               >
                 <font-awesome :icon="['fas', 'trash-can']" class="text-[10px]" />
               </button>
@@ -90,12 +92,14 @@
                 >
                   {{ floor.floorId }}
                 </span>
-                <span class="text-[10px] font-semibold text-slate-600">ชั้น {{ floor.floorNum }}</span>
+                <span class="text-[10px] font-semibold text-slate-600">
+                  {{ langStore.t('ชั้น {num}', { num: floor.floorNum }) }}
+                </span>
               </div>
 
               <div class="flex items-center gap-1.5">
-                <span v-if="floor.status === 'occupied'" class="text-[9px] font-bold text-amber-700">
-                  {{ floor.items.length }} รายการ
+                <span v-if="floor.status === 'occupied'" class="text-[9px] font-bold text-amber-700 font-sans">
+                  {{ langStore.t('{count} รายการ', { count: floor.items.length }) }}
                 </span>
                 <span
                   :class="{
@@ -104,7 +108,7 @@
                   }"
                   class="px-1.5 py-0.5 text-[8px] font-bold rounded-full border uppercase tracking-wider"
                 >
-                  {{ floor.status === 'empty' ? 'ว่าง' : 'เก็บของ' }}
+                  {{ floor.status === 'empty' ? langStore.t('ว่าง') : langStore.t('ใช้งานอยู่') }}
                 </span>
               </div>
             </div>
@@ -123,13 +127,15 @@
         <!-- Modal Header -->
         <div class="px-6 py-4 bg-slate-50 border-b border-slate-200/80 flex items-center justify-between">
           <div class="flex items-center gap-2.5">
-            <span class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 border border-indigo-100 text-indigo-600">
+            <span class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-50 border border-indigo-100 text-indigo-650">
               <font-awesome :icon="['fas', 'box-archive']" class="text-sm" />
             </span>
             <div>
-              <h3 class="text-sm font-bold text-slate-800 font-mono">{{ selectedFloor.floorId }}</h3>
-              <p class="text-[10px] text-slate-500 font-medium">
-                ชั้น {{ selectedFloor.floorNum }} — {{ selectedFloor.items.length }} รายการในช่องนี้
+              <h3 class="text-sm font-bold text-slate-800 font-mono">
+                {{ langStore.t('รายละเอียดช่องเก็บของ {id}', { id: selectedFloor.floorId }) }}
+              </h3>
+              <p class="text-[10px] text-slate-500 font-medium font-sans">
+                {{ langStore.t('ชั้น {floor} — {count} รายการในช่องนี้', { floor: selectedFloor.floorNum, count: selectedFloor.items.length }) }}
               </p>
             </div>
           </div>
@@ -145,14 +151,18 @@
             <div class="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 text-lg mx-auto shadow-sm mb-4">
               <font-awesome :icon="['fas', 'check-double']" />
             </div>
-            <h4 class="text-xs font-bold text-slate-700">ไม่มีสิ่งของในชั้นนี้</h4>
-            <p class="text-[10px] text-slate-400 mt-1 font-medium">ช่องล็อกเกอร์ {{ selectedFloor.floorId }} ยังว่างอยู่ พร้อมสำหรับจัดเก็บสิ่งของที่พบเจอใหม่</p>
+            <h4 class="text-xs font-bold text-slate-700">{{ langStore.t('ช่องล็อกเกอร์ยังว่างอยู่') }}</h4>
+            <p class="text-[10px] text-slate-400 mt-1 font-medium font-sans">
+              {{ langStore.t('ช่องล็อกเกอร์ {id} ยังว่างอยู่ พร้อมสำหรับจัดเก็บสิ่งของที่พบเจอใหม่', { id: selectedFloor.floorId }) }}
+            </p>
           </div>
 
           <!-- Items List -->
           <div v-else class="space-y-4">
             <div class="flex justify-between items-center mb-2">
-              <span class="text-[10px] font-bold text-slate-450 uppercase tracking-wider">รายการสิ่งของที่จัดเก็บ ({{ selectedFloor.items.length }})</span>
+              <span class="text-[10px] font-bold text-slate-450 uppercase tracking-wider font-sans">
+                {{ langStore.t('รายการสิ่งของที่จัดเก็บ ({count})', { count: selectedFloor.items.length }) }}
+              </span>
             </div>
             <div class="divide-y divide-slate-100 border border-slate-200/80 rounded-xl overflow-hidden shadow-sm">
               <div
@@ -171,17 +181,17 @@
                   <div>
                     <div class="flex items-start justify-between gap-2">
                       <h4 class="font-bold text-slate-800 text-xs truncate" :title="item.name">{{ item.name }}</h4>
-                      <span class="bg-indigo-50 text-indigo-700 text-[9px] font-bold px-2 py-0.5 rounded border border-indigo-100/50 uppercase tracking-wider shrink-0">
+                      <span class="bg-indigo-50 text-indigo-700 text-[9px] font-bold px-2 py-0.5 rounded border border-indigo-100/50 uppercase tracking-wider shrink-0 font-sans">
                         {{ translateCategory(item.category) }}
                       </span>
                     </div>
-                    <p class="text-[10px] text-slate-500 mt-1 line-clamp-2 leading-relaxed" v-if="item.description">{{ formatDescription(item.description) }}</p>
-                    <p class="text-[10px] text-slate-400 italic mt-1" v-else>ไม่มีรายละเอียดคำอธิบายของ</p>
+                    <p class="text-[10px] text-slate-500 mt-1 line-clamp-2 leading-relaxed font-sans" v-if="item.description">{{ formatDescription(item.description) }}</p>
+                    <p class="text-[10px] text-slate-400 italic mt-1 font-sans" v-else>{{ langStore.t('ไม่มีรายละเอียดคำอธิบายของ') }}</p>
                   </div>
                   <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 pt-2 border-t border-slate-100/60 text-[9px] text-slate-450 font-medium font-mono">
                     <span>ID: {{ getMockCode(item) }}</span>
-                    <span>ผู้พบ/ส่ง: {{ item.finderName || item.founder || 'ไม่ได้ระบุ' }}</span>
-                    <span>วันที่พบ: {{ formatDate(item.date) }}</span>
+                    <span class="font-sans">{{ langStore.locale === 'th' ? 'ผู้พบ/ส่ง:' : 'Finder:' }} {{ item.finderName || item.founder || 'N/A' }}</span>
+                    <span class="font-sans">{{ langStore.locale === 'th' ? 'วันที่พบ:' : 'Date Found:' }} {{ formatDate(item.date) }}</span>
                   </div>
                 </div>
               </div>
@@ -192,7 +202,7 @@
         <!-- Modal Footer -->
         <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200/80 flex justify-end">
           <button @click="showLockerModal = false" class="px-4 py-1.5 bg-white border border-slate-250 hover:bg-slate-50 hover:border-slate-350 text-slate-650 text-xs font-bold rounded-xl transition duration-150 shadow-sm">
-            ปิดหน้าต่าง
+            {{ langStore.t('ปิด') }}
           </button>
         </div>
       </div>
@@ -212,8 +222,8 @@
               <font-awesome :icon="['fas', 'plus']" class="text-xs" />
             </span>
             <div>
-              <h3 class="text-xs font-bold text-slate-800">เพิ่มตู้ล็อกเกอร์ใหม่</h3>
-              <p class="text-[9px] text-slate-400 font-medium">เพิ่มพื้นที่จัดเก็บใหม่ให้กับระบบ</p>
+              <h3 class="text-xs font-bold text-slate-800">{{ langStore.t('เพิ่มตู้ล็อกเกอร์ใหม่') }}</h3>
+              <p class="text-[9px] text-slate-400 font-medium">{{ langStore.t('เพิ่มพื้นที่จัดเก็บใหม่ให้กับระบบ') }}</p>
             </div>
           </div>
           <button @click="closeAddLockerModal" class="text-slate-450 hover:text-slate-650 hover:bg-slate-100 p-1.5 rounded-lg transition">
@@ -224,7 +234,9 @@
         <!-- Modal Content (Form) -->
         <form @submit.prevent="submitAddLocker" class="p-6 space-y-4">
           <div>
-            <label for="new-locker-number" class="block text-xs font-bold text-slate-650 mb-1.5">รหัสตู้ล็อกเกอร์ <span class="text-red-500">*</span></label>
+            <label for="new-locker-number" class="block text-xs font-bold text-slate-650 mb-1.5">
+              {{ langStore.t('รหัสตู้ล็อกเกอร์') }} <span class="text-red-500">*</span>
+            </label>
             <div class="flex rounded-xl overflow-hidden border border-slate-200 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-100 transition bg-slate-50/50 hover:bg-slate-50/85">
               <span class="inline-flex items-center px-4 bg-slate-100 border-r border-slate-200 text-xs font-black text-slate-500 select-none">
                 L
@@ -234,7 +246,7 @@
                 v-model="newLockerNumber"
                 type="text"
                 required
-                placeholder="กรอกหมายเลขตู้ เช่น 13, 14, 15"
+                :placeholder="langStore.t('กรอกหมายเลขตู้ เช่น 13, 14, 15')"
                 @input="newLockerNumber = newLockerNumber.replace(/\D/g, '')"
                 class="flex-1 min-w-0 pl-3 pr-4 py-2.5 bg-transparent outline-none text-xs text-slate-700 font-semibold transition"
               />
@@ -242,7 +254,9 @@
           </div>
 
           <div>
-            <label for="new-locker-label" class="block text-xs font-bold text-slate-650 mb-1.5">ป้ายกำกับ / คำอธิบายตู้ <span class="text-red-500">*</span></label>
+            <label for="new-locker-label" class="block text-xs font-bold text-slate-650 mb-1.5">
+              {{ langStore.t('ป้ายกำกับ / คำอธิบายตู้') }} <span class="text-red-500">*</span>
+            </label>
             <div class="relative">
               <select
                 id="new-locker-label"
@@ -250,10 +264,10 @@
                 required
                 class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition"
               >
-                <option value="" disabled>เลือกเดือนหรือป้ายกำกับ</option>
-                <option v-for="m in MONTH_NAMES" :key="m" :value="m">{{ m }}</option>
-                <option value="ตู้เพิ่มเติม">ตู้เพิ่มเติม</option>
-                <option value="ตู้เก็บของพิเศษ">ตู้เก็บของพิเศษ</option>
+                <option value="" disabled>{{ langStore.t('เลือกเดือนหรือป้ายกำกับ') }}</option>
+                <option v-for="m in currentMonthNames" :key="m" :value="m">{{ m }}</option>
+                <option value="ตู้เพิ่มเติม">{{ langStore.locale === 'th' ? 'ตู้เพิ่มเติม' : 'Extra Locker' }}</option>
+                <option value="ตู้เก็บของพิเศษ">{{ langStore.locale === 'th' ? 'ตู้เก็บของพิเศษ' : 'Special Locker' }}</option>
               </select>
               <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                 <font-awesome :icon="['fas', 'chevron-down']" class="text-[10px]" />
@@ -274,13 +288,13 @@
               @click="closeAddLockerModal"
               class="px-4 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-bold rounded-xl transition duration-150"
             >
-              ยกเลิก
+              {{ langStore.t('ยกเลิก') }}
             </button>
             <button
               type="submit"
               class="px-4 py-1.5 bg-gradient-to-r from-violet-500 to-indigo-500 hover:from-violet-600 hover:to-indigo-600 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-500/10 transition"
             >
-              บันทึกตู้ใหม่
+              {{ langStore.t('บันทึกตู้ใหม่') }}
             </button>
           </div>
         </form>
@@ -293,6 +307,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
+import { useLangStore } from '~/stores/lang'
 
 interface LockerFloor {
   floorId: string
@@ -311,6 +326,7 @@ interface Locker {
 definePageMeta({ layout: 'dashboard', title: 'ตู้เก็บของ (Lockers)', icon: 'database' })
 
 const itemsStore = useItemsStore()
+const langStore = useLangStore()
 const { formatDate, translateCategory, getMockCode, getItemImageSrc, formatDescription } = useItemHelpers()
 
 const selectedFloor = ref<any>(null)
@@ -321,11 +337,31 @@ const selectFloor = (floor: any) => {
   showLockerModal.value = true
 }
 
-const MONTH_NAMES = [
+const MONTH_NAMES_TH = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน',
   'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม',
   'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'
 ]
+
+const MONTH_NAMES_EN = [
+  'January', 'February', 'March', 'April',
+  'May', 'June', 'July', 'August',
+  'September', 'October', 'November', 'December'
+]
+
+const currentMonthNames = computed(() => {
+  return langStore.locale === 'th' ? MONTH_NAMES_TH : MONTH_NAMES_EN
+})
+
+const getLocalizedLockerLabel = (label: string) => {
+  const idx = MONTH_NAMES_TH.indexOf(label)
+  if (idx !== -1) {
+    return currentMonthNames.value[idx]
+  }
+  if (label === 'ตู้เพิ่มเติม') return langStore.locale === 'th' ? 'ตู้เพิ่มเติม' : 'Extra Locker'
+  if (label === 'ตู้เก็บของพิเศษ') return langStore.locale === 'th' ? 'ตู้เก็บของพิเศษ' : 'Special Locker'
+  return label
+}
 
 const customLockers = ref<{ lockerId: string; label: string }[]>([])
 const showAddLockerModal = ref(false)
@@ -361,7 +397,7 @@ const submitAddLocker = () => {
   addLockerError.value = ''
   const num = newLockerNumber.value.trim()
   if (!num) {
-    addLockerError.value = 'กรุณากรอกหมายเลขตู้'
+    addLockerError.value = langStore.t('กรุณากรอกหมายเลขตู้')
     return
   }
 
@@ -376,7 +412,7 @@ const submitAddLocker = () => {
   customLockers.value.forEach(cl => allIds.add(cl.lockerId))
 
   if (allIds.has(code)) {
-    addLockerError.value = `รหัสตู้ล็อกเกอร์ ${code} มีอยู่ในระบบแล้ว`
+    addLockerError.value = langStore.t('รหัสตู้ล็อกเกอร์ {id} มีอยู่ในระบบแล้ว', { id: code })
     return
   }
 
@@ -392,13 +428,12 @@ const submitAddLocker = () => {
 }
 
 const removeLocker = (lockerId: string) => {
-  if (!confirm(`ต้องการลบตู้ล็อกเกอร์ ${lockerId} หรือไม่?`)) return
+  if (!confirm(langStore.t('ต้องการลบตู้ล็อกเกอร์ {id} หรือไม่?', { id: lockerId }))) return
   customLockers.value = customLockers.value.filter(l => l.lockerId !== lockerId)
   if (process.client) {
     localStorage.setItem('unifind_custom_lockers', JSON.stringify(customLockers.value))
   }
 }
-
 
 const lockersList = computed(() => {
   // Build a lookup map: locker_id → items (only stored/found status)
@@ -419,7 +454,7 @@ const lockersList = computed(() => {
     const slot02 = lockerMap[`${lockerId}02`] || []
     return {
       lockerId,
-      monthName: MONTH_NAMES[i],
+      monthName: MONTH_NAMES_TH[i],
       isCustom: false,
       floors: [
         {
