@@ -69,10 +69,10 @@
             {{ loading ? $t('กำลังเข้าสู่ระบบ...') : $t('เข้าสู่ระบบเจ้าหน้าที่') }}
           </button>
 
-          <button type="button" @click="handleBypass" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 shadow-sm mb-4">
+          <!-- <button type="button" @click="handleBypass" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 shadow-sm mb-4">
             <font-awesome :icon="['fas', 'bolt']" class="text-amber-500" />
             {{ $t('เข้าใช้งานระบบแบบ Bypass (สำหรับทดสอบ)') }}
-          </button>
+          </button> -->
 
           <p class="text-xs text-center text-slate-500 font-semibold mt-2">
             {{ $t('ยังไม่มีบัญชีเจ้าหน้าที่?') }}
@@ -84,6 +84,8 @@
 
         <form v-else class="login-form" @submit.prevent="handleRegister">
           <input v-model="registerData.username" type="text" class="login-input" :placeholder="$t('ชื่อผู้ใช้งาน (Username) *')" required
+            :disabled="loading" />
+          <input v-model="registerData.nickname" type="text" class="login-input" :placeholder="$t('ชื่อเล่น (Nickname)')"
             :disabled="loading" />
           <input v-model="registerData.email" type="email" class="login-input" :placeholder="$t('อีเมลติดต่อ (Email) *')" required
             :disabled="loading" />
@@ -123,6 +125,7 @@ const langStore = useLangStore()
 const route = useRoute()
 
 onMounted(() => {
+  langStore.initLocale()
   // บันทึก lineUserId หากมีแนบมาในลิงก์เว็บ
   const lineUserId = route.query.lineUserId as string
   if (lineUserId) {
@@ -138,7 +141,7 @@ onMounted(() => {
 
 const isRegistering = ref(false)
 const loginData = reactive({ username: '', password: '' })
-const registerData = reactive({ username: '', email: '', password: '', confirmPassword: '' })
+const registerData = reactive({ username: '', nickname: '', email: '', password: '', confirmPassword: '' })
 const errorMsg = ref('')
 const successMsg = ref('')
 const loading = ref(false)
@@ -186,12 +189,14 @@ const handleRegister = async () => {
       registerData.username,
       registerData.email,
       registerData.password,
-      registerData.username // using username as full name
+      registerData.username, // using username as full name
+      registerData.nickname
     )
     if (result.success) {
       successMsg.value = 'ส่งคำขอสมัครสมาชิกสำเร็จ! กรุณารอการอนุมัติสิทธิ์จากผู้ดูแลระบบ (Admin)'
       // Clear register form
       registerData.username = ''
+      registerData.nickname = ''
       registerData.email = ''
       registerData.password = ''
       registerData.confirmPassword = ''

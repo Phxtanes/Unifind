@@ -66,8 +66,8 @@ const formatItem = (item) => {
     claimerType: item.claimer?.person_type || null,
 
     // staff
-    staffName: item.staff?.username || null,
-    namereport: item.staff?.username || null,
+    staffName: item.staff?.nickname || item.staff?.username || null,
+    namereport: item.staff?.nickname || item.staff?.username || null,
 
     // timestamps
     created_at: item.created_at,
@@ -82,7 +82,7 @@ const SELECT_FIELDS = `
   found_item_statuses(status_code, status_name_th),
   finder:persons!items_finder_id_fkey(full_name, phone, student_id, email, person_type),
   claimer:persons!items_claimer_id_fkey(full_name, phone, student_id, email, person_type),
-  staff:users!items_created_by_fkey(username)
+  staff:users!items_created_by_fkey(username, nickname)
 `.trim();
 
 // ──────────────────────────────────────────────────

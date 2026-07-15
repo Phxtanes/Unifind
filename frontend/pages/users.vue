@@ -81,6 +81,7 @@
           <table class="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr class="border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-50/70">
+                <th class="py-4 px-6">{{ $t('ชื่อเล่น') }}</th>
                 <th class="py-4 px-6">{{ $t('ชื่อผู้ใช้งาน (Username)') }}</th>
                 <th class="py-4 px-6">{{ $t('อีเมล (Email)') }}</th>
                 <th class="py-4 px-6">{{ $t('ระดับสิทธิ์ (Role)') }}</th>
@@ -91,8 +92,9 @@
             </thead>
             <tbody class="divide-y divide-slate-100 text-xs text-slate-700">
               <tr v-for="user in filteredStaff" :key="user.user_id" class="hover:bg-indigo-50/30 transition-all duration-150">
-                <td class="py-4 px-6 font-bold text-slate-900 flex items-center gap-2">
-                  <span class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-bold text-slate-600">
+                <td class="py-4 px-6 text-slate-700 font-medium">{{ user.nickname || '-' }}</td>
+                <td class="py-4 px-6 font-medium text-slate-900 flex items-center gap-2">
+                  <span class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center font-medium text-slate-600">
                     {{ user.username.slice(0, 2).toUpperCase() }}
                   </span>
                   {{ user.username }}
@@ -129,6 +131,14 @@
                 <td class="py-4 px-6 text-slate-455 font-medium font-mono">{{ formatFullDate(user.created_at || user.createdAt) }}</td>
                 <td class="py-4 px-6">
                   <div class="flex items-center justify-center gap-2">
+                    <button 
+                      @click="openEditModal(user)"
+                      class="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-800 text-[10px] font-bold rounded-lg border border-blue-200 transition"
+                      :title="$t('แก้ไข')"
+                    >
+                      <font-awesome :icon="['fas', 'pen-to-square']" class="mr-1" />
+                      {{ $t('แก้ไข') }}
+                    </button>
                     <button 
                       v-if="user.status === 'Active' || user.status === 'active'"
                       @click="deactivateUserAccount(user.user_id)"
@@ -175,6 +185,7 @@
           <table class="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr class="border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-50/70">
+                <th class="py-4 px-6">{{ $t('ชื่อเล่น') }}</th>
                 <th class="py-4 px-6">{{ $t('ชื่อผู้สมัคร (Username)') }}</th>
                 <th class="py-4 px-6">{{ $t('อีเมลติดต่อ (Email)') }}</th>
                 <th class="py-4 px-6">{{ $t('ระดับสิทธิ์ที่ขอ') }}</th>
@@ -191,6 +202,7 @@
                   </span>
                   {{ user.username }}
                 </td>
+                <td class="py-4 px-6 text-slate-700 font-medium">{{ user.nickname || '-' }}</td>
                 <td class="py-4 px-6 text-slate-500 font-medium">{{ user.email }}</td>
                 <td class="py-4 px-6">
                   <span class="bg-amber-50 text-amber-700 border-amber-100 px-2 py-0.5 rounded text-[10px] font-bold border uppercase">
@@ -244,6 +256,17 @@
         </div>
 
         <form @submit.prevent="createNewUser" class="p-6 space-y-4">
+          
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ $t('ชื่อเล่น (Nickname)') }}</label>
+            <input 
+              type="text" 
+              v-model="newUserForm.nickname" 
+              :placeholder="$t('กรอกชื่อเล่น...')"
+              class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            />
+          </div>
+          
           <div>
             <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ $t('ชื่อผู้ใช้งาน (Username) *') }}</label>
             <input 
@@ -320,6 +343,104 @@
         </form>
       </div>
     </div>
+
+    <!-- Edit User Modal -->
+    <div v-if="showEditModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4" @click.self="showEditModal = false">
+      <div class="bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden max-w-md w-full animate-fade-in-up font-sans">
+        <div class="bg-slate-900 px-6 py-4 flex justify-between items-center text-white border-b border-slate-800">
+          <h2 class="text-sm font-bold tracking-tight flex items-center gap-2">
+            <font-awesome :icon="['fas', 'user-pen']" class="text-slate-400" />
+            {{ $t('แก้ไขข้อมูลผู้ใช้งาน') }}
+          </h2>
+          <button @click="showEditModal = false" class="text-slate-400 hover:text-white text-xl font-semibold outline-none">&times;</button>
+        </div>
+
+        <form @submit.prevent="updateUserAccount" class="p-6 space-y-4">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ $t('ชื่อเล่น (Nickname)') }}</label>
+            <input 
+              type="text" 
+              v-model="editUserForm.nickname" 
+              :placeholder="$t('กรอกชื่อเล่น...')"
+              class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            />
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ $t('ชื่อผู้ใช้งาน (Username) *') }}</label>
+            <input 
+              type="text" 
+              v-model="editUserForm.username" 
+              required
+              :placeholder="$t('กรอกชื่อผู้ใช้งาน...')"
+              class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            />
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ $t('อีเมลติดต่อ (Email) *') }}</label>
+            <input 
+              type="email" 
+              v-model="editUserForm.email" 
+              required
+              placeholder="example@unifind.local..."
+              class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            />
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ $t('รหัสผ่านใหม่ (Password) (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)') }}</label>
+            <input 
+              type="password" 
+              v-model="editUserForm.password" 
+              :placeholder="$t('กรอกรหัสผ่านใหม่...')"
+              class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ $t('ระดับสิทธิ์ (Role)') }}</label>
+              <select 
+                v-model="editUserForm.role" 
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition cursor-pointer"
+              >
+                <option value="STAFF">STAFF</option>
+                <option value="ADMIN">ADMIN</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ $t('สถานะ') }}</label>
+              <select 
+                v-model="editUserForm.status" 
+                class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition cursor-pointer"
+              >
+                <option value="Active">{{ $t('เปิดใช้งาน') }}</option>
+                <option value="Suspended">{{ $t('ระงับชั่วคราว') }}</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+            <button 
+              type="button"
+              @click="showEditModal = false" 
+              class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition"
+            >
+              {{ $t('ยกเลิก') }}
+            </button>
+            <button 
+              type="submit"
+              :disabled="isSubmittingUser"
+              class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition shadow-md disabled:opacity-50"
+            >
+              {{ isSubmittingUser ? $t('กำลังส่งข้อมูล') : $t('บันทึก') }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -349,9 +470,20 @@ const pendingUsers = ref<any[]>([])
 
 // Modal States
 const showAddModal = ref(false)
+const showEditModal = ref(false)
+const editUserId = ref<number | null>(null)
 const isSubmittingUser = ref(false)
 const newUserForm = ref({
   username: '',
+  nickname: '',
+  email: '',
+  password: '',
+  role: 'STAFF',
+  status: 'Active'
+})
+const editUserForm = ref({
+  username: '',
+  nickname: '',
   email: '',
   password: '',
   role: 'STAFF',
@@ -420,10 +552,56 @@ const createNewUser = async () => {
     await axios.post(`${config.public.apiBaseUrl}/auth/users`, newUserForm.value, { headers })
     await fetchUsersData()
     showAddModal.value = false
-    newUserForm.value = { username: '', email: '', password: '', role: 'STAFF', status: 'Active' }
+    newUserForm.value = { username: '', nickname: '', email: '', password: '', role: 'STAFF', status: 'Active' }
   } catch (error: any) {
     console.error('Failed to create user:', error)
     alert(error.response?.data?.message || 'เกิดข้อผิดพลาดในการสร้างผู้ใช้')
+  } finally {
+    isSubmittingUser.value = false
+  }
+}
+
+const openEditModal = (user: any) => {
+  editUserId.value = user.user_id
+  editUserForm.value = {
+    username: user.username,
+    nickname: user.nickname || '',
+    email: user.email || '',
+    password: '',
+    role: (user.role || 'STAFF').toUpperCase(),
+    status: user.status || 'Active'
+  }
+  showEditModal.value = true
+}
+
+const updateUserAccount = async () => {
+  if (!editUserForm.value.username || !editUserForm.value.email) {
+    alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน')
+    return
+  }
+
+  isSubmittingUser.value = true
+  const config = useRuntimeConfig()
+
+  try {
+    const headers = { Authorization: `Bearer ${authStore.token}` }
+    const payload: any = {
+      username: editUserForm.value.username,
+      nickname: editUserForm.value.nickname,
+      email: editUserForm.value.email,
+      role: editUserForm.value.role,
+      status: editUserForm.value.status
+    }
+    if (editUserForm.value.password) {
+      payload.password = editUserForm.value.password
+    }
+    
+    await axios.put(`${config.public.apiBaseUrl}/auth/user/${editUserId.value}`, payload, { headers })
+    await fetchUsersData()
+    showEditModal.value = false
+  } catch (error: any) {
+    console.error('Failed to update user:', error)
+    alert(error.response?.data?.message || 'เกิดข้อผิดพลาดในการแก้ไขข้อมูลผู้ใช้')
   } finally {
     isSubmittingUser.value = false
   }

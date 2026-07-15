@@ -22,6 +22,7 @@ router.delete('/user/:userId/reject', verifyToken, isAdmin, controller.deleteUse
 
 router.put('/user/:userId/activate', verifyToken, isAdmin, controller.activateUser);
 router.put('/user/:userId/deactivate', verifyToken, isAdmin, controller.deactivateUser);
+router.put('/user/:userId', verifyToken, isAdmin, controller.updateUser);
 router.delete('/user/:userId', verifyToken, isAdmin, controller.deleteUser);
 
 module.exports = router;

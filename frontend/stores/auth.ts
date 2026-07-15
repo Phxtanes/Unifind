@@ -5,6 +5,7 @@ interface User {
   id: string;
   username: string;
   full_name?: string;
+  nickname?: string;
   email?: string;
   role?: string;
 }
@@ -24,6 +25,7 @@ export const useAuthStore = defineStore('auth', {
           id: response.data.id,
           username: response.data.username,
           full_name: response.data.full_name,
+          nickname: response.data.nickname,
           email: response.data.email,
           role: response.data.role
         };
@@ -39,10 +41,10 @@ export const useAuthStore = defineStore('auth', {
         };
       }
     },
-    async register(username: string, email: string, password: string, fullName?: string) {
+    async register(username: string, email: string, password: string, fullName?: string, nickname?: string) {
       const config = useRuntimeConfig();
       try {
-        await axios.post(`${config.public.apiBaseUrl}/auth/register`, { username, email, password, full_name: fullName });
+        await axios.post(`${config.public.apiBaseUrl}/auth/register`, { username, email, password, full_name: fullName, nickname });
         return { success: true, message: 'สมัครสมาชิกสำเร็จ!' };
       } catch (error: any) {
         return {

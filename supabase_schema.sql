@@ -46,6 +46,7 @@ CREATE TABLE "users" (
     username  VARCHAR(50)  NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     full_name VARCHAR(50)  NOT NULL,
+    nickname  VARCHAR(50),
     email     VARCHAR(50)  UNIQUE,
     role      VARCHAR(20)  DEFAULT 'STAFF',
     status    VARCHAR(20)  DEFAULT 'Active'

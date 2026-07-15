@@ -11,6 +11,7 @@ const formatUser = (user) => {
     username: user.username,
     email: user.email,
     full_name: user.full_name,
+    nickname: user.nickname,
     role: user.role ? user.role.toLowerCase() : 'staff',
     status: user.status,
     isActive: user.status === 'Active',
@@ -21,7 +22,7 @@ const formatUser = (user) => {
 // Register a new staff user (defaults to Inactive, waiting for Admin approval)
 exports.register = async (req, res) => {
   try {
-    const { username, email, password, full_name } = req.body;
+    const { username, email, password, full_name, nickname } = req.body;
 
     const { data: existingUser } = await supabase
       .from('users')
@@ -52,6 +53,7 @@ exports.register = async (req, res) => {
         email,
         password_hash: hashedPassword,
         full_name: full_name || username,
+        nickname: nickname || null,
         role: 'STAFF',
         status: 'Inactive',
       });
@@ -112,7 +114,7 @@ exports.getUsers = async (req, res) => {
   try {
     const { data: users, error } = await supabase
       .from('users')
-      .select('user_id, username, email, full_name, role, status')
+      .select('user_id, username, email, full_name, nickname, role, status')
       .in('role', ['ADMIN', 'STAFF'])
       .in('status', ['Active', 'Suspended']);
 
@@ -127,7 +129,7 @@ exports.getUsers = async (req, res) => {
 // Admin creates a new user directly
 exports.createUser = async (req, res) => {
   try {
-    const { username, email, password, full_name, role = 'STAFF', status = 'Active' } = req.body;
+    const { username, email, password, full_name, nickname, role = 'STAFF', status = 'Active' } = req.body;
 
     if (!username || !email || !password) {
       return res.status(400).json({ message: 'Username, email, and password are required' });
@@ -162,6 +164,7 @@ exports.createUser = async (req, res) => {
         email,
         password_hash: hashedPassword,
         full_name: full_name || username,
+        nickname: nickname || null,
         role: role.toUpperCase(),
         status,
       })
@@ -181,7 +184,7 @@ exports.getPendingUsers = async (req, res) => {
   try {
     const { data: pendingUsers, error } = await supabase
       .from('users')
-      .select('user_id, username, email, full_name, role, status')
+      .select('user_id, username, email, full_name, nickname, role, status')
       .eq('role', 'STAFF')
       .eq('status', 'Inactive');
 
@@ -293,6 +296,73 @@ exports.deleteUser = async (req, res) => {
     if (error) throw error;
 
     res.status(200).json({ message: 'User deleted permanently' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Update user details
+exports.updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { username, email, password, full_name, nickname, role, status } = req.body;
+
+    const { data: user, error: findError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (findError || !user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (username && username !== user.username) {
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('user_id')
+        .eq('username', username)
+        .maybeSingle();
+
+      if (existingUser) {
+        return res.status(400).json({ message: 'Username is already taken' });
+      }
+    }
+
+    if (email && email !== user.email) {
+      const { data: existingEmail } = await supabase
+        .from('users')
+        .select('user_id')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (existingEmail) {
+        return res.status(400).json({ message: 'Email is already registered' });
+      }
+    }
+
+    const updates = {};
+    if (username) updates.username = username;
+    if (email) updates.email = email;
+    if (full_name) updates.full_name = full_name;
+    if (nickname !== undefined) updates.nickname = nickname;
+    if (role) updates.role = role.toUpperCase();
+    if (status) updates.status = status;
+
+    if (password) {
+      updates.password_hash = await bcrypt.hash(password, 8);
+    }
+
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .update(updates)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    res.status(200).json({ message: 'User updated successfully', user: formatUser(updatedUser) });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
