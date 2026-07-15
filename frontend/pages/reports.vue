@@ -3,8 +3,8 @@
     <!-- Header Section (Hidden during Print) -->
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 no-print">
       <div>
-        <h1 class="text-xl font-bold text-slate-900">รายงานและสถิติภาพรวม</h1>
-        <p class="text-xs text-slate-500 font-medium">วิเคราะห์ข้อมูลความสำเร็จ สถิติจำนวนของหาย และประสิทธิภาพคลังสินค้า</p>
+        <h1 class="text-xl font-bold text-slate-900">{{ $t('รายงานและสถิติภาพรวม') }}</h1>
+        <p class="text-xs text-slate-500 font-medium">{{ $t('วิเคราะห์ข้อมูลความสำเร็จ สถิติจำนวนของหาย และประสิทธิภาพคลังสินค้า') }}</p>
       </div>
       <!-- Action Buttons -->
       <div class="flex items-center gap-2">
@@ -13,7 +13,7 @@
           class="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition duration-200 border border-slate-200"
         >
           <font-awesome :icon="['fas', 'file-csv']" class="text-slate-500" />
-          Export to CSV
+          {{ langStore.locale === 'th' ? 'ส่งออกเป็น CSV' : 'Export to CSV' }}
         </button>
        <!--  <button 
           @click="printReport"
@@ -29,12 +29,12 @@
     <div class="hidden print-header border-b-2 border-slate-900 pb-4 mb-6">
       <div class="flex justify-between items-end">
         <div>
-          <h1 class="text-2xl font-black text-slate-900 uppercase">UniFind - Reports & Analytics</h1>
-          <p class="text-xs text-slate-500 font-bold mt-1">รายงานสรุปข้อมูลสิ่งของสูญหายและประสิทธิภาพระบบ</p>
+          <h1 class="text-2xl font-black text-slate-900 uppercase">UniFind - {{ langStore.locale === 'th' ? 'รายงานและวิเคราะห์ข้อมูล' : 'Reports & Analytics' }}</h1>
+          <p class="text-xs text-slate-500 font-bold mt-1">{{ $t('รายงานสรุปข้อมูลสิ่งของสูญหายและประสิทธิภาพระบบ') }}</p>
         </div>
         <div class="text-right text-xs text-slate-600">
-          <p>พิมพ์เมื่อ: {{ formatFullDate(new Date().toISOString()) }}</p>
-          <p>ช่วงเวลาที่เลือก: {{ periodLabel }}</p>
+          <p>{{ $t('พิมพ์เมื่อ:') }} {{ formatFullDate(new Date().toISOString()) }}</p>
+          <p>{{ $t('ช่วงเวลาที่เลือก:') }} {{ periodLabel }}</p>
         </div>
       </div>
     </div>
@@ -61,7 +61,7 @@
         <!-- Custom Date Pickers -->
         <div v-if="selectedPeriod === 'custom'" class="flex items-center gap-2 animate-fade-in-up">
           <div class="flex items-center gap-1.5">
-            <span class="text-xs font-bold text-slate-400 uppercase">เริ่มต้น</span>
+            <span class="text-xs font-bold text-slate-400 uppercase">{{ $t('เริ่มต้น') }}</span>
             <input 
               type="date" 
               v-model="startDate" 
@@ -69,7 +69,7 @@
             />
           </div>
           <div class="flex items-center gap-1.5">
-            <span class="text-xs font-bold text-slate-400 uppercase">สิ้นสุด</span>
+            <span class="text-xs font-bold text-slate-400 uppercase">{{ $t('สิ้นสุด') }}</span>
             <input 
               type="date" 
               v-model="endDate" 
@@ -82,8 +82,8 @@
 
     <!-- Active Filter Notification (Only visible when no items found in period) -->
     <div v-if="filteredItems.length === 0 && !itemsStore.loading" class="bg-amber-50 border border-amber-200 rounded-2xl p-6 text-center text-amber-800">
-      <p class="text-sm font-semibold">ไม่พบข้อมูลรายงานในช่วงเวลาที่ท่านเลือก ({{ periodLabel }})</p>
-      <p class="text-xs text-amber-600 mt-1">กรุณาเลือกช่วงเวลาอื่น หรือตรวจสอบการเชื่อมต่อข้อมูล</p>
+      <p class="text-sm font-semibold">{{ $t('ไม่พบข้อมูลรายงานในช่วงเวลาที่ท่านเลือก ({periodLabel})', { periodLabel }) }}</p>
+      <p class="text-xs text-amber-600 mt-1">{{ $t('กรุณาเลือกช่วงเวลาอื่น หรือตรวจสอบการเชื่อมต่อข้อมูล') }}</p>
     </div>
 
     <!-- Analytics Dashboard Grid -->
@@ -91,47 +91,47 @@
       <!-- Top Overview Metrics Grid -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">ของหายแจ้งใหม่</span>
+          <span class="text-[10px] font-bold text-rose-500 uppercase tracking-wider">{{ $t('ของหายแจ้งใหม่') }}</span>
           <div class="my-2">
             <span class="text-3xl font-black text-slate-800">{{ summaryData.lost }}</span>
-            <span class="text-[10px] font-medium text-slate-400 ml-1">รายการ</span>
+            <span class="text-[10px] font-medium text-slate-400 ml-1">{{ $t('รายการ') }}</span>
           </div>
-          <p class="text-[9px] text-slate-400 leading-none">ผู้ใช้ลงบันทึกในระบบ</p>
+          <p class="text-[9px] text-slate-400 leading-none">{{ langStore.locale === 'th' ? 'ผู้ใช้ลงบันทึกในระบบ' : 'Recorded by users' }}</p>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">สิ่งของที่พบเจอ</span>
+          <span class="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">{{ $t('สิ่งของที่พบเจอ') }}</span>
           <div class="my-2">
             <span class="text-3xl font-black text-slate-800">{{ summaryData.found }}</span>
-            <span class="text-[10px] font-medium text-slate-400 ml-1">รายการ</span>
+            <span class="text-[10px] font-medium text-slate-400 ml-1">{{ $t('รายการ') }}</span>
           </div>
-          <p class="text-[9px] text-slate-400 leading-none">นำส่งเข้าจัดเก็บระบบ</p>
+          <p class="text-[9px] text-slate-400 leading-none">{{ $t('นำส่งเข้าจัดเก็บระบบ') }}</p>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">ส่งมอบคืนสำเร็จ</span>
+          <span class="text-[10px] font-bold text-indigo-500 uppercase tracking-wider">{{ $t('ส่งมอบคืนสำเร็จ') }}</span>
           <div class="my-2">
             <span class="text-3xl font-black text-slate-800">{{ summaryData.claimed }}</span>
-            <span class="text-[10px] font-medium text-slate-400 ml-1">รายการ</span>
+            <span class="text-[10px] font-medium text-slate-400 ml-1">{{ $t('รายการ') }}</span>
           </div>
-          <p class="text-[9px] text-slate-400 leading-none">คืนเจ้าของเรียบร้อยแล้ว</p>
+          <p class="text-[9px] text-slate-400 leading-none">{{ $t('คืนเจ้าของเรียบร้อยแล้ว') }}</p>
         </div>
 
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">รายการทั้งหมด</span>
+          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{{ $t('รายการทั้งหมด') }}</span>
           <div class="my-2">
             <span class="text-3xl font-black text-slate-800">{{ summaryData.total }}</span>
-            <span class="text-[10px] font-medium text-slate-400 ml-1">รายการ</span>
+            <span class="text-[10px] font-medium text-slate-400 ml-1">{{ $t('รายการ') }}</span>
           </div>
-          <p class="text-[9px] text-slate-400 leading-none">ผลรวมธุรกรรมทั้งสิ้น</p>
+          <p class="text-[9px] text-slate-400 leading-none">{{ $t('ผลรวมธุรกรรมทั้งสิ้น') }}</p>
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Return Success Rate -->
         <div class="bg-white pt-0 px-6 pb-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between relative overflow-hidden">
           <div class="pt-6">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">อัตราความสำเร็จในการส่งคืน</h4>
-            <p class="text-[10px] text-slate-400 mt-0.5">ของหายที่ถูกนำส่งคืนเจ้าของสำเร็จ</p>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ $t('อัตราความสำเร็จในการส่งคืน') }}</h4>
+            <p class="text-[10px] text-slate-400 mt-0.5">{{ $t('ของหายที่ถูกนำส่งคืนเจ้าของสำเร็จ') }}</p>
           </div>
           <div class="py-6 flex items-center justify-center">
             <!-- Semi-radial progress display or pure big text -->
@@ -150,37 +150,37 @@
             </div>
           </div>
           <div class="text-center text-[10px] font-bold text-indigo-600 bg-indigo-50/50 py-1.5 rounded-lg border border-indigo-100/40">
-            สำเร็จ {{ summaryData.claimed }} จากของที่พบเจอ {{ summaryData.found }} ชิ้น
+            {{ $t('สำเร็จ {claimed} จากของที่พบเจอ {found} ชิ้น', { claimed: summaryData.claimed, found: summaryData.found }) }}
           </div>
         </div>
 
         <!-- Average Retention Time -->
         <div class="bg-white pt-0 px-6 pb-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
           <div class="pt-6">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">ระยะเวลาเฉลี่ยในการเก็บรักษา</h4>
-            <p class="text-[10px] text-slate-400 mt-0.5">เวลาเฉลี่ยในการฝากเก็บสิ่งของก่อนเจ้าของมารับคืน</p>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ $t('ระยะเวลาเฉลี่ยในการเก็บรักษา') }}</h4>
+            <p class="text-[10px] text-slate-400 mt-0.5">{{ $t('เวลาเฉลี่ยในการฝากเก็บสิ่งของก่อนเจ้าของมารับคืน') }}</p>
           </div>
           <div class="py-6 text-center">
             <div class="flex justify-center items-baseline gap-1">
               <span class="text-5xl font-black text-amber-500">{{ performanceData.avgDuration }}</span>
-              <span class="text-xs font-bold text-slate-500">วัน</span>
+              <span class="text-xs font-bold text-slate-500">{{ $t('วัน') }}</span>
             </div>
-            <p class="text-[10px] text-slate-400 mt-3 font-semibold">อ้างอิงจากข้อมูลส่งคืนสำเร็จในระบบ</p>
+            <p class="text-[10px] text-slate-400 mt-3 font-semibold">{{ $t('อ้างอิงจากข้อมูลส่งคืนสำเร็จในระบบ') }}</p>
           </div>
           <div class="text-[10px] text-center text-slate-500 bg-slate-50 py-1.5 rounded-lg border border-slate-100">
-            ระบบจัดเก็บรวดเร็วและปลอดภัย
+            {{ $t('ระบบจัดเก็บรวดเร็วและปลอดภัย') }}
           </div>
         </div>
 
         <!-- Storage Rate -->
         <div class="bg-white pt-0 px-6 pb-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
           <div class="pt-6">
-            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">อัตราการบันทึกจัดเก็บสิ่งของ (Storage Rate)</h4>
-            <p class="text-[10px] text-slate-400 mt-0.5">ของที่พบเจอและนำเข้าจัดเก็บในล็อกเกอร์</p>
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ $t('อัตราการบันทึกจัดเก็บสิ่งของ (Storage Rate)') }}</h4>
+            <p class="text-[10px] text-slate-400 mt-0.5">{{ $t('ของที่พบเจอและนำเข้าจัดเก็บในล็อกเกอร์') }}</p>
           </div>
           <div class="py-6 flex flex-col items-center justify-center">
             <span class="text-5xl font-black text-emerald-600">{{ performanceData.storageRate }}%</span>
-            <p class="text-xs font-bold text-slate-700 mt-3">ใช้งานล็อกเกอร์: {{ occupiedLockers }} / 12 ตู้</p>
+            <p class="text-xs font-bold text-slate-700 mt-3">{{ $t('ใช้งานล็อกเกอร์: {occupied} / 12 ตู้', { occupied: occupiedLockers }) }}</p>
           </div>
           <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
             <div class="bg-emerald-500 h-2 transition-all duration-500" :style="{ width: `${performanceData.storageRate}%` }"></div>
@@ -193,38 +193,38 @@
         <!-- Category Stats -->
         <div class="bg-white pt-0 px-6 pb-6 rounded-2xl border border-slate-200/80 shadow-sm">
           <div class="pt-6 mb-4">
-            <h4 class="text-xs font-bold text-slate-505 uppercase tracking-wider">จำแนกตามหมวดหมู่สิ่งของ</h4>
+            <h4 class="text-xs font-bold text-slate-505 uppercase tracking-wider">{{ $t('จำแนกตามหมวดหมู่สิ่งของ') }}</h4>
           </div>
           <div class="space-y-4">
             <div v-for="cat in categoryStats" :key="cat.name" class="space-y-1">
               <div class="flex justify-between text-xs font-bold text-slate-700">
                 <span>{{ translateCategory(cat.name) }}</span>
-                <span>{{ cat.count }} รายการ ({{ cat.percent }}%)</span>
+                <span>{{ cat.count }} {{ langStore.locale === 'th' ? 'รายการ' : 'items' }} ({{ cat.percent }}%)</span>
               </div>
               <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                 <div class="bg-indigo-500 h-2 rounded-full" :style="{ width: `${cat.percent}%` }"></div>
               </div>
             </div>
-            <div v-if="categoryStats.length === 0" class="text-xs text-center text-slate-400 py-8">ไม่มีข้อมูลหมวดหมู่</div>
+            <div v-if="categoryStats.length === 0" class="text-xs text-center text-slate-400 py-8">{{ langStore.locale === 'th' ? 'ไม่มีข้อมูลหมวดหมู่' : 'No category data' }}</div>
           </div>
         </div>
 
         <!-- Location Hotspots -->
         <div class="bg-white pt-0 px-6 pb-6 rounded-2xl border border-slate-200/80 shadow-sm">
           <div class="pt-6 mb-4">
-            <h4 class="text-xs font-bold text-slate-505 uppercase tracking-wider">สถานที่ที่พบสิ่งของบ่อยที่สุด</h4>
+            <h4 class="text-xs font-bold text-slate-505 uppercase tracking-wider">{{ $t('จำแนกตามสถานที่พบเจอ') }}</h4>
           </div>
           <div class="space-y-4">
             <div v-for="loc in locationStats" :key="loc.name" class="space-y-1">
               <div class="flex justify-between text-xs font-bold text-slate-700">
                 <span>{{ loc.name }}</span>
-                <span>{{ loc.count }} รายการ ({{ loc.percent }}%)</span>
+                <span>{{ loc.count }} {{ langStore.locale === 'th' ? 'รายการ' : 'items' }} ({{ loc.percent }}%)</span>
               </div>
               <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                 <div class="bg-slate-700 h-2 rounded-full" :style="{ width: `${loc.percent}%` }"></div>
               </div>
             </div>
-            <div v-if="locationStats.length === 0" class="text-xs text-center text-slate-400 py-8">ไม่มีข้อมูลสถานที่</div>
+            <div v-if="locationStats.length === 0" class="text-xs text-center text-slate-400 py-8">{{ langStore.locale === 'th' ? 'ไม่มีข้อมูลสถานที่' : 'No location data' }}</div>
           </div>
         </div>
       </div>
@@ -233,11 +233,11 @@
       <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden page-break-before">
         <div class="pt-4 px-6 pb-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">รายงานของค้างส่งคืน (Unclaimed Items)</h3>
-            <p class="text-xs text-slate-400 mt-1">สิ่งของที่พบแต่ไม่มีผู้มารับคืนและตกค้างในคลังมากกว่า 30 วัน</p>
+            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">{{ $t('รายงานของค้างส่งคืน (Unclaimed Items)') }}</h3>
+            <p class="text-xs text-slate-400 mt-1">{{ $t('สิ่งของที่พบแต่ไม่มีผู้มารับคืนและตกค้างในคลังมากกว่า 30 วัน') }}</p>
           </div>
           <span class="self-start px-3 py-1 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-100 rounded-full">
-            ตกค้างเกิน 30 วัน: {{ unclaimedOver30Days.length }} รายการ
+            {{ langStore.locale === 'th' ? `ตกค้างเกิน 30 วัน: ${unclaimedOver30Days.length} รายการ` : `Over 30 Days: ${unclaimedOver30Days.length} items` }}
           </span>
         </div>
 
@@ -245,12 +245,12 @@
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-slate-50/70 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-200">
-                <th class="py-4 px-6">ชื่อสิ่งของ</th>
-                <th class="py-4 px-6">หมวดหมู่</th>
-                <th class="py-4 px-6">ตู้เก็บของ</th>
-                <th class="py-4 px-6">สถานที่พบ</th>
-                <th class="py-4 px-6">วันที่พบ</th>
-                <th class="py-4 px-6 text-right">ระยะเวลาค้างคลัง</th>
+                <th class="py-4 px-6">{{ $t('ชื่อสิ่งของ') }}</th>
+                <th class="py-4 px-6">{{ $t('หมวดหมู่') }}</th>
+                <th class="py-4 px-6">{{ $t('ตู้จัดเก็บ') }}</th>
+                <th class="py-4 px-6">{{ $t('สถานที่') }}</th>
+                <th class="py-4 px-6">{{ $t('วันที่') }}</th>
+                <th class="py-4 px-6 text-right">{{ $t('ระยะเวลาค้างคลัง') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100 text-xs text-slate-700">
@@ -267,7 +267,7 @@
                 <td class="py-4 px-6">
                   <span class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-lg text-[10px] font-bold border border-amber-100">
                     <font-awesome :icon="['fas', 'box-archive']" />
-                    {{ item.locker && item.locker !== '-' ? item.locker : 'ไม่มีตู้' }}
+                    {{ item.locker && item.locker !== '-' ? item.locker : $t('ไม่มีตู้') }}
                   </span>
                 </td>
                 <td class="py-4 px-6 text-slate-500 font-medium">
@@ -285,12 +285,12 @@
                 <td class="py-4 px-6 text-right">
                   <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-50 text-rose-600 rounded-full font-bold text-[10px] border border-rose-100 shadow-sm">
                     <font-awesome :icon="['fas', 'circle-exclamation']" class="text-rose-500 animate-pulse" />
-                    {{ item.ageInDays }} วัน
+                    {{ item.ageInDays }} {{ $t('วัน') }}
                   </span>
                 </td>
               </tr>
               <tr v-if="unclaimedOver30Days.length === 0">
-                <td colspan="6" class="py-8 text-center text-slate-400 font-medium">ไม่มีสิ่งของค้างส่งคืนเกินกว่า 30 วัน</td>
+                <td colspan="6" class="py-8 text-center text-slate-400 font-medium">{{ langStore.locale === 'th' ? 'ไม่มีสิ่งของค้างส่งคืนเกินกว่า 30 วัน' : 'No unclaimed items exceeding 30 days' }}</td>
               </tr>
             </tbody>
           </table>
@@ -304,10 +304,12 @@
 import { ref, computed, onMounted } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
+import { useLangStore } from '~/stores/lang'
 
 definePageMeta({ layout: 'dashboard', title: 'รายงานและสถิติระบบ', icon: 'chart-pie' })
 
 const itemsStore = useItemsStore()
+const langStore = useLangStore()
 const { translateCategory, formatFullDate, formatDescription } = useItemHelpers()
 
 // Fetch data on component mount
@@ -320,25 +322,25 @@ const selectedPeriod = ref('monthly') // Default to monthly
 const startDate = ref('')
 const endDate = ref('')
 
-const periodTabs = [
-  { label: 'ประจำวัน (Daily)', value: 'daily' },  
-  { label: 'ประจำสัปดาห์ (Weekly)', value: 'weekly' },
-  { label: 'ประจำเดือน (Monthly)', value: 'monthly' },
-  { label: 'กำหนดเอง (Custom)', value: 'custom' }
-]
+const periodTabs = computed(() => [
+  { label: langStore.locale === 'th' ? 'ประจำวัน (Daily)' : 'Daily', value: 'daily' },  
+  { label: langStore.locale === 'th' ? 'ประจำสัปดาห์ (Weekly)' : 'Weekly', value: 'weekly' },
+  { label: langStore.locale === 'th' ? 'ประจำเดือน (Monthly)' : 'Monthly', value: 'monthly' },
+  { label: langStore.locale === 'th' ? 'กำหนดเอง (Custom)' : 'Custom', value: 'custom' }
+])
 
 // Label descriptor for the chosen period
 const periodLabel = computed(() => {
-  if (selectedPeriod.value === 'daily') return 'ประจำวัน (วันนี้)'
-  if (selectedPeriod.value === 'weekly') return 'ประจำสัปดาห์ (7 วันล่าสุด)'
-  if (selectedPeriod.value === 'monthly') return 'ประจำเดือน (30 วันล่าสุด)'
+  if (selectedPeriod.value === 'daily') return langStore.locale === 'th' ? 'ประจำวัน (วันนี้)' : 'Daily (Today)'
+  if (selectedPeriod.value === 'weekly') return langStore.locale === 'th' ? 'ประจำสัปดาห์ (7 วันล่าสุด)' : 'Weekly (Last 7 Days)'
+  if (selectedPeriod.value === 'monthly') return langStore.locale === 'th' ? 'ประจำเดือน (30 วันล่าสุด)' : 'Monthly (Last 30 Days)'
   if (selectedPeriod.value === 'custom') {
     if (startDate.value && endDate.value) {
-      return `ช่วงวันที่ ${startDate.value} ถึง ${endDate.value}`
+      return langStore.locale === 'th' ? `ช่วงวันที่ ${startDate.value} ถึง ${endDate.value}` : `Date Range: ${startDate.value} to ${endDate.value}`
     }
-    if (startDate.value) return `ตั้งแต่วันที่ ${startDate.value}`
-    if (endDate.value) return `จนถึงวันที่ ${endDate.value}`
-    return 'กำหนดช่วงเวลาเอง'
+    if (startDate.value) return langStore.locale === 'th' ? `ตั้งแต่วันที่ ${startDate.value}` : `From Date: ${startDate.value}`
+    if (endDate.value) return langStore.locale === 'th' ? `จนถึงวันที่ ${endDate.value}` : `Until Date: ${endDate.value}`
+    return langStore.locale === 'th' ? 'กำหนดช่วงเวลาเอง' : 'Select Date Range'
   }
   return ''
 })

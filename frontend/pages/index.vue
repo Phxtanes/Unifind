@@ -1,5 +1,14 @@
 <template>
-  <div class="main-container">
+  <div class="main-container relative">
+    <!-- Language Switcher -->
+    <div class="absolute top-4 right-4 z-50">
+      <button @click="langStore.toggleLocale()"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-slate-100 border border-slate-200 transition-all select-none text-xs font-bold text-slate-700 hover:scale-105 active:scale-95 shadow-sm bg-white">
+        <span class="mr-0.5">{{ langStore.locale === 'th' ? '🇹🇭' : '🇬🇧' }}</span>
+        <span>{{ langStore.locale === 'th' ? 'TH' : 'EN' }}</span>
+      </button>
+    </div>
+
     <!-- Left Panel -->
     <div class="left-panel">
       <div>
@@ -11,7 +20,7 @@
           <p class="office-of">Office of</p>
           <p class="student">Student</p>
           <p class="development">Development</p>
-          <p class="thai-text">สำนักกิจการนักศึกษา มหาวิทยาลัยหอการค้าไทย</p>
+          <p class="thai-text">{{ $t('สำนักกิจการนักศึกษา มหาวิทยาลัยหอการค้าไทย') }}</p>
         </div>
       </div>
       <div class="contact-info">
@@ -40,8 +49,10 @@
     <div class="right-panel">
       <div class="login-container">
         <h2 class="login-title font-bold">
-          {{ isRegistering ? 'สมัครสมาชิกเจ้าหน้าที่' : 'ระบบบันทึกของหาย' }}<br>
-          <span class="text-sm text-slate-500 font-normal">({{ isRegistering ? 'ลงทะเบียนสิทธิ์เข้าใช้งาน' : 'สำหรับเจ้าหน้าที่จัดการข้อมูล' }})</span>
+          {{ isRegistering ? $t('สมัครสมาชิกเจ้าหน้าที่') : $t('ระบบบันทึกของหาย') }}<br>
+          <span class="text-sm text-slate-500 font-normal">
+            ({{ isRegistering ? $t('ลงทะเบียนสิทธิ์เข้าใช้งาน') : $t('สำหรับเจ้าหน้าที่จัดการข้อมูล') }})
+          </span>
         </h2>
         <div v-if="errorMsg" class="error-message mb-4">{{ errorMsg }}</div>
         <div v-if="successMsg" class="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold text-center">
@@ -49,46 +60,46 @@
         </div>
         
         <form v-if="!isRegistering" class="login-form" @submit.prevent="handleLogin">
-          <input v-model="loginData.username" type="text" class="login-input" placeholder="ชื่อผู้ใช้เจ้าหน้าที่" required
+          <input v-model="loginData.username" type="text" class="login-input" :placeholder="$t('ชื่อผู้ใช้เจ้าหน้าที่')" required
             :disabled="loading" />
-          <input v-model="loginData.password" type="password" class="login-input" placeholder="รหัสผ่าน" required
+          <input v-model="loginData.password" type="password" class="login-input" :placeholder="$t('รหัสผ่าน')" required
             :disabled="loading" />
           
           <button type="submit" class="login-button font-semibold mb-2" :disabled="loading" :class="{ loading }">
-            {{ loading ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบเจ้าหน้าที่' }}
+            {{ loading ? $t('กำลังเข้าสู่ระบบ...') : $t('เข้าสู่ระบบเจ้าหน้าที่') }}
           </button>
 
           <button type="button" @click="handleBypass" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition duration-150 flex items-center justify-center gap-1.5 shadow-sm mb-4">
             <font-awesome :icon="['fas', 'bolt']" class="text-amber-500" />
-            เข้าใช้งานระบบแบบ Bypass (สำหรับทดสอบ)
+            {{ $t('เข้าใช้งานระบบแบบ Bypass (สำหรับทดสอบ)') }}
           </button>
 
           <p class="text-xs text-center text-slate-500 font-semibold mt-2">
-            ยังไม่มีบัญชีเจ้าหน้าที่? 
+            {{ $t('ยังไม่มีบัญชีเจ้าหน้าที่?') }}
             <button type="button" @click="toggleMode" class="text-indigo-650 hover:text-indigo-850 font-bold ml-1 transition focus:outline-none">
-              สมัครสมาชิกที่นี่
+              {{ $t('สมัครสมาชิกที่นี่') }}
             </button>
           </p>
         </form>
 
         <form v-else class="login-form" @submit.prevent="handleRegister">
-          <input v-model="registerData.username" type="text" class="login-input" placeholder="ชื่อผู้ใช้งาน (Username) *" required
+          <input v-model="registerData.username" type="text" class="login-input" :placeholder="$t('ชื่อผู้ใช้งาน (Username) *')" required
             :disabled="loading" />
-          <input v-model="registerData.email" type="email" class="login-input" placeholder="อีเมลติดต่อ (Email) *" required
+          <input v-model="registerData.email" type="email" class="login-input" :placeholder="$t('อีเมลติดต่อ (Email) *')" required
             :disabled="loading" />
-          <input v-model="registerData.password" type="password" class="login-input" placeholder="รหัสผ่าน (Password) *" required
+          <input v-model="registerData.password" type="password" class="login-input" :placeholder="$t('รหัสผ่าน (Password) *')" required
             :disabled="loading" />
-          <input v-model="registerData.confirmPassword" type="password" class="login-input" placeholder="ยืนยันรหัสผ่าน *" required
+          <input v-model="registerData.confirmPassword" type="password" class="login-input" :placeholder="$t('ยืนยันรหัสผ่าน *')" required
             :disabled="loading" />
           
           <button type="submit" class="login-button font-semibold mb-4 bg-emerald-600 hover:bg-emerald-700" :disabled="loading">
-            {{ loading ? 'กำลังสมัครสมาชิก...' : 'ส่งคำขอสมัครสมาชิก' }}
+            {{ loading ? $t('กำลังสมัครสมาชิก...') : $t('ส่งคำขอสมัครสมาชิก') }}
           </button>
 
           <p class="text-xs text-center text-slate-500 font-semibold mt-2">
-            มีบัญชีเจ้าหน้าที่อยู่แล้ว? 
+            {{ $t('มีบัญชีเจ้าหน้าที่อยู่แล้ว?') }}
             <button type="button" @click="toggleMode" class="text-indigo-650 hover:text-indigo-850 font-bold ml-1 transition focus:outline-none">
-              เข้าสู่ระบบที่นี่
+              {{ $t('เข้าสู่ระบบที่นี่') }}
             </button>
           </p>
         </form>
@@ -101,12 +112,14 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useRoute } from 'vue-router'
+import { useLangStore } from '~/stores/lang'
 
 definePageMeta({
   layout: false,
 })
 
 const auth = useAuthStore()
+const langStore = useLangStore()
 const route = useRoute()
 
 onMounted(() => {

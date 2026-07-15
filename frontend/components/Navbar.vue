@@ -135,7 +135,7 @@
         <button @click="logout"
           class="w-full py-2.5 bg-white hover:bg-rose-50 hover:text-rose-600 text-slate-500 text-xs font-semibold rounded-xl border border-slate-200 hover:border-rose-200 shadow-sm transition duration-150 flex items-center justify-center gap-2">
           <font-awesome :icon="['fas', 'right-from-bracket']" class="text-xs" />
-          <span>ออกจากระบบ</span>
+          <span>{{ langStore.t('nav.logout') }}</span>
         </button>
       </div>
     </aside>
@@ -146,8 +146,10 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { useRouter } from 'vue-router';
+import { useLangStore } from '~/stores/lang';
 
 const authStore = useAuthStore();
+const langStore = useLangStore();
 const router = useRouter();
 
 const currentPath = ref('');
@@ -176,47 +178,47 @@ const logout = () => {
 const menuItems = computed(() => {
   const items = [
     {
-      title: 'หน้าหลัก',
+      title: langStore.t('หน้าหลัก'),
       path: '/dashboard',
       icon: 'house'
     },
     {
-      title: 'รายการทั้งหมด',
+      title: langStore.t('รายการทั้งหมด'),
       path: '/items',
       icon: 'clipboard-list'
     },
     {
-      title: 'ของหาย',
+      title: langStore.t('ของหาย'),
       path: '/lost',
       icon: 'briefcase'
     },
     {
-      title: 'พบของ',
+      title: langStore.t('พบของ'),
       path: '/found',
       icon: 'box-open'
     },
     {
-      title: 'คืนแล้ว',
+      title: langStore.t('คืนแล้ว'),
       path: '/claimed',
       icon: 'rotate'
     },
     {
-      title: 'ตู้เก็บของ',
+      title: langStore.t('ตู้เก็บของ'),
       path: '/lockers',
       icon: 'database'
     },
     {
-      title: 'รายงาน',
+      title: langStore.t('รายงาน'),
       path: '/reports',
       icon: 'chart-pie'
     },
     {
-      title: 'วิเคราะห์จับคู่',
+      title: langStore.t('วิเคราะห์จับคู่'),
       path: '/matching',
       icon: 'robot'
     },
     {
-      title: 'ประวัติการดำเนินการ',
+      title: langStore.t('ประวัติการดำเนินการ'),
       path: '/history',
       icon: 'clock-rotate-left'
     }
@@ -224,7 +226,7 @@ const menuItems = computed(() => {
 
   if (authStore.user?.role?.toLowerCase() === 'admin') {
     items.push({
-      title: 'จัดการผู้ใช้',
+      title: langStore.t('จัดการผู้ใช้'),
       path: '/users',
       icon: 'users'
     });
@@ -233,7 +235,7 @@ const menuItems = computed(() => {
   const userEmail = authStore.user?.email || authStore.user?.username || '';
   if (userEmail === '2210511101002@utcc.ac.th' || authStore.token === 'mock-token' || authStore.token === 'bypass-token-12345') {
     items.push({
-      title: 'การตั้งค่าระบบ',
+      title: langStore.t('การตั้งค่าระบบ'),
       path: '/settings',
       icon: 'gear'
     });

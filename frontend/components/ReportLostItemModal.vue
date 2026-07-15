@@ -1,5 +1,5 @@
 <template>
-  <div v-if="show" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4 ">
+  <div v-if="show" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 flex items-center justify-center p-4 font-sans">
     <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden max-w-6xl w-full transition-all duration-300 transform scale-100 flex flex-col max-h-[90vh]">
       
       <!-- Header -->
@@ -9,8 +9,8 @@
             <font-awesome :icon="['fas', 'magnifying-glass']" class="text-lg" />
           </div>
           <div>
-            <h2 class="text-base font-black text-slate-800 tracking-tight">{{ editItem ? 'แก้ไขข้อมูลบันทึกของหาย' : 'แจ้งข้อมูลบันทึกของหาย' }}</h2>
-            <p class="text-slate-400 text-xs font-semibold mt-0.5">กรุณากรอกข้อมูลให้ครบถ้วนเพื่อความรวดเร็วในการติดตามสิ่งของ</p>
+            <h2 class="text-base font-black text-slate-800 tracking-tight">{{ editItem ? $t('แก้ไขข้อมูลบันทึกของหาย') : $t('แจ้งข้อมูลบันทึกของหาย') }}</h2>
+            <p class="text-slate-400 text-xs font-semibold mt-0.5">{{ $t('กรุณากรอกข้อมูลให้ครบถ้วนเพื่อความรวดเร็วในการติดตามสิ่งของ') }}</p>
           </div>
         </div>
         <button @click="$emit('close')" class="w-8 h-8 rounded-full border border-slate-100 hover:bg-slate-50 flex items-center justify-center text-slate-400 hover:text-slate-700 transition duration-150">
@@ -29,14 +29,14 @@
                 <div class="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500 font-bold">
                   <font-awesome :icon="['fas', 'box']" class="text-[11px]" />
                 </div>
-                <h3 class="text-xs font-extrabold text-rose-600 uppercase tracking-wider">ข้อมูลสิ่งของ</h3>
+                <h3 class="text-xs font-extrabold text-rose-600 uppercase tracking-wider">{{ $t('ข้อมูลสิ่งของ') }}</h3>
               </div>
 
               <!-- ชื่อสิ่งของ -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">ชื่อสิ่งของ <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('ชื่อสิ่งของ') }} <span class="text-red-500">*</span></label>
                 <div class="relative">
-                  <input v-model="form.item_name" type="text" required placeholder="เช่น กระเป๋าสตางค์, iPad Pro" 
+                  <input v-model="form.item_name" type="text" required :placeholder="$t('เช่น กระเป๋าสตางค์, iPad Pro')" 
                     class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                     <font-awesome :icon="['fas', 'tag']" class="text-xs" />
@@ -47,14 +47,14 @@
               <!-- หมวดหมู่สิ่งของ -->
               <div>
                 <div class="flex justify-between items-center mb-1.5">
-                  <label class="block text-xs font-bold text-slate-650">หมวดหมู่สิ่งของ <span class="text-red-500">*</span></label>
+                  <label class="block text-xs font-bold text-slate-650">{{ $t('หมวดหมู่สิ่งของ') }} <span class="text-red-500">*</span></label>
                   <button type="button" @click="showAddCategory = true" class="text-[10px] font-extrabold text-rose-600 hover:text-rose-800 transition flex items-center gap-1">
-                    <font-awesome :icon="['fas', 'plus']" class="text-[9px]" /> เพิ่มประเภท
+                    <font-awesome :icon="['fas', 'plus']" class="text-[9px]" /> {{ $t('เพิ่มประเภท') }}
                   </button>
                 </div>
                 <div class="relative">
                   <select v-model="form.category_id" required class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
-                    <option value="" disabled>เลือกประเภทหมวดหมู่</option>
+                    <option value="" disabled>{{ $t('เลือกประเภทหมวดหมู่') }}</option>
                     <option v-for="cat in itemsStore.categories" :key="cat.category_id" :value="cat.category_id">
                       {{ cat.category_name }}
                     </option>
@@ -68,18 +68,18 @@
               <!-- สถานที่สูญหาย -->
               <div>
                 <div class="flex justify-between items-center mb-1.5">
-                  <label class="block text-xs font-bold text-slate-650">สถานที่สูญหาย (ตึก/อาคาร)</label>
+                  <label class="block text-xs font-bold text-slate-650">{{ $t('สถานที่สูญหาย (ตึก/อาคาร)') }}</label>
                   <button type="button" @click="showAddLocation = true" class="text-[10px] font-extrabold text-rose-600 hover:text-rose-800 transition flex items-center gap-1">
-                    <font-awesome :icon="['fas', 'plus']" class="text-[9px]" /> เพิ่มสถานที่
+                    <font-awesome :icon="['fas', 'plus']" class="text-[9px]" /> {{ $t('เพิ่มสถานที่') }}
                   </button>
                 </div>
                 <div class="relative">
                   <select v-model="form.location_id" class="w-full pl-4 pr-12 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
-                    <option value="">ไม่ระบุสถานที่ (หรือยังไม่ทราบ)</option>
+                    <option value="">{{ $t('ไม่ระบุสถานที่ (หรือยังไม่ทราบ)') }}</option>
                     <option v-for="loc in itemsStore.locations" :key="loc.location_id" :value="loc.location_id">
                       {{ loc.location_name }}
                     </option>
-                    <option value="custom">อื่นๆ (ระบุเอง)</option>
+                    <option value="custom">{{ $t('อื่นๆ (ระบุเอง)') }}</option>
                   </select>
                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400 gap-1.5">
                     <font-awesome :icon="['fas', 'location-dot']" class="text-xs" />
@@ -91,9 +91,9 @@
               <!-- ระบุสถานที่เอง -->
               <transition name="fade">
                 <div v-if="form.location_id === 'custom'" class="mt-3">
-                  <label class="block text-xs font-bold text-slate-650 mb-1.5">ระบุสถานที่หายเอง</label>
+                  <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('ระบุสถานที่หายเอง') }}</label>
                   <div class="relative">
-                    <input v-model="customLocationName" type="text" placeholder="ระบุสถานที่ เช่น อาคารเรียน 3 ห้อง 302"
+                    <input v-model="customLocationName" type="text" :placeholder="$t('ระบุสถานที่ เช่น อาคารเรียน 3 ห้อง 302')"
                       class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                       <font-awesome :icon="['fas', 'location-dot']" class="text-xs" />
@@ -104,9 +104,9 @@
 
               <!-- ชั้นที่หาย -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">ชั้นที่หาย</label>
+                <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('ชั้นที่หาย') }}</label>
                 <div class="relative">
-                  <input v-model="form.floor" type="text" placeholder="เช่น ชั้น 1, ชั้น 4"
+                  <input v-model="form.floor" type="text" :placeholder="$t('เช่น ชั้น 1, ชั้น 4')"
                     class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                     <font-awesome :icon="['fas', 'building']" class="text-xs" />
@@ -116,7 +116,7 @@
 
               <!-- วันและเวลาที่คาดว่าหาย -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">วันและเวลาที่คาดว่าหาย <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('วันและเวลาที่คาดว่าหาย') }} <span class="text-red-500">*</span></label>
                 <div class="relative">
                   <input v-model="form.lost_datetime" type="datetime-local" required
                     class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
@@ -128,8 +128,8 @@
 
               <!-- รายละเอียดเพิ่มเติม -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">รายละเอียดเพิ่มเติม / จุดสังเกตสิ่งของ</label>
-                <textarea v-model="form.description" rows="3" placeholder="ระบุตำหนิ สี แบรนด์ หรือจุดสังเกตเฉพาะ..."
+                <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('รายละเอียดเพิ่มเติม / จุดสังเกตสิ่งของ') }}</label>
+                <textarea v-model="form.description" rows="3" :placeholder="$t('ระบุตำหนิ สี แบรนด์ หรือจุดสังเกตเฉพาะ...')"
                   class="w-full px-4 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition resize-none"></textarea>
               </div>
             </div>
@@ -140,14 +140,14 @@
                 <div class="w-6 h-6 rounded-lg bg-amber-50 flex items-center justify-center text-amber-500 font-bold">
                   <font-awesome :icon="['fas', 'user']" class="text-[11px]" />
                 </div>
-                <h3 class="text-xs font-extrabold text-amber-600 uppercase tracking-wider">ข้อมูลผู้แจ้งทำของหาย</h3>
+                <h3 class="text-xs font-extrabold text-amber-600 uppercase tracking-wider">{{ $t('ข้อมูลผู้แจ้งทำของหาย') }}</h3>
               </div>
 
               <!-- ชื่อผู้แจ้งหาย -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">ชื่อผู้แจ้งหาย <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('ชื่อผู้แจ้งหาย') }} <span class="text-red-500">*</span></label>
                 <div class="relative">
-                  <input v-model="form.reporter_name" type="text" required placeholder="เช่น นายสมชาย ดีใจ"
+                  <input v-model="form.reporter_name" type="text" required :placeholder="$t('เช่น นายสมชาย ดีใจ')"
                     class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                     <font-awesome :icon="['fas', 'user']" class="text-xs" />
@@ -157,12 +157,12 @@
 
               <!-- ประเภทสถานะผู้แจ้ง -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">ประเภทผู้ทำของหาย <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('ประเภทผู้ทำของหาย') }} <span class="text-red-500">*</span></label>
                 <div class="relative">
                   <select v-model="form.reporter_type" required class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold appearance-none transition">
-                    <option value="STUDENT">นักศึกษา</option>
-                    <option value="STAFF">พนักงาน / อาจารย์</option>
-                    <option value="EXTERNAL">บุคคลภายนอก</option>
+                    <option value="STUDENT">{{ $t('นักศึกษา') }}</option>
+                    <option value="STAFF">{{ $t('พนักงาน / อาจารย์') }}</option>
+                    <option value="EXTERNAL">{{ $t('บุคคลภายนอก') }}</option>
                   </select>
                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                     <font-awesome :icon="['fas', 'chevron-down']" class="text-[10px]" />
@@ -172,10 +172,10 @@
 
               <!-- เบอร์โทรศัพท์ติดต่อ -->
               <div>
-                <label class="block text-xs font-bold text-slate-650 mb-1.5">เบอร์โทรศัพท์ติดต่อ <span class="text-red-500">*</span></label>
+                <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('เบอร์โทรศัพท์ติดต่อ') }} <span class="text-red-500">*</span></label>
                 <div class="relative">
-                  <input v-model="form.reporter_phoneNumber" type="tel" required placeholder="เช่น 081-234-5678" maxlength="10"
-                    class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
+                  <input v-model="form.reporter_phoneNumber" type="tel" required :placeholder="$t('เช่น 081-234-5678')" maxlength="10"
+                    class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                     <font-awesome :icon="['fas', 'phone']" class="text-xs" />
                   </div>
@@ -187,9 +187,9 @@
                 <div v-if="form.reporter_type === 'STUDENT'" class="space-y-4">
                   <!-- เลขทะเบียนนักศึกษา -->
                   <div>
-                    <label class="block text-xs font-bold text-slate-650 mb-1.5">เลขทะเบียนนักศึกษา <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('เลขทะเบียนนักศึกษา') }} <span class="text-red-500">*</span></label>
                     <div class="relative">
-                      <input v-model="form.reporter_studentId" type="text" :required="form.reporter_type === 'STUDENT'" placeholder="เช่น 64010123456"
+                      <input v-model="form.reporter_studentId" type="text" :required="form.reporter_type === 'STUDENT'" :placeholder="$t('เช่น 64010123456')"
                         class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
                       <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                         <font-awesome :icon="['fas', 'id-card']" class="text-xs" />
@@ -199,9 +199,9 @@
 
                   <!-- อีเมลมหาวิทยาลัย -->
                   <div>
-                    <label class="block text-xs font-bold text-slate-650 mb-1.5">อีเมลมหาวิทยาลัย <span class="text-red-500">*</span></label>
+                    <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('อีเมลมหาวิทยาลัย') }} <span class="text-red-500">*</span></label>
                     <div class="relative">
-                      <input v-model="form.reporter_universityEmail" type="email" :required="form.reporter_type === 'STUDENT'" placeholder="เช่น student@university.ac.th"
+                      <input v-model="form.reporter_universityEmail" type="email" :required="form.reporter_type === 'STUDENT'" :placeholder="$t('เช่น student@university.ac.th')"
                         class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-slate-200 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
                       <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                         <font-awesome :icon="['fas', 'envelope']" class="text-xs" />
@@ -218,7 +218,7 @@
                 <div class="w-6 h-6 rounded-lg bg-rose-50 flex items-center justify-center text-rose-500 font-bold">
                   <font-awesome :icon="['fas', 'file-image']" class="text-[11px]" />
                 </div>
-                <h3 class="text-xs font-extrabold text-rose-500 uppercase tracking-wider">รูปภาพประกอบ (ถ้ามี)</h3>
+                <h3 class="text-xs font-extrabold text-rose-500 uppercase tracking-wider">{{ $t('รูปภาพประกอบ (ถ้ามี)') }}</h3>
               </div>
 
               <!-- อัปโหลดรูปภาพ -->
@@ -234,10 +234,10 @@
                     <div class="w-12 h-12 rounded-full bg-rose-50 flex items-center justify-center text-rose-500 mb-3 group-hover:scale-110 transition duration-200">
                       <font-awesome :icon="['fas', 'cloud-arrow-up']" class="text-lg" />
                     </div>
-                    <span class="text-xs font-extrabold text-slate-700">คลิกหรือลากไฟล์มาวางที่นี่</span>
-                    <span class="text-[9px] text-slate-400 mt-1">รองรับไฟล์ JPG, JPEG, PNG (ขนาดไม่เกิน 10MB)</span>
+                    <span class="text-xs font-extrabold text-slate-700">{{ $t('คลิกหรือลากไฟล์มาวางที่นี่') }}</span>
+                    <span class="text-[9px] text-slate-400 mt-1">{{ $t('รองรับไฟล์ JPG, JPEG, PNG (ขนาดไม่เกิน 10MB)') }}</span>
                     <button type="button" class="mt-4 px-4 py-1.5 border border-slate-200 hover:border-slate-350 rounded-lg text-[10px] font-bold text-rose-650 bg-white hover:bg-rose-50/30 shadow-sm transition flex items-center gap-1.5">
-                      <font-awesome :icon="['fas', 'file-image']" class="text-[10px] text-rose-400" /> เลือกไฟล์
+                      <font-awesome :icon="['fas', 'file-image']" class="text-[10px] text-rose-400" /> {{ $t('เลือกไฟล์') }}
                     </button>
                   </div>
                   <div v-else class="w-full flex flex-col items-center">
@@ -256,8 +256,8 @@
               <div class="bg-rose-50/60 border border-rose-100 rounded-2xl p-4 flex gap-3 text-rose-700 mt-4 shadow-sm shadow-rose-100/10">
                 <font-awesome :icon="['fas', 'circle-info']" class="text-base text-rose-500 shrink-0 mt-0.5" />
                 <div class="flex flex-col gap-0.5">
-                  <h4 class="text-[11px] font-bold text-rose-800">ข้อมูลของคุณจะถูกเก็บเป็นความลับ</h4>
-                  <p class="text-[10px] text-rose-650 leading-relaxed font-semibold">ข้อมูลทั้งหมดจะถูกนำไปใช้เพื่อการติดตามของหายเท่านั้น และจะไม่เปิดเผยต่อบุคคลภายนอก</p>
+                  <h4 class="text-[11px] font-bold text-rose-800">{{ $t('ข้อมูลของคุณจะถูกเก็บเป็นความลับ') }}</h4>
+                  <p class="text-[10px] text-rose-650 leading-relaxed font-semibold">{{ $t('ข้อมูลทั้งหมดจะถูกนำไปใช้เพื่อการติดตามของหายเท่านั้น และจะไม่เปิดเผยต่อบุคคลภายนอก') }}</p>
                 </div>
               </div>
             </div>
@@ -269,13 +269,13 @@
         <div class="px-8 py-5 border-t border-slate-100 bg-white flex justify-end gap-3 shrink-0">
           <button type="button" @click="$emit('close')" 
             class="px-6 py-2.5 border border-slate-200 rounded-xl text-slate-500 font-bold hover:bg-slate-50 text-xs transition duration-150">
-            ยกเลิก
+            {{ $t('ยกเลิก') }}
           </button>
           <button type="submit" :disabled="isSubmitting" 
             class="px-6 py-2.5 bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 text-white font-bold rounded-xl text-xs transition duration-150 flex items-center justify-center gap-2 disabled:opacity-50 shadow-md shadow-rose-500/10">
             <span v-if="isSubmitting" class="animate-spin h-3 w-3 border-2 border-white border-t-transparent rounded-full"></span>
             <font-awesome v-else :icon="['fas', 'paper-plane']" class="text-[10px]" />
-            {{ isSubmitting ? 'กำลังบันทึกข้อมูล...' : (editItem ? 'บันทึกการแก้ไข' : 'ลงทะเบียนของหาย') }}
+            {{ isSubmitting ? $t('กำลังบันทึกข้อมูล...') : (editItem ? $t('บันทึกการแก้ไข') : $t('ลงทะเบียนของหาย')) }}
           </button>
         </div>
       </form>
@@ -295,7 +295,9 @@ import dayjs from 'dayjs'
 import { useItemsStore } from '~/stores/items'
 import AddCategoryModal from './AddCategoryModal.vue'
 import AddLocationModal from './AddLocationModal.vue'
+import { useLangStore } from '~/stores/lang'
 
+const langStore = useLangStore()
 const showAddCategory = ref(false)
 const showAddLocation = ref(false)
 

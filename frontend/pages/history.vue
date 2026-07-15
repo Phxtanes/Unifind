@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-6">
+  <div class="space-y-6 font-sans">
 
 
     <div class="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">
@@ -17,13 +17,13 @@
           <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <h4 class="text-xs font-bold text-slate-800">
-                บันทึกข้อมูลสิ่งของ: <span class="text-indigo-600">{{ log.name }}</span>
+                {{ $t('บันทึกข้อมูลสิ่งของ') }}: <span class="text-indigo-600">{{ log.name }}</span>
               </h4>
               <p class="text-[10px] text-slate-450 mt-1 font-medium">
-                สถานที่: <span class="font-semibold">{{ log.place }}</span> | หมวดหมู่: {{ translateCategory(log.category) }}
+                {{ $t('สถานที่') }}: <span class="font-semibold">{{ log.place }}</span> | {{ $t('หมวดหมู่') }}: {{ translateCategory(log.category) }}
               </p>
               <p class="text-[9px] text-slate-400 mt-0.5">
-                ลงบันทึกโดย: {{ log.staffName || 'System Admin' }}
+                {{ $t('ลงบันทึกโดย') }}: {{ log.staffName || 'System Admin' }}
               </p>
             </div>
             <div class="text-right shrink-0">
@@ -33,13 +33,13 @@
                 'bg-emerald-50 text-emerald-700': log.status === 'found' || log.status === 'stored',
                 'bg-indigo-50 text-indigo-700': log.status === 'claimed' || log.status === 'removed'
               }" class="px-2 py-0.5 text-[8px] font-bold rounded border uppercase mt-1 inline-block">
-                {{ log.status === 'lost' ? 'สูญหาย' : (log.status === 'found' || log.status === 'stored') ? 'พร้อมส่งคืน' : 'ส่งคืนแล้ว' }}
+                {{ log.status === 'lost' ? $t('สูญหาย') : (log.status === 'found' || log.status === 'stored') ? $t('พร้อมส่งคืน') : $t('ส่งคืนแล้ว') }}
               </span>
             </div>
           </div>
         </div>
 
-        <div v-if="historyList.length === 0" class="py-8 text-center text-slate-400 text-xs">ไม่มีรายการกิจกรรมในระบบ</div>
+        <div v-if="historyList.length === 0" class="py-8 text-center text-slate-400 text-xs">{{ $t('ไม่มีรายการกิจกรรมในระบบ') }}</div>
       </div>
     </div>
   </div>
@@ -49,10 +49,12 @@
 import { computed } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
+import { useLangStore } from '~/stores/lang'
 
 definePageMeta({ layout: 'dashboard', title: 'ประวัติการดำเนินการ (System Logs)', icon: 'clock-rotate-left' })
 
 const itemsStore = useItemsStore()
+const langStore = useLangStore()
 const { translateCategory, formatFullDate } = useItemHelpers()
 
 const historyList = computed(() => {
@@ -61,3 +63,4 @@ const historyList = computed(() => {
     .slice(0, 20)
 })
 </script>
+

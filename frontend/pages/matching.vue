@@ -6,20 +6,20 @@
         <div>
           <h1 class="text-xl font-bold text-slate-900 flex items-center gap-2">
             <font-awesome :icon="['fas', 'robot']" class="text-indigo-600 animate-bounce" />
-            AI Matching Center (ศูนย์วิเคราะห์และจับคู่สิ่งของหาย)
+            {{ $t('AI Matching Center (ศูนย์วิเคราะห์และจับคู่สิ่งของหาย)') }}
           </h1>
-          <p class="text-xs text-slate-500 font-medium mt-1">เปรียบเทียบสิ่งของที่แจ้งหายและของที่พบในระบบด้วย Gemini AI วิเคราะห์ความน่าจะเป็นในการจับคู่แบบสองทิศทาง</p>
+          <p class="text-xs text-slate-500 font-medium mt-1">{{ $t('เปรียบเทียบสิ่งของที่แจ้งหายและของที่พบในระบบด้วย Gemini AI วิเคราะห์ความน่าจะเป็นในการจับคู่แบบสองทิศทาง') }}</p>
         </div>
         
         <!-- Active Count Stats -->
         <div class="flex gap-4 self-start md:self-auto">
           <div class="bg-rose-50 border border-rose-100 rounded-xl px-4 py-2 text-center">
             <span class="text-xs text-rose-700 font-bold font-mono">{{ activeLostItems.length }}</span>
-            <p class="text-[10px] text-rose-550 font-bold mt-0.5">ของหายรอคู่</p>
+            <p class="text-[10px] text-rose-550 font-bold mt-0.5">{{ $t('ของหายรอคู่') }}</p>
           </div>
           <div class="bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-2 text-center">
             <span class="text-xs text-emerald-700 font-bold font-mono">{{ activeFoundItems.length }}</span>
-            <p class="text-[10px] text-emerald-550 font-bold mt-0.5">ของในคลังรอคืน</p>
+            <p class="text-[10px] text-emerald-550 font-bold mt-0.5">{{ $t('ของในคลังรอคืน') }}</p>
           </div>
         </div>
       </div>
@@ -33,14 +33,14 @@
         <div class="p-4 border-b border-slate-100 bg-slate-50/50 shrink-0">
           <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
             <font-awesome :icon="['fas', 'briefcase']" class="text-rose-550" />
-            1. เลือกรายการของหาย (Lost Items)
+            {{ $t('1. เลือกรายการของหาย (Lost Items)') }}
           </h3>
           <!-- Search box -->
           <div class="relative mt-3">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">
               <font-awesome :icon="['fas', 'magnifying-glass']" />
             </span>
-            <input v-model="lostSearchQuery" type="text" placeholder="ค้นหาของหาย..."
+            <input v-model="lostSearchQuery" type="text" :placeholder="$t('ค้นหาของหาย...')"
               class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-250 rounded-xl focus:ring-1 focus:ring-rose-500 focus:border-rose-500 outline-none text-xs text-slate-700 transition" />
           </div>
         </div>
@@ -71,7 +71,7 @@
           </div>
           <div v-if="filteredLostItems.length === 0" class="text-center py-20 text-slate-400">
             <font-awesome :icon="['fas', 'magnifying-glass']" class="text-lg mb-2" />
-            <p class="text-xs font-bold">ไม่พบรายการของหาย</p>
+            <p class="text-xs font-bold">{{ $t('ไม่พบรายการของหาย') }}</p>
           </div>
         </div>
       </div>
@@ -81,14 +81,14 @@
         <div class="p-4 border-b border-slate-100 bg-slate-50/50 shrink-0">
           <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
             <font-awesome :icon="['fas', 'box-open']" class="text-emerald-650" />
-            2. เลือกของในคลังเปรียบเทียบ (Found Items)
+            {{ $t('2. เลือกของในคลังเปรียบเทียบ (Found Items)') }}
           </h3>
           <!-- Search box -->
           <div class="relative mt-3">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs">
               <font-awesome :icon="['fas', 'magnifying-glass']" />
             </span>
-            <input v-model="foundSearchQuery" type="text" placeholder="ค้นหาของพบเจอ..."
+            <input v-model="foundSearchQuery" type="text" :placeholder="$t('ค้นหาของพบเจอ...')"
               class="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-250 rounded-xl focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-xs text-slate-700 transition" />
           </div>
         </div>
@@ -99,13 +99,13 @@
             <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto text-slate-400 border border-slate-150 mb-3 shadow-inner">
               <font-awesome :icon="['fas', 'arrow-left']" />
             </div>
-            <h4 class="text-xs font-bold text-slate-600">กรุณาเลือกรายการของหายก่อน</h4>
-            <p class="text-[10px] mt-1">ระบบจะแสดงรายชื่อของพบที่อยู่ในหมวดหมู่เดียวกันขึ้นมาเปรียบเทียบแบบอัตโนมัติ</p>
+            <h4 class="text-xs font-bold text-slate-600">{{ $t('กรุณาเลือกรายการของหายก่อน') }}</h4>
+            <p class="text-[10px] mt-1">{{ $t('ระบบจะแสดงรายชื่อของพบที่อยู่ในหมวดหมู่เดียวกันขึ้นมาเปรียบเทียบแบบอัตโนมัติ') }}</p>
           </div>
 
           <div v-else-if="filteredFoundItems.length === 0" class="text-center py-32 px-6 text-slate-400">
             <font-awesome :icon="['fas', 'box-open']" class="text-lg mb-2" />
-            <p class="text-xs font-bold">ไม่มีสิ่งของที่พบเจอในหมวดหมู่เดียวกัน</p>
+            <p class="text-xs font-bold">{{ $t('ไม่มีสิ่งของที่พบเจอในหมวดหมู่เดียวกัน') }}</p>
           </div>
 
           <div v-else v-for="item in filteredFoundItems" :key="item.id" 
@@ -142,7 +142,7 @@
           <div class="border-b border-slate-100 pb-3 mb-4">
             <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
               <font-awesome :icon="['fas', 'shuffle']" class="text-indigo-600" />
-              3. โต๊ะเปรียบเทียบข้อมูลคู่จับคู่
+              {{ $t('3. โต๊ะเปรียบเทียบข้อมูลคู่จับคู่') }}
             </h3>
           </div>
 
@@ -153,9 +153,9 @@
                 <font-awesome :icon="['fas', 'briefcase']" />
               </div>
               <div class="min-w-0 flex-1">
-                <p class="text-[9px] font-bold text-rose-600 uppercase tracking-wide">ฝั่งแจ้งของหาย</p>
+                <p class="text-[9px] font-bold text-rose-600 uppercase tracking-wide">{{ $t('ฝั่งแจ้งของหาย') }}</p>
                 <h4 class="font-extrabold text-slate-800 text-[11px] truncate mt-0.5">
-                  {{ selectedLost ? selectedLost.name : 'ยังไม่เลือกรายการ' }}
+                  {{ selectedLost ? selectedLost.name : $t('ยังไม่เลือกรายการ') }}
                 </h4>
               </div>
             </div>
@@ -173,9 +173,9 @@
                 <font-awesome :icon="['fas', 'box-open']" />
               </div>
               <div class="min-w-0 flex-1">
-                <p class="text-[9px] font-bold text-emerald-700 uppercase tracking-wide">ฝั่งคลังสิ่งของพบเจอ</p>
+                <p class="text-[9px] font-bold text-emerald-700 uppercase tracking-wide">{{ $t('ฝั่งคลังสิ่งของพบเจอ') }}</p>
                 <h4 class="font-extrabold text-slate-800 text-[11px] truncate mt-0.5">
-                  {{ selectedFound ? selectedFound.name : 'ยังไม่เลือกรายการ' }}
+                  {{ selectedFound ? selectedFound.name : $t('ยังไม่เลือกรายการ') }}
                 </h4>
               </div>
             </div>
@@ -189,7 +189,7 @@
               class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed text-white text-xs font-bold rounded-xl transition duration-150 shadow-md flex items-center justify-center gap-2"
             >
               <font-awesome :icon="['fas', isAnalyzing ? 'spinner' : 'robot']" :class="{ 'animate-spin': isAnalyzing }" />
-              {{ isAnalyzing ? 'กำลังวิเคราะห์ด้วย Gemini AI...' : 'วิเคราะห์ความเข้ากันด้วย AI' }}
+              {{ isAnalyzing ? $t('กำลังวิเคราะห์ด้วย Gemini AI...') : $t('วิเคราะห์ความเข้ากันด้วย AI') }}
             </button>
           </div>
         </div>
@@ -201,8 +201,8 @@
             <div class="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 text-xl mx-auto shadow-sm animate-pulse">
               <font-awesome :icon="['fas', 'microchip']" class="animate-spin" />
             </div>
-            <h4 class="text-xs font-bold text-slate-700">กำลังอ่านข้อมูลประมวลผล...</h4>
-            <p class="text-[10px] text-slate-400">Gemini AI กำลังวิเคราะห์ชื่อ ตำหนิ สถานที่และวันเวลาสูญหาย</p>
+            <h4 class="text-xs font-bold text-slate-700">{{ $t('กำลังอ่านข้อมูลประมวลผล...') }}</h4>
+            <p class="text-[10px] text-slate-400">{{ $t('Gemini AI กำลังวิเคราะห์ชื่อ ตำหนิ สถานที่และวันเวลาสูญหาย') }}</p>
           </div>
 
           <!-- Result state -->
@@ -223,12 +223,12 @@
                 <span class="text-[9px] font-bold mt-1 uppercase">match</span>
               </div>
               <h4 class="text-xs font-extrabold text-slate-800 mt-3">
-                {{ matchResult.matched ? 'มีโอกาสสูงที่จะเป็นของชิ้นเดียวกัน' : 'ยังไม่ตรงกันเพียงพอ' }}
+                {{ matchResult.matched ? $t('มีโอกาสสูงที่จะเป็นของชิ้นเดียวกัน') : $t('ยังไม่ตรงกันเพียงพอ') }}
               </h4>
             </div>
 
             <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
-              <span class="text-[9px] font-bold text-slate-450 uppercase tracking-wider">ข้อวินิจฉัยจาก AI:</span>
+              <span class="text-[9px] font-bold text-slate-450 uppercase tracking-wider">{{ $t('ข้อวินิจฉัยจาก AI:') }}</span>
               <p class="text-[11px] text-slate-650 font-medium leading-relaxed mt-1">
                 {{ matchResult.reason }}
               </p>
@@ -240,7 +240,7 @@
                 @click="processClaimSuccess"
                 class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition duration-150 shadow-sm"
               >
-                <font-awesome :icon="['fas', 'check']" class="mr-1.5" /> ทำเรื่องคืนของ
+                <font-awesome :icon="['fas', 'check']" class="mr-1.5" /> {{ $t('ทำเรื่องคืนของ') }}
               </button>
             </div>
           </div>
