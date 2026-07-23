@@ -189,22 +189,22 @@ const menuItems = computed(() => {
       icon: 'house'
     },
     {
-      title: langStore.t('รายการทั้งหมด'),
+      title: langStore.t('หน้ารายการทั้งหมด'),
       path: '/items',
       icon: 'clipboard-list'
     },
     {
-      title: langStore.t('ของหาย'),
+      title: langStore.t('สิ่งของที่มีการแจ้งหาย'),
       path: '/lost',
       icon: 'briefcase'
     },
     {
-      title: langStore.t('พบของ'),
+      title: langStore.t('สิ่งของที่พบ'),
       path: '/found',
       icon: 'box-open'
     },
     {
-      title: langStore.t('คืนแล้ว'),
+      title: langStore.t('สิ่งของที่คืนแล้ว'),
       path: '/claimed',
       icon: 'rotate'
     },
@@ -214,7 +214,7 @@ const menuItems = computed(() => {
       icon: 'database'
     },
     {
-      title: langStore.t('รายงาน'),
+      title: langStore.t('หน้ารายงาน'),
       path: '/reports',
       icon: 'chart-pie'
     },
