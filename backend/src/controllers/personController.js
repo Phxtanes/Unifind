@@ -1,6 +1,16 @@
+/**
+ * =========================================================================
+ * 👤 PERSON CONTROLLER (ตัวจัดการข้อมูลบุคคลผู้ส่งพบ/ผู้ติดต่อรับคืน)
+ * =========================================================================
+ * ทำหน้าที่ประมวลผลการค้นหา ค้นพบ หรือสร้างโปรไฟล์บุคคล (Persons) ในระบบ
+ *
+ * 🎓 พัฒนาขึ้นสำหรับ: มหาวิทยาลัยหอการค้าไทย (UTCC)
+ * =========================================================================
+ */
+
 const supabase = require("../config/supabase");
 
-// ดึงข้อมูลบุคคล (Persons) ทั้งหมดในระบบ
+/** GET /api/persons - ดึงข้อมูลบุคคล (Persons) ทั้งหมดในระบบ */
 exports.getPersons = async (req, res) => {
   try {
     const { data, error } = await supabase.from("persons").select("*");
@@ -12,7 +22,7 @@ exports.getPersons = async (req, res) => {
   }
 };
 
-// ค้นหาหรือบันทึกบุคคลใหม่ (ป้อนผู้ส่งพบ/ผู้ติดต่อรับคืนของหาย)
+/** POST /api/persons/find-or-create - ค้นหาหรือบันทึกบุคคลใหม่ (ผู้ส่งพบ/ผู้ติดต่อรับคืนของหาย) */
 exports.findOrCreatePerson = async (req, res) => {
   try {
     const { person_type, full_name, student_id, email, phone, department } =

@@ -1,15 +1,35 @@
+/**
+ * =========================================================================
+ * ⏱️ IN-MEMORY OTP STORE (ระบบจัดเก็บรหัส OTP ในหน่วยความจำชั่วคราว)
+ * =========================================================================
+ * ทำหน้าที่สร้าง จัดเก็บ ตรวจสอบ และลบชั่วคราวรหัส OTP (อายุ 5 นาที) สำหรับการผูกบัญชี LINE
+ *
+ * 🎓 พัฒนาขึ้นสำหรับ: มหาวิทยาลัยหอการค้าไทย (UTCC)
+ * =========================================================================
+ */
+
+const crypto = require("crypto");
+
 // เก็บข้อมูลรหัส OTP ชั่วคราวสำหรับการผูกบัญชี LINE: { [lineUserId]: { email, studentId, role, otp, expiresAt } }
 const pendingOtps = {};
 
-// สุ่มสร้างรหัส OTP เลข 6 หลัก
+/**
+ * สุ่มสร้างรหัส OTP เลขจำนวนเต็ม 6 หลักที่ปลอดภัย (Cryptographically Secure 100,000 - 999,999)
+ * @returns {string} รหัส OTP 6 หลัก
+ */
 function generateOtp() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(crypto.randomInt(100000, 999999));
 }
 
-// สร้างข้อมูลและรหัส OTP เพื่อส่งอีเมลยืนยันตัวตน (อายุใช้งาน 5 นาที)
+/**
+ * สร้างข้อมูลและรหัส OTP เพื่อส่งอีเมลยืนยันตัวตน (กำหนดอายุใช้งาน 5 นาที)
+ * @param {string} lineUserId - LINE User ID
+ * @param {object} details - ข้อมูลบทบาทและอีเมลของผู้สมัคร
+ * @returns {string} รหัส OTP ที่สร้างได้
+ */
 function createPending(lineUserId, details) {
   const otp = generateOtp();
-  const expiresAt = Date.now() + 5 * 60 * 1000; // กำหนดหมดอายุใน 5 นาที (5 นาที * 60 วินาที * 1000 มิลลิวินาที)
+  const expiresAt = Date.now() + 5 * 60 * 1000; // หมดอายุใน 5 นาที
 
   pendingOtps[lineUserId] = {
     email: details.email,
@@ -25,7 +45,11 @@ function createPending(lineUserId, details) {
   return otp;
 }
 
-// ดึงข้อมูลรหัส OTP ปัจจุบัน (เช็กอายุใช้งานว่าหมดอายุหรือไม่)
+/**
+ * ดึงข้อมูลรหัส OTP ปัจจุบัน (ตรวจสอบความสมบูรณ์และอายุใช้งาน)
+ * @param {string} lineUserId - LINE User ID
+ * @returns {object|null} ข้อมูล OTP หรือ null หากหมดอายุ/ไม่พบ
+ */
 function getPending(lineUserId) {
   const record = pendingOtps[lineUserId];
   if (!record) return null;
@@ -37,12 +61,15 @@ function getPending(lineUserId) {
   return record;
 }
 
-// ล้างข้อมูลรหัส OTP เมื่อยืนยันตัวตนสำเร็จ
+/**
+ * ล้างข้อมูลรหัส OTP เมื่อยืนยันตัวตนสำเร็จ
+ * @param {string} lineUserId - LINE User ID
+ */
 function clearPending(lineUserId) {
   delete pendingOtps[lineUserId];
 }
 
-// เคลียร์รหัส OTP ที่หมดอายุค้างใน RAM ทุกๆ 10 นาที
+// ระบบทำความสะอาดล้างรหัส OTP ที่หมดอายุค้างใน RAM ทุกๆ 10 นาที
 setInterval(
   () => {
     const now = Date.now();

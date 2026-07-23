@@ -1,5 +1,16 @@
+/**
+ * =========================================================================
+ * 📍 LOCATION CONTROLLER (ตัวจัดการข้อมูลสถานที่และชั้นภายในอาคาร)
+ * =========================================================================
+ * ทำหน้าที่ประมวลผลคำขอจัดการข้อมูลสถานที่ย่อย (Locations)
+ *
+ * 🎓 พัฒนาขึ้นสำหรับ: มหาวิทยาลัยหอการค้าไทย (UTCC)
+ * =========================================================================
+ */
+
 const supabase = require("../config/supabase");
 
+/** GET /api/locations - ดึงรายการสถานที่ทั้งหมดพร้อมข้อมูลอาคารเชื่อมโยง */
 exports.getLocations = async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -14,6 +25,7 @@ exports.getLocations = async (req, res) => {
   }
 };
 
+/** POST /api/locations - เพิ่มข้อมูลสถานที่ย่อยใหม่ */
 exports.createLocation = async (req, res) => {
   try {
     const { location_name, building_id, floor, description } = req.body;
@@ -35,6 +47,7 @@ exports.createLocation = async (req, res) => {
   }
 };
 
+/** PUT /api/locations/:id - แก้ไขอัปเดตข้อมูลสถานที่ย่อย */
 exports.updateLocation = async (req, res) => {
   try {
     const { id } = req.params;
@@ -54,6 +67,7 @@ exports.updateLocation = async (req, res) => {
   }
 };
 
+/** DELETE /api/locations/:id - ลบข้อมูลสถานที่ออกจากระบบ */
 exports.deleteLocation = async (req, res) => {
   try {
     const { id } = req.params;

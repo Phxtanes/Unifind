@@ -1,5 +1,16 @@
+/**
+ * =========================================================================
+ * 🏷️ CATEGORY CONTROLLER (ตัวจัดการข้อมูลหมวดหมู่สิ่งของ)
+ * =========================================================================
+ * ทำหน้าที่ประมวลผลคำขอจัดการข้อมูลหมวดหมู่ของหาย (Categories)
+ *
+ * 🎓 พัฒนาขึ้นสำหรับ: มหาวิทยาลัยหอการค้าไทย (UTCC)
+ * =========================================================================
+ */
+
 const supabase = require("../config/supabase");
 
+/** GET /api/categories - ดึงรายการหมวดหมู่สิ่งของทั้งหมด */
 exports.getCategories = async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -14,6 +25,7 @@ exports.getCategories = async (req, res) => {
   }
 };
 
+/** POST /api/categories - เพิ่มหมวดหมู่สิ่งของใหม่ */
 exports.createCategory = async (req, res) => {
   try {
     const { category_name, description } = req.body;
@@ -30,6 +42,7 @@ exports.createCategory = async (req, res) => {
   }
 };
 
+/** PUT /api/categories/:id - แก้ไขอัปเดตข้อมูลหมวดหมู่สิ่งของ */
 exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -48,6 +61,7 @@ exports.updateCategory = async (req, res) => {
   }
 };
 
+/** DELETE /api/categories/:id - ลบหมวดหมู่สิ่งของออกจากระบบ */
 exports.deleteCategory = async (req, res) => {
   try {
     const { id } = req.params;

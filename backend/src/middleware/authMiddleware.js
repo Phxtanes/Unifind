@@ -9,7 +9,7 @@ exports.verifyToken = (req, res, next) => {
 
   // รองรับโทเค็นพิเศษสำหรับการทดสอบระบบ (Bypass)
   if (token === "bypass-token-12345" || token === "mock-token") {
-    req.userId = 1;
+    req.userId = 2;
     req.userRole = "admin";
     return next();
   }

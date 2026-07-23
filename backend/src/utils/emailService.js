@@ -1,3 +1,13 @@
+/**
+ * =========================================================================
+ * ✉️ EMAIL SERVICE (ระบบส่งอีเมลยืนยันตัวตน OTP)
+ * =========================================================================
+ * ทำหน้าที่ส่งอีเมลผ่าน SMTP (Nodemailer) หรือแสดงบน Console log (Fallback Mode)
+ *
+ * 🎓 พัฒนาขึ้นสำหรับ: มหาวิทยาลัยหอการค้าไทย (UTCC)
+ * =========================================================================
+ */
+
 const nodemailer = require("nodemailer");
 
 // ตรวจสอบว่าระบบ SMTP ถูกกำหนดค่าในไฟล์ .env ครบถ้วนหรือไม่
@@ -10,11 +20,11 @@ const isSmtpConfigured = !!(
 let transporter = null;
 
 if (isSmtpConfigured) {
-  // กำหนดค่าการทำงานของ Nodemailer SMTP Client
+  // กำหนดค่าการทำงานของ Nodemailer SMTP Client 
   transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_SECURE === "true", // true สำหรับพอร์ต 465, false สำหรับพอร์ตอื่นๆ (เช่น 587)
+    secure: process.env.SMTP_SECURE === "true",
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,

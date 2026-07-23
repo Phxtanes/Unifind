@@ -1,14 +1,6 @@
-/**
- * =========================================================================
- * 📌 Unifind LINE Bot Router & Hybrid AI System
- * =========================================================================
- * ไฟล์นี้ทำหน้าที่เป็นตัวจัดการระบบ LINE Webhook, การผูกบัญชีผู้ใช้,
- * การบันทึกและสืบค้นข้อมูลของหาย (Lost & Found), รวมถึงการใช้ Gemini AI
- * ในการจัดประเภทผู้ใช้, ค้นหาแบบมีความหมาย (Semantic Search), และคุยทั่วไป
- *
- * 🎓 พัฒนาขึ้นสำหรับ: มหาวิทยาลัยหอการค้าไทย (UTCC)
- * =========================================================================
- */
+/* =========================================================================
+ * 📦 1. IMPORTS & SYSTEM INITIALIZATION (ส่วนนำเข้าแพ็กเกจและการตั้งค่าระบบ)
+ * ========================================================================= */
 
 const express = require("express");
 const crypto = require("crypto");
@@ -32,9 +24,16 @@ const router = express.Router();
 // เริ่มต้นระบบ Gemini AI ด้วย GoogleGenAI SDK
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+
 /* =========================================================================
- * 🛠️ 1. HELPER FUNCTIONS & MAPPINGS (ฟังก์ชันช่วยเหลือและการแปลงข้อมูล)
+ * 📊 2. DATA MAPPINGS & CONSTANTS (ค่าคงที่และการแปลงข้อมูล)
  * ========================================================================= */
+
+// ข้อความแนะนำการใช้งานระบบเริ่มต้น (สำหรับผู้ที่ยังไม่ได้ผูกบัญชี)
+const welcomeAndGuideMessage = `ยินดีต้อนรับเข้าสู่ Unifind นะครับผม! 🎉 ช่องทางช่วยตามหาของหายและรับแจ้งเตือนสำหรับชาว UTCC \n\nกรุณาผูกบัญชีผู้ใช้เพื่อความปลอดภัยและเปิดสิทธิ์ใช้งานระบบตามหาของหาย โดยพิมพ์ส่งอีเมลมหาวิทยาลัยของคุณเข้ามาในแชทนี้เพื่อทำการผูกบัญชีได้เลยครับ 🎓💼`;
+
+// ข้อความแนะนำการใช้งานสำหรับผู้ที่ผูกบัญชีเรียบร้อยแล้ว
+const welcomeAlreadyBoundMessage = `ยินดีต้อนรับเข้าสู่ Unifind นะครับผม! 🎉 บัญชีของคุณผูกเรียบร้อยแล้ว\n\nคุณสามารถใช้งานได้ง่ายๆ ดังนี้ครับ:\n• 🔍 พิมพ์ข้อความค้นหา เช่น "มีใครเจอกระเป๋าสีดำบ้างไหม"\n• 📝 พิมพ์แจ้งของหายเพื่อให้ระบบคอยเฝ้าระวัง เช่น "ทำร่มสีแดงหายแถวตึก 24 ชั้น 3"\n• 📸 ส่งรูปภาพสิ่งของที่ต้องการตรวจจับและค้นหาคู่แมตช์ในคลังเก็บของหาย`;
 
 /**
  * ดึงชื่อสถานที่จำลองกรณีฐานข้อมูล Supabase ออฟไลน์
@@ -94,73 +93,16 @@ const getLocationNameText = (item) => {
 };
 
 /**
- * ตรวจสอบความสุ่ม (ความสุ่มสลับการทักทาย)
+ * สุ่มเลือกข้อความจากอาร์เรย์
  * @param {Array} array - รายการข้อความที่ต้องการสุ่มเลือก
  * @returns {*} ข้อความที่สุ่มได้
  */
 const getRandomResponse = (array) =>
   array[Math.floor(Math.random() * array.length)];
 
-// ข้อความแนะนำการใช้งานระบบเริ่มต้น (สำหรับผู้ที่ยังไม่ได้ผูกบัญชี)
-const welcomeAndGuideMessage = `ยินดีต้อนรับเข้าสู่ Unifind นะครับผม! 🎉 ช่องทางช่วยตามหาของหายและรับแจ้งเตือนสำหรับชาว UTCC \n\nกรุณาผูกบัญชีผู้ใช้เพื่อความปลอดภัยและเปิดสิทธิ์ใช้งานระบบตามหาของหาย โดยพิมพ์ส่งอีเมลมหาวิทยาลัยของคุณเข้ามาในแชทนี้เพื่อทำการผูกบัญชีได้เลยครับ 🎓💼`;
-
-// ข้อความแนะนำการใช้งานสำหรับผู้ที่ผูกบัญชีเรียบร้อยแล้ว
-const welcomeAlreadyBoundMessage = `ยินดีต้อนรับเข้าสู่ Unifind นะครับผม! 🎉 บัญชีของคุณผูกเรียบร้อยแล้ว\n\nคุณสามารถใช้งานได้ง่ายๆ ดังนี้ครับ:\n• 🔍 พิมพ์ข้อความค้นหา เช่น "มีใครเจอกระเป๋าสีดำบ้างไหม"\n• 📝 พิมพ์แจ้งของหายเพื่อให้ระบบคอยเฝ้าระวัง เช่น "ทำร่มสีแดงหายแถวตึก 24 ชั้น 3"\n• 📸 ส่งรูปภาพสิ่งของที่ต้องการตรวจจับและค้นหาคู่แมตช์ในคลังเก็บของหาย`;
 
 /* =========================================================================
- * 🤖 2. GEMINI AI CORE FUNCTIONS (ส่วนงานสมองกล AI - Gemini)
- * ========================================================================= */
-
-/**
- * ตรวจสอบความเฉพาะเจาะจงของรายละเอียดของหายที่ผู้ใช้แจ้ง (Color, Brand, Identifier)
- * @param {string} userMessage - ข้อความแจ้งของหายที่ผู้ใช้พิมพ์เข้ามา
- * @returns {Promise<object>} ผลวิเคราะห์ { isSpecific: boolean, reason: string }
- */
-async function checkSpecificity(userMessage) {
-  const prompt = `คุณคือผู้ช่วย AI ประเมินความเฉพาะเจาะจงของรายละเอียดของหายในระบบ Unifind
-หน้าที่ของคุณคือตรวจสอบข้อความของผู้ใช้ภาษาไทยว่ามีการระบุรายละเอียดสิ่งของ "เฉพาะเจาะจงเพียงพอ" หรือไม่ เพื่อที่จะสามารถระบุตัวตนและตรวจสอบของได้ง่ายขึ้น (เช่น ยี่ห้อ/รุ่น, สี, ลักษณะเด่น, หรือจุดสังเกตเฉพาะตัว)
-
-เกณฑ์การตัดสิน:
-1. หากผู้ใช้ระบุเพียงประเภทสิ่งของกว้างๆ เช่น "โทรศัพท์", "กระเป๋า", "กุญแจ", "ร่ม", "หูฟัง", "บัตร" โดยไม่มีการระบุ "สี", "รุ่น/ยี่ห้อ", หรือ "ลักษณะเฉพาะอื่นใดเพิ่มเติมเลย" ให้ถือว่า "ไม่เฉพาะเจาะจงพอ (isSpecific: false)"
-2. หากผู้ใช้ระบุรายละเอียดเพิ่มเติม เช่น "โทรศัพท์ iPhone 15 สีดำ", "กระเป๋าตังสีน้ำตาลยี่ห้อ Coach", "กุญแจรถ Honda มีพวงกุญแจหมี", "ร่มสีแดงลายจุด" ให้ถือว่า "เฉพาะเจาะจงเพียงพอ (isSpecific: true)"
-
-ตัวอย่างที่ไม่ผ่าน (isSpecific: false):
-- "ทำโทรศัพท์หายครับ"
-- "มีใครเจอกระเป๋าสตางค์บ้างไหม"
-- "ลืมกุญแจไว้"
-- "ตามหาหูฟังที่ทำหล่น"
-- "ร่มหายแถวตึก 24" (มีแต่สถานที่ ไม่มีรายละเอียดลักษณะของร่ม)
-
-ตัวอย่างที่ผ่าน (isSpecific: true):
-- "ไอแพดสีขาวเคสการ์ตูนหาย"
-- "กุญแจรถ Toyota"
-- "กระเป๋าเป้สีน้ำเงินยี่ห้อ Adidas"
-- "หูฟัง Airpods เคสสีเหลือง"
-
-ข้อความของผู้ใช้ที่ต้องการตรวจสอบ: "${userMessage}"
-
-ตอบกลับเป็น JSON รูปแบบนี้เท่านั้น ห้ามมีคำอธิบายอื่นเด็ดขาด:
-{
-  "isSpecific": true หรือ false,
-  "reason": "คำอธิบายภาษาไทยสั้นๆ ที่เป็นมิตรและเป็นกันเอง บอกผู้ใช้ว่าข้อมูลกว้างเกินไปและแนะแนวทางว่าควรระบุอะไรเพิ่ม เช่น ยี่ห้อ รุ่น หรือสี เพื่อค้นหาหรือบันทึกได้แม่นยำยิ่งขึ้น เช่น 'น้องบอทคิดว่ารายละเอียดของหายยังกว้างเกินไปนิดนึงครับ เพื่อความแม่นยำในการตามหา รบกวนระบุสี รุ่น หรือลักษณะพิเศษเพิ่มเติมอีกสักนิดได้ไหมครับ 😊'"
-}`;
-
-  try {
-    const response = await aiHelper.generateContentWithFallback(ai, {
-      contents: prompt,
-      config: { responseMimeType: "application/json" },
-      taskType: "classification",
-    });
-    return JSON.parse(response.text.trim());
-  } catch (e) {
-    console.error("Error checking specificity:", e);
-    // Fallback ในกรณี AI ผิดพลาด ให้ผ่านไปก่อนเพื่อไม่ให้ระบบสะดุด
-    return { isSpecific: true, reason: "" };
-  }
-}
-
-/* =========================================================================
- * ✉️ 3. LINE MESSAGE UTILITIES (ส่วนเชื่อมต่อกับ LINE Messaging API)
+ * 💬 3. LINE MESSAGING API UTILITIES (การส่งข้อความ LINE และดึง Media)
  * ========================================================================= */
 
 /**
@@ -222,7 +164,7 @@ async function pushToLine(lineUserId, messages) {
 
 /**
  * ฟังก์ชันกลางสำหรับเลือกส่งข้อความแบบอัตโนมัติ (Reply หรือ Push)
- * @param {object} dest - ปลายทางที่ต้องการส่ง { replyToken, lineUserId }
+ * @param {object|string} dest - ปลายทางที่ต้องการส่ง { replyToken, lineUserId } หรือ String replyToken
  * @param {Array} messages - ข้อความที่จะส่ง
  */
 async function sendLineMessage(dest, messages) {
@@ -258,8 +200,9 @@ async function getLineImageBuffer(messageId) {
   };
 }
 
+
 /* =========================================================================
- * 📱 4. LINE FLEX MESSAGE BUILDERS (ตัวประกอบโครงสร้าง Flex Message)
+ * 🎨 4. LINE FLEX MESSAGE BUILDERS (ตัวประกอบโครงสร้าง Flex Message)
  * ========================================================================= */
 
 /**
@@ -430,6 +373,276 @@ function buildBindingSuccessFlexMessage(role, details) {
 }
 
 /**
+ * สร้าง Flex Message แนะนำขั้นตอนการใช้งานและวิธีใช้ระบบตามสถานะการผูกบัญชี
+ * @param {boolean} isBound - สถานะการผูกบัญชีของผู้ใช้
+ * @returns {object} โครงสร้าง Flex Message JSON สำหรับ LINE
+ */
+function buildUserGuideFlexMessage(isBound) {
+  if (isBound) {
+    return {
+      type: "flex",
+      altText: "คู่มือการใช้งาน Unifind 🚀",
+      contents: {
+        type: "bubble",
+        size: "mega",
+        header: {
+          type: "box",
+          layout: "vertical",
+          backgroundColor: "#1e3a8a",
+          paddingAll: "20px",
+          contents: [
+            {
+              type: "text",
+              text: "คู่มือการใช้งาน Unifind 🚀",
+              weight: "bold",
+              color: "#ffffff",
+              size: "md",
+              align: "center"
+            },
+            {
+              type: "text",
+              text: "ช่องทางช่วยตามหาของหายชาว UTCC",
+              color: "#bfdbfe",
+              size: "xs",
+              align: "center",
+              margin: "xs"
+            }
+          ]
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "lg",
+          contents: [
+            {
+              type: "box",
+              layout: "vertical",
+              spacing: "sm",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "🔍 ค้นหาของหายในคลัง",
+                      weight: "bold",
+                      size: "sm",
+                      color: "#1e3a8a",
+                      flex: 8
+                    }
+                  ]
+                },
+                {
+                  type: "text",
+                  text: "พิมพ์สิ่งของที่กำลังตามหาเพื่อเช็กว่ามีคนเก็บได้หรือยัง\n💡 ตัวอย่าง: \"มีใครเจอกระเป๋าสีดำบ้างไหม\"",
+                  wrap: true,
+                  color: "#4b5563",
+                  size: "xs",
+                  lineSpacing: "4px"
+                }
+              ]
+            },
+            {
+              type: "separator"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              spacing: "sm",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "📝 บันทึกแจ้งของหาย",
+                      weight: "bold",
+                      size: "sm",
+                      color: "#1e3a8a",
+                      flex: 8
+                    }
+                  ]
+                },
+                {
+                  type: "text",
+                  text: "หากของยังไม่ขึ้นคลัง สามารถพิมพ์บอกรายละเอียดเพื่อให้บอทช่วยเฝ้าระวังแมตช์อัตโนมัติ 24 ชม.\n💡 ตัวอย่าง: \"ทำร่มสีแดงหายแถวตึก 24 ชั้น 3\"",
+                  wrap: true,
+                  color: "#4b5563",
+                  size: "xs",
+                  lineSpacing: "4px"
+                }
+              ]
+            },
+            {
+              type: "separator"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              spacing: "sm",
+              contents: [
+                {
+                  type: "box",
+                  layout: "horizontal",
+                  contents: [
+                    {
+                      type: "text",
+                      text: "📸 ส่งรูปตามหาของ",
+                      weight: "bold",
+                      size: "sm",
+                      color: "#1e3a8a",
+                      flex: 8
+                    }
+                  ]
+                },
+                {
+                  type: "text",
+                  text: "ส่งรูปถ่ายสิ่งของที่ต้องการตรวจจับ บอทจะใช้ AI ประมวลผลและเช็กกับของในคลังให้ทันที",
+                  wrap: true,
+                  color: "#4b5563",
+                  size: "xs",
+                  lineSpacing: "4px"
+                }
+              ]
+            },
+            {
+              type: "separator"
+            },
+            {
+              type: "box",
+              layout: "horizontal",
+              backgroundColor: "#e8f5e9",
+              paddingAll: "10px",
+              cornerRadius: "md",
+              alignItems: "center",
+              contents: [
+                {
+                  type: "text",
+                  text: "สถานะบัญชี:",
+                  color: "#555555",
+                  size: "xs",
+                  flex: 4
+                },
+                {
+                  type: "text",
+                  text: "ผูกข้อมูลเรียบร้อยแล้ว ✅",
+                  color: "#2e7d32",
+                  weight: "bold",
+                  size: "xs",
+                  align: "end",
+                  flex: 6
+                }
+              ]
+            }
+          ]
+        }
+      }
+    };
+  } else {
+    return {
+      type: "flex",
+      altText: "ขั้นตอนการผูกบัญชี Unifind 🎓",
+      contents: {
+        type: "bubble",
+        size: "mega",
+        header: {
+          type: "box",
+          layout: "vertical",
+          backgroundColor: "#b91c1c",
+          paddingAll: "20px",
+          contents: [
+            {
+              type: "text",
+              text: "เริ่มต้นใช้งาน Unifind 🔑",
+              weight: "bold",
+              color: "#ffffff",
+              size: "md",
+              align: "center"
+            },
+            {
+              type: "text",
+              text: "กรุณาผูกบัญชีเพื่อเปิดสิทธิ์การใช้งานระบบ",
+              color: "#fecaca",
+              size: "xs",
+              align: "center",
+              margin: "xs"
+            }
+          ]
+        },
+        body: {
+          type: "box",
+          layout: "vertical",
+          spacing: "lg",
+          contents: [
+            {
+              type: "text",
+              text: "ยินดีต้อนรับสู่ Unifind ช่องทางช่วยตามหาของหายและรับแจ้งเตือนสำหรับชาว UTCC นะครับ! เพื่อความปลอดภัย รบกวนทำตามขั้นตอนด้านล่างนี้เลยครับ 👇",
+              wrap: true,
+              color: "#4b5563",
+              size: "xs",
+              lineSpacing: "4px"
+            },
+            {
+              type: "separator"
+            },
+            {
+              type: "box",
+              layout: "vertical",
+              spacing: "xs",
+              contents: [
+                {
+                  type: "text",
+                  text: "ขั้นตอนการผูกบัญชี:",
+                  weight: "bold",
+                  size: "xs",
+                  color: "#b91c1c"
+                },
+                {
+                  type: "text",
+                  text: "1. ✉️ พิมพ์ส่งอีเมลมหาวิทยาลัยของคุณเข้ามาในแชทนี้ (เช่น 2210511101xxx@live4.utcc.ac.th)\n2. 🔑 ระบบจะส่งรหัสผ่าน OTP ไปที่อีเมลดังกล่าวเพื่อยืนยันตัวตน\n3. 💬 นำรหัสผ่าน OTP มาพิมพ์ตอบกลับในแชทนี้เพื่อทำการเชื่อมโยงข้อมูล",
+                  wrap: true,
+                  color: "#4b5563",
+                  size: "xs",
+                  lineSpacing: "5px"
+                }
+              ]
+            },
+            {
+              type: "box",
+              layout: "horizontal",
+              backgroundColor: "#fee2e2",
+              paddingAll: "10px",
+              cornerRadius: "md",
+              alignItems: "center",
+              contents: [
+                {
+                  type: "text",
+                  text: "สถานะบัญชี:",
+                  color: "#991b1b",
+                  size: "xs",
+                  flex: 4
+                },
+                {
+                  type: "text",
+                  text: "ยังไม่ได้ผูกข้อมูล ❌",
+                  color: "#b91c1c",
+                  weight: "bold",
+                  size: "xs",
+                  align: "end",
+                  flex: 6
+                }
+              ]
+            }
+          ]
+        }
+      }
+    };
+  }
+}
+
+/**
  * สร้าง Flex Message แสดงรายละเอียดสิ่งของที่พบ
  * @param {object} item - ข้อมูลของที่พบคืน
  * @param {string} altTextPrefix - ข้อความแจ้งเตือนย่อที่จะแสดงบน Notification bar
@@ -563,8 +776,9 @@ function buildFoundItemFlexMessage(item, altTextPrefix = "พบข้อมู�
   };
 }
 
+
 /* =========================================================================
- * 📩 5. PARSING UTILITIES (ส่วนวิเคราะห์แกะข้อมูลเบื้องต้น)
+ * 🔐 5. ACCOUNT BINDING & OTP AUTHENTICATION (ระบบผูกบัญชีและ OTP)
  * ========================================================================= */
 
 /**
@@ -620,32 +834,111 @@ function parseBindingMessage(message) {
   return null;
 }
 
+/**
+ * ดำเนินการผูกข้อมูลผู้ใช้ลงฐานข้อมูลและส่ง Flex Message ตอบกลับเมื่อยืนยัน OTP สำเร็จ
+ * @param {string} replyToken - Reply token จาก LINE
+ * @param {object} parsedBinding - ข้อมูลผู้ใช้จากการลงทะเบียน
+ * @param {string} lineUserId - LINE User ID
+ */
+async function handleBindingCredentials(replyToken, parsedBinding, lineUserId) {
+  const email = parsedBinding.email;
+  const { data: existingPerson } = await supabase
+    .from("persons")
+    .select("person_id")
+    .eq("email", email)
+    .maybeSingle();
+  let personId;
+  if (existingPerson) {
+    personId = existingPerson.person_id;
+  } else {
+    const emailPrefix = email.split("@")[0];
+    const numericId = emailPrefix.match(/\d+/);
+    const studentId = numericId ? numericId[0] : "";
+    const { data: newPerson, error: personInsertError } = await supabase
+      .from("persons")
+      .insert({
+        person_type: parsedBinding.role || "STUDENT",
+        full_name: emailPrefix,
+        student_id: studentId,
+        email: email,
+        phone: null,
+      })
+      .select()
+      .single();
+    if (personInsertError) throw personInsertError;
+    personId = newPerson.person_id;
+  }
+
+  // บันทึกความสัมพันธ์ LINE User ID คู่กับอีเมลผู้ใช้ลงใน lineBindings
+  lineBindings.bind(parsedBinding.identifier, lineUserId);
+
+  // สร้างและส่ง Flex Message แสดงผลผูกสำเร็จ
+  const flexMsg = buildBindingSuccessFlexMessage(
+    parsedBinding.role,
+    parsedBinding,
+  );
+  await replyToLine(replyToken, [flexMsg]);
+}
+
+
 /* =========================================================================
- * ⚡ 6. LINE OA WEBHOOK EVENT HANDLERS (ส่วนดำเนินการตามเป้าหมายของคำสั่ง)
+ * 🤖 6. GEMINI AI CORE HELPERS (ฟังก์ชันประมวลผล AI)
  * ========================================================================= */
 
 /**
- * [Handler] จัดการผู้ใช้ที่เข้ามากดติดตาม LINE OA ใหม่ (Follow Event)
+ * ตรวจสอบความเฉพาะเจาะจงของรายละเอียดของหายที่ผู้ใช้แจ้ง (Color, Brand, Identifier)
+ * @param {string} userMessage - ข้อความแจ้งของหายที่ผู้ใช้พิมพ์เข้ามา
+ * @returns {Promise<object>} ผลวิเคราะห์ { isSpecific: boolean, reason: string }
  */
-async function handleFollowEvent(event) {
-  const replyToken = event.replyToken;
-  const lineUserId = event.source.userId;
-  const isBound = lineUserId
-    ? !!lineBindings.getEmailByLineUserId(lineUserId)
-    : false;
+async function checkSpecificity(userMessage) {
+  const prompt = `คุณคือผู้ช่วย AI ประเมินความเฉพาะเจาะจงของรายละเอียดของหายในระบบ Unifind
+หน้าที่ของคุณคือตรวจสอบข้อความของผู้ใช้ภาษาไทยว่ามีการระบุรายละเอียดสิ่งของ "เฉพาะเจาะจงเพียงพอ" หรือไม่ เพื่อที่จะสามารถระบุตัวตนและตรวจสอบของได้ง่ายขึ้น (เช่น ยี่ห้อ/รุ่น, สี, ลักษณะเด่น, หรือจุดสังเกตเฉพาะตัว)
 
-  const welcomePatterns = [
-    `สวัสดีครับผม ยินดีต้อนรับสู่ Unifind ช่องทางช่วยตามหาของหายของชาว UTCC นะครับ ดีใจที่ได้ดูแลคุณนะครับ 😊`,
-    `สวัสดีครับผม ยินดีต้อนรับเข้าสู่ Unifind นะครับ น้องบอทจะคอยช่วยเฝ้าระวังและเช็กของหายในคลังมหาวิทยาลัยให้ตลอด 24 ชั่วโมงเลยครับ ไม่ต้องกังวลนะครับ 😊`,
-  ];
-  await replyToLine(replyToken, [
-    { type: "text", text: getRandomResponse(welcomePatterns) },
-    {
-      type: "text",
-      text: isBound ? welcomeAlreadyBoundMessage : welcomeAndGuideMessage,
-    },
-  ]);
+เกณฑ์การตัดสิน:
+1. หากผู้ใช้ระบุเพียงประเภทสิ่งของกว้างๆ เช่น "โทรศัพท์", "กระเป๋า", "กุญแจ", "ร่ม", "หูฟัง", "บัตร" โดยไม่มีการระบุ "สี", "รุ่น/ยี่ห้อ", หรือ "ลักษณะเฉพาะอื่นใดเพิ่มเติมเลย" ให้ถือว่า "ไม่เฉพาะเจาะจงพอ (isSpecific: false)"
+2. หากผู้ใช้ระบุรายละเอียดเพิ่มเติม เช่น "โทรศัพท์ iPhone 15 สีดำ", "กระเป๋าตังสีน้ำตาลยี่ห้อ Coach", "กุญแจรถ Honda มีพวงกุญแจหมี", "ร่มสีแดงลายจุด" ให้ถือว่า "เฉพาะเจาะจงเพียงพอ (isSpecific: true)"
+
+ตัวอย่างที่ไม่ผ่าน (isSpecific: false):
+- "ทำโทรศัพท์หายครับ"
+- "มีใครเจอกระเป๋าสตางค์บ้างไหม"
+- "ลืมกุญแจไว้"
+- "ตามหาหูฟังที่ทำหล่น"
+- "ร่มหายแถวตึก 24" (มีแต่สถานที่ ไม่มีรายละเอียดลักษณะของร่ม)
+
+ตัวอย่างที่ผ่าน (isSpecific: true):
+- "ไอแพดสีขาวเคสการ์ตูนหาย"
+- "กุญแจรถ Toyota"
+- "กระเป๋าเป้สีน้ำเงินยี่ห้อ Adidas"
+- "หูฟัง Airpods เคสสีเหลือง"
+
+ข้อความของผู้ใช้ที่ต้องการตรวจสอบ: "${userMessage}"
+
+ตอบกลับเป็น JSON รูปแบบนี้เท่านั้น ห้ามมีคำอธิบายอื่นเด็ดขาด:
+{
+  "isSpecific": true หรือ false,
+  "reason": "คำอธิบายภาษาไทยสั้นๆ ที่เป็นมิตรและเป็นกันเอง บอกผู้ใช้ว่าข้อมูลกว้างเกินไปและแนะแนวทางว่าควรระบุอะไรเพิ่ม เช่น ยี่ห้อ รุ่น หรือสี เพื่อค้นหาหรือบันทึกได้แม่นยำยิ่งขึ้น เช่น 'น้องบอทคิดว่ารายละเอียดของหายยังกว้างเกินไปนิดนึงครับ เพื่อความแม่นยำในการตามหา รบกวนระบุสี รุ่น หรือลักษณะพิเศษเพิ่มเติมอีกสักนิดได้ไหมครับ 😊'"
+}`;
+
+  try {
+    const response = await aiHelper.generateContentWithFallback(ai, {
+      contents: prompt,
+      config: { responseMimeType: "application/json" },
+      taskType: "classification",
+    });
+    return JSON.parse(response.text.trim());
+  } catch (e) {
+    console.error("Error checking specificity:", e);
+    // Fallback ในกรณี AI ผิดพลาด ให้ผ่านไปก่อนเพื่อไม่ให้ระบบสะดุด
+    return { isSpecific: true, reason: "" };
+  }
 }
+
+
+/* =========================================================================
+ * ⚡ 7. INTENT HANDLERS & FEATURE WORKFLOWS (ฟังก์ชันงานตามวัตถุประสงค์)
+ * ========================================================================= */
+
+// --- 7.1 Report Lost Workflow (กระบวนการแจ้งของหาย) ---
 
 /**
  * [Handler] จัดการกรณีผู้ใช้ส่งรูปภาพเพื่อแจ้งของหาย (Image Report Lost Intent)
@@ -720,204 +1013,209 @@ async function handleImageReportLost(event, lineUserId, replyToken, baseUrl) {
 }
 
 /**
- * [Handler] จัดการกรณีผู้ใช้ส่งรูปภาพสิ่งของเข้ามาค้นหา (Image Multimodal AI)
+ * [Handler] จัดการกระบวนการสร้างโพสต์บันทึกของหายใหม่ (Report Lost Intent)
  */
-async function handleImageEvent(event, dest, baseUrl) {
-  const replyToken = event ? event.replyToken : null;
-  const messageId = event.message.id;
-  const lineUserId = event.source.userId;
+async function handleReportLostIntent(
+  dest,
+  userMessage,
+  email,
+  imageUrl = null,
+) {
+  const isEmail = email.includes("@");
+  const contactLabel = isEmail ? "อีเมลผู้แจ้ง" : "เบอร์โทรผู้แจ้ง";
 
-  console.log(`📸 ระบบได้รับข้อความรูปภาพ ID: ${messageId}`);
+  // 1. สกัดข้อมูลรายละเอียดสิ่งของและสถานที่ตกหายโดย AI
+  const reportExtractionPrompt = `คุณคือ AI ระบบบันทึกแจ้งของหายของ Unifind
+จงวิเคราะห์ข้อความแจ้งของหายภาษาไทยด้านล่างนี้ แล้วสกัดโครงสร้างข้อมูลออกมาในรูปแบบ JSON เท่านั้น ห้ามมีข้อความนำหน้าหรือตามหลังเด็ดขาด:
+ข้อความผู้ใช้: "${userMessage}"
 
-  const isBound = !!lineBindings.getEmailByLineUserId(lineUserId);
+โครงสร้าง JSON:
+{
+  "item_name": "ชื่อสิ่งของเด่นๆ สั้นๆ กระชับ (เช่น 'กุญแจรถ Toyota', 'โทรศัพท์ iPhone', 'ร่มสีฟ้า' - ห้ามเป็นคำกว้างๆ เช่น 'ของหาย')",
+  "category_id": [ใส่ตัวเลข ID หมวดหมู่ที่เหมาะสมที่สุด: 1 (เอกสารสำคัญ), 2 (กระเป๋า / เป้), 3 (อุปกรณ์ไอที), 4 (กุญแจ), 5 (เครื่องประดับ), 6 (แก้วน้ำ), 7 (เสื้อผ้า), 8 (อื่นๆ - ระบุชื่อหมวดหมู่ที่เฉพาะเจาะจง)],
+  "place": "ระบุสถานที่ทำหายสั้นๆ (เช่น 'อาคาร 24 ชั้น 2', 'โรงอาหารหลัก' - หากไม่ระบุเลยให้ใส่ 'ไม่ระบุ')",
+  "floor": "ระบุเฉพาะเลขชั้นเป็นสตริง เช่น '2', '3' (หากไม่ระบุชั้นให้เว้นว่างเป็น '')",
+  "description": "รายละเอียดเพิ่มเติม เช่น เคสสีชมพู, พวงกุญแจหมีน้อย (หากไม่มีระบุให้เป็น '')"
+}`;
 
-  if (!isBound) {
-    await replyToLine(replyToken, [
-      {
-        type: "text",
-        text: `ขออภัยด้วยนะครับ คุณยังไม่ได้ผูกบัญชี LINE กับ Unifind เลยครับ 🥺\n\nเพื่อความปลอดภัยและเปิดสิทธิ์ใช้งานระบบตามหาของหาย กรุณาพิมพ์ส่งอีเมลมหาวิทยาลัยของคุณเข้ามาในแชทเพื่อผูกบัญชีเข้าใช้งานนะครับ\n\n*หมายเหตุ: ระบบ Unifind เปิดให้ใช้งานเฉพาะนักศึกษาและบุคลากรภายในมหาวิทยาลัยหอการค้าไทยเท่านั้นครับ`,
-      },
-    ]);
-    return;
+  const aiResponse = await aiHelper.generateContentWithFallback(ai, {
+    contents: reportExtractionPrompt,
+    config: { responseMimeType: "application/json" },
+    taskType: "extraction",
+  });
+
+  const extractedData = JSON.parse(aiResponse.text.trim());
+
+  // ล้างและแปลงข้อมูลหมวดหมู่ (Category ID) ให้เป็นตัวเลขจำนวนเต็มที่ถูกต้อง
+  let categoryId = extractedData.category_id;
+  if (Array.isArray(categoryId)) {
+    categoryId = categoryId[0];
+  }
+  categoryId = parseInt(categoryId, 10);
+  if (isNaN(categoryId) || categoryId < 1 || categoryId > 8) {
+    categoryId = 8; // หมวดหมู่อื่นๆ
   }
 
-  // เพิ่มการเช็กสถานะการแจ้งของหายเพื่อสลับ Workflow
-  const conversationState = userSessionStore.getState(lineUserId);
-  if (conversationState === "AWAITING_REPORT_DETAILS") {
-    await handleImageReportLost(event, lineUserId, replyToken, baseUrl);
-    return;
-  }
+  // แปลงชื่อสถานที่ให้เข้ากับ Schema location ID
+  const getLocationId = async (locationName) => {
+    if (!locationName) return null;
 
-  // ส่งข้อความตอบรับทันทีเพื่อแจ้งเตือนว่ากำลังประมวลผลรูปภาพ (ป้องกันสถานะห้องแชทค้าง/เงียบ)
-  await replyToLine(replyToken, [
-    {
-      type: "text",
-      text: `น้องบอทได้รับภาพสิ่งของแล้วครับ! กำลังนำภาพไปวิเคราะห์แยกแยะและค้นหาคู่เปรียบเทียบในคลังสักครู่นะครับ... 🤖📸`,
-    },
-  ]);
+    const isUnspecified =
+      locationName.includes("ไม่ระบุ") ||
+      locationName.includes("ไม่ได้ระบุ") ||
+      locationName.includes("ไม่มี") ||
+      locationName.includes("ไม่ทราบ") ||
+      locationName.includes("unknown");
+    if (isUnspecified) return null;
 
-  try {
-    // ดึงรายการของหายที่ถูกจัดเก็บในระบบ (FOUND หรือ STORED)
-    const { data: rawItems, error: itemsError } = await supabase
-      .from("items")
-      .select(
-        "item_id, item_name, category_id, location_id, description, status_id",
-      );
+    try {
+      const { data: dbLocations } = await supabase
+        .from("locations")
+        .select("location_id, location_name")
+        .eq("is_active", true);
 
-    if (itemsError) throw itemsError;
-
-    // กรองสิ่งของเฉพาะที่ระบุสถานะจริง (ไม่เป็น Null)
-    const allItems = (rawItems || []).filter(
-      (item) => item.status_id !== null && item.status_id !== undefined,
-    );
-
-    // ดึงข้อมูลรูปภาพจาก LINE OA API เพื่อประมวลผล
-    const imagePart = await getLineImageBuffer(messageId);
-
-    if (!allItems || allItems.length === 0) {
-      await sendLineMessage(dest, [
-        {
-          type: "text",
-          text: `น้องบอทได้รับรูปภาพแล้วนะครับ 📸 ลองตรวจสอบคลังของหายในระบบให้แล้ว ตอนนี้ยังไม่มีข้อมูลของในคลังเลยครับ 🥺\n\nเพื่อไม่ให้พลาดโอกาส หากอยากให้น้องบอทคอยเฝ้าระวังไว้ให้ล่วงหน้า สามารถพิมพ์รายละเอียดสิ่งของที่ทำหายส่งเข้ามาในแชทนี้เพื่อบันทึกข้อมูลไว้ได้เลยนะครับ เดี๋ยวถ้ามีคนมาส่งของที่คลังเมื่อไหร่ น้องบอทจะส่งข้อความแจ้งเตือนทันทีเลยครับ!`,
-        },
-      ]);
-      return;
+      if (dbLocations) {
+        const sortedLocs = [...dbLocations].sort((a, b) => b.location_name.length - a.location_name.length);
+        for (const loc of sortedLocs) {
+          if (
+            locationName.includes(loc.location_name) ||
+            loc.location_name.includes(locationName)
+          ) {
+            return loc.location_id;
+          }
+        }
+      }
+    } catch (dbErr) {
+      console.warn("Error fetching locations in lineRoutes:", dbErr);
     }
 
-    // จัดเตรียมรายการสิ่งของที่มีอยู่ในระบบเพื่อส่งให้ Gemini วิเคราะห์
-    const candidates = allItems.map((item) => ({
-      id: item.item_id,
-      name: item.item_name,
-      category: getCategoryName(item.category_id),
-      description: item.description || "",
-    }));
-
-    const imageAnalysisPrompt = `คุณคือ AI ตรวจสอบภาพของหายในระบบ Unifind
-จงดูรูปภาพสิ่งของที่ผู้ใช้ส่งมานี้อย่างละเอียด วิเคราะห์ว่ามันคืออะไร สีอะไร ลักษณะอย่างไร จากนั้นเปรียบเทียบกับรายการสิ่งของในคลังเก็บของหายด้านล่างนี้:
-
-รายการข้อมูลในคลังเก็บของหาย:
-${JSON.stringify(candidates, null, 2)}
-
-หน้าที่ของคุณ:
-1. ตรวจสอบว่าในภาพ มีสิ่งของชิ้นใดที่ "ตรงกัน หรือใกล้เคียงมากที่สุด" กับสิ่งของในคลังเก็บของหายหรือไม่
-2. หากพบข้อมูลที่สอดคล้องกัน (เช่น ในรูปเป็นกระเป๋าตังค์สีน้ำตาล และใน DB มีกระเป๋าตังค์สีน้ำตาลระบุไว้) ให้ตอบกลับเป็น JSON ในรูปแบบนี้เท่านั้น:
-   { "match": true, "itemId": [ใส่ ID ของชิ้นที่เจอในคลัง], "reason": "อธิบายเหตุผลเป็นภาษาไทยว่าทำไมถึงแมตช์กันอย่างสุภาพและเป็นกันเองเหมือนคุยกับเพื่อน" }
-3. หากตรวจสอบแล้วไม่พบสิ่งของใดในคลังที่ตรงกับรูปภาพนี้เลย ให้ตอบกลับเป็น JSON รูปแบบนี้:
-   { "match": false, "itemId": null, "reason": "อธิบายสั้นๆ ว่าวิเคราะห์แล้วภาพนี้คือประเภทอะไร แต่ไม่พบของลักษณะนี้ในระบบคลัง" }
-
-*ข้อสำคัญ: ในช่อง reason ห้ามเอ่ยถึงเว็บไซต์ แนะนำให้ใช้งานเว็บไซต์ หรือส่งลิงก์เว็บไซต์ของ Unifind ให้กับผู้ใช้โดยเด็ดขาด เนื่องจากเว็บไซต์นี้ถูกออกแบบมาให้เฉพาะเจ้าหน้าที่/บุคลากรภายในใช้งานเท่านั้น (สำหรับผู้ใช้ทั่วไปใน LINE OA นี้ ให้คุยและทำรายการผ่านแชท หรือติดต่อโดยตรงที่จุดบริการของหาย/กองกิจการนักศึกษาเท่านั้น)
-
-ตอบกลับเป็น JSON รูปแบบที่กำหนดเท่านั้น ห้ามพิมพ์ข้อความอื่นนอกเหนือจาก JSON`;
-
-    // สั่งให้ Gemini Multimodal AI ทำการตรวจจับภาพ
-    const aiImageResult = await aiHelper.generateContentWithFallback(ai, {
-      contents: [imagePart, imageAnalysisPrompt],
-      config: { responseMimeType: "application/json" },
-    });
-
-    const resultData = JSON.parse(aiImageResult.text.trim());
-    console.log("🔮 ผลวิเคราะห์รูปภาพจาก AI:", resultData);
-
-    if (resultData.match && resultData.itemId) {
-      const matchedItem = allItems.find(
-        (i) => Number(i.item_id) === Number(resultData.itemId),
-      );
-      const nameText = matchedItem ? `"${matchedItem.item_name}"` : "สิ่งของ";
-
-      await sendLineMessage(dest, [
-        {
-          type: "text",
-          text: `ยินดีด้วยครับ! น้องบอทพบสิ่งของในคลังที่มีลักษณะใกล้เคียงกับรูปของคุณเลยล่ะครับ 😍\n\n📦 ข้อมูลของในคลัง: ${nameText}\n💡 ผลวิเคราะห์รูปภาพ: ${resultData.reason}\n\nแนะนำให้นำหลักฐานยืนยันตัวตน (เช่น บัตรนักศึกษา บัตรประชาชน หรือภาพถ่ายต้นฉบับ) เข้าไปติดต่อขอตรวจสอบและรับของคืนกับพี่ๆ เจ้าหน้าที่ที่ "จุดบริการของหาย (กองกิจการนักศึกษา)" ได้เลยนะครับ! ขอให้ได้รับของคืนอย่างเรียบร้อยน้า 😊`,
-        },
-      ]);
-    } else {
-      await sendLineMessage(dest, [
-        {
-          type: "text",
-          text: `น้องบอทได้วิเคราะห์รูปภาพแล้วคิดว่าสิ่งของคือ "${resultData.reason}" นะครับ แต่ในคลังตอนนี้ยังไม่มีของลักษณะนี้เข้ามาเลย 🥺\n\nถ้าสะดวก แนะนำให้พิมพ์แจ้งรายละเอียดของหายไว้ล่วงหน้าในแชท LINE นี้ได้เลยน้า หากมีใครเก็บได้แล้วนำมาส่งไว้ที่คลัง น้องบอทจะรีบส่งข้อความแจ้งเตือนด่วนมาบอกใน LINE นี้ทันทีเลยครับ!`,
-        },
-      ]);
+    const mapping = {
+      "ห้องสมุด": 1,
+      "อาคาร 24": 1,
+      "ตึก 24": 1,
+      "โรงอาหาร": 2,
+      "ลานจอดรถ": 3,
+      "ใต้ดิน": 3,
+      "สนามบาส": 5,
+    };
+    for (const [key, val] of Object.entries(mapping)) {
+      if (locationName.includes(key)) return val;
     }
-  } catch (imageError) {
-    console.error("Image Processing/AI Error:", imageError);
-    await replyToLine(replyToken, [
-      {
-        type: "text",
-        text: `ระบบไม่สามารถประมวลผลรูปภาพนี้ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง หรือพิมพ์คำอธิบายในรูปแบบข้อความแทนครับ`,
-      },
-    ]);
-  }
-}
-
-function buildBindingSuccessFlexMessage(role, parsedBinding) {
-  const roleText = role === "STAFF" ? "เจ้าหน้าที่" : "นักศึกษา";
-  return {
-    type: "flex",
-    altText: "ผูกบัญชีสำเร็จ",
-    contents: {
-      type: "bubble",
-      body: {
-        type: "box",
-        layout: "vertical",
-        contents: [
-          {
-            type: "text",
-            text: "ผูกบัญชีสำเร็จ",
-            weight: "bold",
-            size: "xl",
-            color: "#00B900",
-          },
-          {
-            type: "text",
-            text: `ระบบทำการเชื่อมต่อ LINE OA กับอีเมลมหาวิทยาลัยของคุณเรียบร้อยแล้วครับ 🎉\n\n👤 สถานะ: ${roleText}\n📧 อีเมล: ${parsedBinding.email}`,
-            wrap: true,
-            margin: "md",
-          },
-        ],
-      },
-    },
+    return null;
   };
-}
 
-async function handleBindingCredentials(replyToken, parsedBinding, lineUserId) {
-  const email = parsedBinding.email;
-  const { data: existingPerson } = await supabase
-    .from("persons")
-    .select("person_id")
-    .eq("email", email)
-    .maybeSingle();
+  // โครงสร้าง Metadata บันทึกใส่คอลัมน์ description
+  const dbDescription = JSON.stringify({
+    textDescription: extractedData.description || "",
+    finder_type: "STUDENT",
+    finder_phoneNumber: null,
+    finder_studentId: null,
+    finder_universityEmail: email,
+  });
+
+  // 2. ดำเนินการจัดเก็บลงระบบฐานข้อมูล
   let personId;
-  if (existingPerson) {
-    personId = existingPerson.person_id;
-  } else {
-    const emailPrefix = email.split("@")[0];
-    const numericId = emailPrefix.match(/\d+/);
-    const studentId = numericId ? numericId[0] : "";
-    const { data: newPerson, error: personInsertError } = await supabase
+  let newLostItem;
+  try {
+    const queryField = isEmail ? "email" : "phone";
+    const { data: existingPerson } = await supabase
       .from("persons")
+      .select("person_id")
+      .eq(queryField, email)
+      .maybeSingle();
+
+    if (existingPerson) {
+      personId = existingPerson.person_id;
+    } else {
+      const emailPrefix = email.split("@")[0];
+      const numericId = emailPrefix.match(/\d+/);
+      const studentId = numericId ? numericId[0] : "";
+
+      const { data: newPerson, error: personInsertError } = await supabase
+        .from("persons")
+        .insert({
+          person_type: "STUDENT",
+          full_name: emailPrefix,
+          student_id: studentId,
+          email: email,
+          phone: null,
+        })
+        .select()
+        .single();
+
+      if (personInsertError) throw personInsertError;
+      personId = newPerson.person_id;
+    }
+
+    // 3. บันทึกลงตาราง lost_items
+    const { data: insertedItem, error: insertLostError } = await supabase
+      .from("lost_items")
       .insert({
-        person_type: parsedBinding.role || "STUDENT",
-        full_name: emailPrefix,
-        student_id: studentId,
-        email: email,
-        phone: null,
+        item_name: extractedData.item_name,
+        category_id: categoryId,
+        location_id: await getLocationId(extractedData.place),
+        lost_datetime: new Date().toISOString(),
+        description: extractedData.description || "",
+        image_url: imageUrl,
+        reporter_id: personId,
+        status_id: 1, // สถานะ 'LOST'
       })
       .select()
       .single();
-    if (personInsertError) throw personInsertError;
-    personId = newPerson.person_id;
+
+    if (insertLostError) throw insertLostError;
+    newLostItem = insertedItem;
+  } catch (err) {
+    console.warn(
+      "⚠️ Supabase offline in REPORT_LOST case, using local JSON database fallback",
+      err,
+    );
+    personId = localDb.getOrCreateLocalPerson(email);
+
+    newLostItem = localDb.insertLocalLostItem({
+      item_name: extractedData.item_name,
+      category_id: categoryId,
+      location_id: await getLocationId(extractedData.place),
+      floor: extractedData.floor || "",
+      lost_datetime: new Date().toISOString(),
+      description: dbDescription,
+      image_url: imageUrl,
+      status: "LOST",
+      reporter_id: personId,
+    });
   }
 
-  // บันทึกความสัมพันธ์ LINE User ID คู่กับอีเมลผู้ใช้ลงใน lineBindings
-  lineBindings.bind(parsedBinding.identifier, lineUserId);
+  // 3. ประสานกระบวนการจับคู่ทันที (Real-time Matchmaking)
+  const matchingService = require("../services/matchingService");
+  matchingService.checkLostItemMatch(newLostItem);
 
-  // สร้างและส่ง Flex Message แสดงผลผูกสำเร็จ
-  const flexMsg = buildBindingSuccessFlexMessage(
-    parsedBinding.role,
-    parsedBinding,
-  );
-  await replyToLine(replyToken, [flexMsg]);
+  // ปรับรูปแบบแสดงสถานที่
+  let displayPlace = extractedData.place || "ไม่ระบุ";
+  const isUnspecified =
+    !extractedData.place ||
+    extractedData.place.includes("ไม่ระบุ") ||
+    extractedData.place.includes("ไม่ได้ระบุ") ||
+    extractedData.place.includes("ไม่มี") ||
+    extractedData.place.includes("ไม่ทราบ") ||
+    extractedData.place.includes("unknown");
+  if (isUnspecified) {
+    displayPlace = "ไม่ระบุ";
+  }
+
+  let displayFloor = extractedData.floor || "";
+  if (displayFloor && displayPlace.includes(`ชั้น ${displayFloor}`)) {
+    displayFloor = "";
+  }
+
+  await sendLineMessage(dest, [
+    {
+      type: "text",
+      text: `บันทึกการแจ้งของหายของคุณเข้าสู่ระบบเรียบร้อยแล้วครับ! 📝\nน้องบอทจะช่วยแสกนหาของในคลังให้อัตโนมัติเลยนะครับ\n\n📋 รายละเอียดที่บันทึก:\n• สิ่งของ: ${extractedData.item_name}\n• สถานที่: ${displayPlace}${displayFloor ? " ชั้น " + displayFloor : ""}\n• รายละเอียด: ${extractedData.description || "-"}\n• ${contactLabel}: ${email}\n\nหากพบคู่ของหายที่ลักษณะตรงกันในคลัง ระบบจะรีบส่งข้อความแจ้งเตือนด่วนมาบอกทันทีเลยนะครับ 😊`,
+    },
+  ]);
 }
+
+// --- 7.2 Search Items Workflow (กระบวนการค้นหาของหาย) ---
 
 /**
  * [Handler] ดำเนินการค้นหาสิ่งของในฐานข้อมูลตามที่ผู้ใช้สืบค้น (Search Intent)
@@ -954,7 +1252,6 @@ async function handleSearchIntent(dest, userMessage) {
     const orFilter = `item_name.ilike.%${searchData.keyword}%,description.ilike.%${searchData.keyword}%`;
     query = query.or(orFilter);
 
-    // กรองตามสถานที่ถ้าถูกระบุมา
     if (searchData.place) {
       const { data: locs } = await supabase
         .from("Location")
@@ -1010,9 +1307,8 @@ async function handleSearchIntent(dest, userMessage) {
   if (!isMatched) {
     try {
       console.log("🔍 Running Gemini semantic search fallback...");
-      
+
       let allCandidateItems = [];
-      let isLocalFallback = false;
       try {
         const { data: dbItems, error: dbErr } = await supabase
           .from("FoundItem")
@@ -1023,7 +1319,6 @@ async function handleSearchIntent(dest, userMessage) {
       } catch (dbErr) {
         console.warn("⚠️ Supabase offline for semantic search candidates, using local DB fallback");
         allCandidateItems = localDb.getLocalFoundItems();
-        isLocalFallback = true;
       }
 
       const candidatesForAi = allCandidateItems.map((item) => {
@@ -1107,209 +1402,134 @@ ${JSON.stringify(candidatesForAi, null, 2)}
     ]);
   }
 }
-
 /**
- * [Handler] จัดการกระบวนการสร้างโพสต์บันทึกของหายใหม่ (Report Lost Intent)
+ * [Handler] จัดการกรณีผู้ใช้ส่งรูปภาพสิ่งของเข้ามาค้นหา (Image Multimodal AI)
  */
-async function handleReportLostIntent(
-  dest,
-  userMessage,
-  email,
-  imageUrl = null,
-) {
-  const isEmail = email.includes("@");
-  const contactLabel = isEmail ? "อีเมลผู้แจ้ง" : "เบอร์โทรผู้แจ้ง";
+async function handleImageEvent(event, dest, baseUrl) {
+  const replyToken = event ? event.replyToken : null;
+  const messageId = event.message.id;
+  const lineUserId = event.source.userId;
 
-  // 1. สกัดข้อมูลรายละเอียดสิ่งของและสถานที่ตกหายโดย AI
-  const reportExtractionPrompt = `คุณคือ AI ระบบบันทึกแจ้งของหายของ Unifind
-จงวิเคราะห์ข้อความแจ้งของหายภาษาไทยด้านล่างนี้ แล้วสกัดโครงสร้างข้อมูลออกมาในรูปแบบ JSON เท่านั้น ห้ามมีข้อความนำหน้าหรือตามหลังเด็ดขาด:
-ข้อความผู้ใช้: "${userMessage}"
+  console.log(`📸 ระบบได้รับข้อความรูปภาพ ID: ${messageId}`);
 
-โครงสร้าง JSON:
-{
-  "item_name": "ชื่อสิ่งของเด่นๆ สั้นๆ กระชับ (เช่น 'กุญแจรถ Toyota', 'โทรศัพท์ iPhone', 'ร่มสีฟ้า' - ห้ามเป็นคำกว้างๆ เช่น 'ของหาย')",
-  "category_id": [ใส่ตัวเลข ID หมวดหมู่ที่เหมาะสมที่สุด: 1 (เอกสาร/บัตร), 2 (กระเป๋า/เป้), 3 (โทรศัพท์/ไอแพด/อุปกรณ์ไอที), 4 (กุญแจ/พวงกุญแจ), 5 (เครื่องประดับ/อื่นๆ)],
-  "place": "ระบุสถานที่ทำหายสั้นๆ (เช่น 'อาคาร 24 ชั้น 2', 'โรงอาหารหลัก' - หากไม่ระบุเลยให้ใส่ 'ไม่ระบุ')",
-  "floor": "ระบุเฉพาะเลขชั้นเป็นสตริง เช่น '2', '3' (หากไม่ระบุชั้นให้เว้นว่างเป็น '')",
-  "description": "รายละเอียดเพิ่มเติม เช่น เคสสีชมพู, พวงกุญแจหมีน้อย (หากไม่มีระบุให้เป็น '')"
-}`;
+  const isBound = !!lineBindings.getEmailByLineUserId(lineUserId);
 
-  const aiResponse = await aiHelper.generateContentWithFallback(ai, {
-    contents: reportExtractionPrompt,
-    config: { responseMimeType: "application/json" },
-    taskType: "extraction",
-  });
-
-  const extractedData = JSON.parse(aiResponse.text.trim());
-
-  // ล้างและแปลงข้อมูลหมวดหมู่ (Category ID) ให้เป็นตัวเลขจำนวนเต็มที่ถูกต้อง ป้องกันข้อผิดพลาดของประเภทข้อมูลจาก AI เช่น [3] หรือ "3"
-  let categoryId = extractedData.category_id;
-  if (Array.isArray(categoryId)) {
-    categoryId = categoryId[0];
-  }
-  categoryId = parseInt(categoryId, 10);
-  if (isNaN(categoryId) || categoryId < 1 || categoryId > 5) {
-    categoryId = 5; // ค่าเริ่มต้นเป็นหมวดหมู่อื่นๆ
+  if (!isBound) {
+    await replyToLine(replyToken, [
+      {
+        type: "text",
+        text: `ขออภัยด้วยนะครับ คุณยังไม่ได้ผูกบัญชี LINE กับ Unifind เลยครับ 🥺\n\nเพื่อความปลอดภัยและเปิดสิทธิ์ใช้งานระบบตามหาของหาย กรุณาพิมพ์ส่งอีเมลมหาวิทยาลัยของคุณเข้ามาในแชทเพื่อผูกบัญชีเข้าใช้งานนะครับ\n\n*หมายเหตุ: ระบบ Unifind เปิดให้ใช้งานเฉพาะนักศึกษาและบุคลากรภายในมหาวิทยาลัยหอการค้าไทยเท่านั้นครับ`,
+      },
+    ]);
+    return;
   }
 
-  // แปลงชื่อสถานที่ให้เข้ากับ Schema location ID
-  const getLocationId = async (locationName) => {
-    if (!locationName) return null;
-
-    // หากระบุคีย์เวิร์ดเกี่ยวกับการไม่ระบุสถานที่
-    const isUnspecified =
-      locationName.includes("ไม่ระบุ") ||
-      locationName.includes("ไม่ได้ระบุ") ||
-      locationName.includes("ไม่มี") ||
-      locationName.includes("ไม่ทราบ") ||
-      locationName.includes("unknown");
-    if (isUnspecified) return null;
-
-    try {
-      const { data: dbLocations } = await supabase
-        .from("locations")
-        .select("location_id, location_name")
-        .eq("is_active", true);
-
-      if (dbLocations) {
-        // Sort locations by length descending to match more specific ones first
-        const sortedLocs = [...dbLocations].sort((a, b) => b.location_name.length - a.location_name.length);
-        for (const loc of sortedLocs) {
-          if (locationName.includes(loc.location_name)) {
-            return loc.location_id;
-          }
-        }
-      }
-    } catch (dbErr) {
-      console.warn("Error fetching locations in lineRoutes:", dbErr);
-    }
-
-    const mapping = {
-      24: 1,
-      "อาคาร 24": 1,
-      "ตึก 24": 1,
-      6: 2,
-      "อาคาร 6": 2,
-      "ตึก 6": 2,
-      โรงอาหาร: 3,
-      ห้องสมุด: 4,
-    };
-    for (const [key, val] of Object.entries(mapping)) {
-      if (locationName.includes(key)) return val;
-    }
-    return null; // เมื่อไม่พบคีย์เวิร์ดตรงตามแผนผัง ให้ถือว่าไม่ระบุสถานที่ (null)
-  };
-
-  // โครงสร้าง Metadata บันทึกใส่คอลัมน์ description
-  const dbDescription = JSON.stringify({
-    textDescription: extractedData.description || "",
-    finder_type: "STUDENT",
-    finder_phoneNumber: null,
-    finder_studentId: null,
-    finder_universityEmail: email,
-  });
-
-  // 2. ดำเนินการจัดเก็บลงระบบฐานข้อมูล
-  let personId;
-  let newLostItem;
-  try {
-    const queryField = isEmail ? "email" : "phone";
-    const { data: existingPerson } = await supabase
-      .from("persons")
-      .select("person_id")
-      .eq(queryField, email)
-      .maybeSingle();
-
-    if (existingPerson) {
-      personId = existingPerson.person_id;
-    } else {
-      const emailPrefix = email.split("@")[0];
-      const numericId = emailPrefix.match(/\d+/);
-      const studentId = numericId ? numericId[0] : "";
-
-      const { data: newPerson, error: personInsertError } = await supabase
-        .from("persons")
-        .insert({
-          person_type: "STUDENT",
-          full_name: emailPrefix,
-          student_id: studentId,
-          email: email,
-          phone: null,
-        })
-        .select()
-        .single();
-
-      if (personInsertError) throw personInsertError;
-      personId = newPerson.person_id;
-    }
-
-    // 3. บันทึกลงตาราง lost_items
-    const { data: insertedItem, error: insertLostError } = await supabase
-      .from("lost_items")
-      .insert({
-        item_name: extractedData.item_name,
-        category_id: categoryId, // ใช้ตัวแปรที่แปลงตัวเลขหมวดหมู่เรียบร้อยแล้ว
-        location_id: await getLocationId(extractedData.place),
-        lost_datetime: new Date().toISOString(),
-        description: extractedData.description || "",
-        image_url: imageUrl, // พ่วงบันทึก URL รูปภาพ
-        reporter_id: personId,
-        status_id: 1, // สถานะ 'LOST'
-      })
-      .select()
-      .single();
-
-    if (insertLostError) throw insertLostError;
-    newLostItem = insertedItem;
-  } catch (err) {
-    console.warn(
-      "⚠️ Supabase offline in REPORT_LOST case, using local JSON database fallback",
-      err,
-    );
-    personId = localDb.getOrCreateLocalPerson(email);
-
-    newLostItem = localDb.insertLocalLostItem({
-      item_name: extractedData.item_name,
-      category_id: categoryId, // ใช้ตัวแปรที่แปลงตัวเลขหมวดหมู่เรียบร้อยแล้ว
-      location_id: await getLocationId(extractedData.place),
-      floor: extractedData.floor || "",
-      lost_datetime: new Date().toISOString(),
-      description: dbDescription,
-      image_url: imageUrl, // พ่วงบันทึก URL รูปภาพ
-      status: "LOST",
-      reporter_id: personId,
-    });
+  // เพิ่มการเช็กสถานะการแจ้งของหายเพื่อสลับ Workflow
+  const conversationState = userSessionStore.getState(lineUserId);
+  if (conversationState === "AWAITING_REPORT_DETAILS") {
+    await handleImageReportLost(event, lineUserId, replyToken, baseUrl);
+    return;
   }
 
-  // 3. ประสานกระบวนการจับคู่ทันที (Real-time Matchmaking)
-  const matchingService = require("../services/matchingService");
-  matchingService.checkLostItemMatch(newLostItem);
-
-  // ปรับรูปแบบแสดงสถานที่
-  let displayPlace = extractedData.place || "ไม่ระบุ";
-  const isUnspecified =
-    !extractedData.place ||
-    extractedData.place.includes("ไม่ระบุ") ||
-    extractedData.place.includes("ไม่ได้ระบุ") ||
-    extractedData.place.includes("ไม่มี") ||
-    extractedData.place.includes("ไม่ทราบ") ||
-    extractedData.place.includes("unknown");
-  if (isUnspecified) {
-    displayPlace = "ไม่ระบุ";
-  }
-
-  let displayFloor = extractedData.floor || "";
-  if (displayFloor && displayPlace.includes(`ชั้น ${displayFloor}`)) {
-    displayFloor = "";
-  }
-
-  await sendLineMessage(dest, [
+  // ส่งข้อความตอบรับทันทีเพื่อแจ้งเตือนว่ากำลังประมวลผลรูปภาพ (ป้องกันสถานะห้องแชทค้าง/เงียบ)
+  await replyToLine(replyToken, [
     {
       type: "text",
-      text: `บันทึกการแจ้งของหายของคุณเข้าสู่ระบบเรียบร้อยแล้วครับ! 📝\nน้องบอทจะช่วยแสกนหาของในคลังให้อัตโนมัติเลยนะครับ\n\n📋 รายละเอียดที่บันทึก:\n• สิ่งของ: ${extractedData.item_name}\n• สถานที่: ${displayPlace}${displayFloor ? " ชั้น " + displayFloor : ""}\n• รายละเอียด: ${extractedData.description || "-"}\n• ${contactLabel}: ${email}\n\nหากพบคู่ของหายที่ลักษณะตรงกันในคลัง ระบบจะรีบส่งข้อความแจ้งเตือนด่วนมาบอกทันทีเลยนะครับ 😊`,
+      text: `น้องบอทได้รับภาพสิ่งของแล้วครับ! กำลังนำภาพไปวิเคราะห์แยกแยะและค้นหาคู่เปรียบเทียบในคลังสักครู่นะครับ... 🤖📸`,
     },
   ]);
+
+  try {
+    // ดึงรายการของหายที่ถูกจัดเก็บในระบบ (FOUND หรือ STORED)
+    const { data: rawItems, error: itemsError } = await supabase
+      .from("items")
+      .select(
+        "item_id, item_name, category_id, location_id, description, status_id",
+      );
+
+    if (itemsError) throw itemsError;
+
+    const allItems = (rawItems || []).filter(
+      (item) => item.status_id !== null && item.status_id !== undefined,
+    );
+
+    // ดึงข้อมูลรูปภาพจาก LINE OA API เพื่อประมวลผล
+    const imagePart = await getLineImageBuffer(messageId);
+
+    if (!allItems || allItems.length === 0) {
+      await sendLineMessage(dest, [
+        {
+          type: "text",
+          text: `น้องบอทได้รับรูปภาพแล้วนะครับ 📸 ลองตรวจสอบคลังของหายในระบบให้แล้ว ตอนนี้ยังไม่มีข้อมูลของในคลังเลยครับ 🥺\n\nเพื่อไม่ให้พลาดโอกาส หากอยากให้น้องบอทคอยเฝ้าระวังไว้ให้ล่วงหน้า สามารถพิมพ์รายละเอียดสิ่งของที่ทำหายส่งเข้ามาในแชทนี้เพื่อบันทึกข้อมูลไว้ได้เลยนะครับ เดี๋ยวถ้ามีคนมาส่งของที่คลังเมื่อไหร่ น้องบอทจะส่งข้อความแจ้งเตือนทันทีเลยครับ!`,
+        },
+      ]);
+      return;
+    }
+
+    const candidates = allItems.map((item) => ({
+      id: item.item_id,
+      name: item.item_name,
+      category: getCategoryName(item.category_id),
+      description: item.description || "",
+    }));
+
+    const imageAnalysisPrompt = `คุณคือ AI ตรวจสอบภาพของหายในระบบ Unifind
+จงดูรูปภาพสิ่งของที่ผู้ใช้ส่งมานี้อย่างละเอียด วิเคราะห์ว่ามันคืออะไร สีอะไร ลักษณะอย่างไร จากนั้นเปรียบเทียบกับรายการสิ่งของในคลังเก็บของหายด้านล่างนี้:
+
+รายการข้อมูลในคลังเก็บของหาย:
+${JSON.stringify(candidates, null, 2)}
+
+หน้าที่ของคุณ:
+1. ตรวจสอบว่าในภาพ มีสิ่งของชิ้นใดที่ "ตรงกัน หรือใกล้เคียงมากที่สุด" กับสิ่งของในคลังเก็บของหายหรือไม่
+2. หากพบข้อมูลที่สอดคล้องกัน (เช่น ในรูปเป็นกระเป๋าตังค์สีน้ำตาล และใน DB มีกระเป๋าตังค์สีน้ำตาลระบุไว้) ให้ตอบกลับเป็น JSON ในรูปแบบนี้เท่านั้น:
+   { "match": true, "itemId": [ใส่ ID ของชิ้นที่เจอในคลัง], "reason": "อธิบายเหตุผลเป็นภาษาไทยว่าทำไมถึงแมตช์กันอย่างสุภาพและเป็นกันเองเหมือนคุยกับเพื่อน" }
+3. หากตรวจสอบแล้วไม่พบสิ่งของใดในคลังที่ตรงกับรูปภาพนี้เลย ให้ตอบกลับเป็น JSON รูปแบบนี้:
+   { "match": false, "itemId": null, "reason": "อธิบายสั้นๆ ว่าวิเคราะห์แล้วภาพนี้คือประเภทอะไร แต่ไม่พบของลักษณะนี้ในระบบคลัง" }
+
+*ข้อสำคัญ: ในช่อง reason ห้ามเอ่ยถึงเว็บไซต์ แนะนำให้ใช้งานเว็บไซต์ หรือส่งลิงก์เว็บไซต์ของ Unifind ให้กับผู้ใช้โดยเด็ดขาด เนื่องจากเว็บไซต์นี้ถูกออกแบบมาให้เฉพาะเจ้าหน้าที่/บุคลากรภายในใช้งานเท่านั้น (สำหรับผู้ใช้ทั่วไปใน LINE OA นี้ ให้คุยและทำรายการผ่านแชท หรือติดต่อโดยตรงที่จุดบริการของหาย/กองกิจการนักศึกษาเท่านั้น)
+
+ตอบกลับเป็น JSON รูปแบบที่กำหนดเท่านั้น ห้ามพิมพ์ข้อความอื่นนอกเหนือจาก JSON`;
+
+    const aiImageResult = await aiHelper.generateContentWithFallback(ai, {
+      contents: [imagePart, imageAnalysisPrompt],
+      config: { responseMimeType: "application/json" },
+    });
+
+    const resultData = JSON.parse(aiImageResult.text.trim());
+    console.log("🔮 ผลวิเคราะห์รูปภาพจาก AI:", resultData);
+
+    if (resultData.match && resultData.itemId) {
+      const matchedItem = allItems.find(
+        (i) => Number(i.item_id) === Number(resultData.itemId),
+      );
+      const nameText = matchedItem ? `"${matchedItem.item_name}"` : "สิ่งของ";
+
+      await sendLineMessage(dest, [
+        {
+          type: "text",
+          text: `ยินดีด้วยครับ! น้องบอทพบสิ่งของในคลังที่มีลักษณะใกล้เคียงกับรูปของคุณเลยล่ะครับ 😍\n\n📦 ข้อมูลของในคลัง: ${nameText}\n💡 ผลวิเคราะห์รูปภาพ: ${resultData.reason}\n\nแนะนำให้นำหลักฐานยืนยันตัวตน (เช่น บัตรนักศึกษา บัตรประชาชน หรือภาพถ่ายต้นฉบับ) เข้าไปติดต่อขอตรวจสอบและรับของคืนกับพี่ๆ เจ้าหน้าที่ที่ "จุดบริการของหาย (กองกิจการนักศึกษา)" ได้เลยนะครับ! ขอให้ได้รับของคืนอย่างเรียบร้อยน้า 😊`,
+        },
+      ]);
+    } else {
+      await sendLineMessage(dest, [
+        {
+          type: "text",
+          text: `น้องบอทได้วิเคราะห์รูปภาพแล้วคิดว่าสิ่งของคือ "${resultData.reason}"\n\nถ้าสะดวก แนะนำให้พิมพ์แจ้งรายละเอียดของหายไว้ล่วงหน้าในแชท LINE นี้ได้เลยน้า หากมีใครเก็บได้แล้วนำมาส่งไว้ที่คลัง น้องบอทจะรีบส่งข้อความแจ้งเตือนด่วนมาบอกใน LINE นี้ทันทีเลยครับ!`,
+        },
+      ]);
+    }
+  } catch (imageError) {
+    console.error("Image Processing/AI Error:", imageError);
+    await replyToLine(replyToken, [
+      {
+        type: "text",
+        text: `ระบบไม่สามารถประมวลผลรูปภาพนี้ได้ในขณะนี้ กรุณาลองใหม่อีกครั้ง หรือพิมพ์คำอธิบายในรูปแบบข้อความแทนครับ`,
+      },
+    ]);
+  }
 }
+
+// --- 7.3 Chitchat & Follow Workflows (การคุยทั่วไปและกดติดตาม) ---
 
 /**
  * [Handler] จัดการตอบกลับบทรสนิยมทั่วไป (Chitchat Intent)
@@ -1331,6 +1551,31 @@ async function handleChitchatIntent(dest, userMessage) {
 }
 
 /**
+ * [Handler] จัดการผู้ใช้ที่เข้ามากดติดตาม LINE OA ใหม่ (Follow Event)
+ */
+async function handleFollowEvent(event) {
+  const replyToken = event.replyToken;
+  const lineUserId = event.source.userId;
+  const isBound = lineUserId
+    ? !!lineBindings.getEmailByLineUserId(lineUserId)
+    : false;
+
+  const welcomePatterns = [
+    `สวัสดีครับผม ยินดีต้อนรับสู่ Unifind ช่องทางช่วยตามหาของหายของชาว UTCC นะครับ ดีใจที่ได้ดูแลคุณนะครับ 😊`,
+    `สวัสดีครับผม ยินดีต้อนรับเข้าสู่ Unifind นะครับ น้องบอทจะคอยช่วยเฝ้าระวังและเช็กของหายในคลังมหาวิทยาลัยให้ตลอด 24 ชั่วโมงเลยครับ ไม่ต้องกังวลนะครับ 😊`,
+  ];
+  await replyToLine(replyToken, [
+    { type: "text", text: getRandomResponse(welcomePatterns) },
+    buildUserGuideFlexMessage(isBound),
+  ]);
+}
+
+
+/* =========================================================================
+ * 🕸️ 8. MAIN EVENT ROUTERS & WEBHOOK ENDPOINT (จุดเชื่อมรับสัญญาณและคุมคิว)
+ * ========================================================================= */
+
+/**
  * [Handler] ผู้คุมการประมวลผลเหตุการณ์ส่งข้อความชนิดอักษร (Text Message Router)
  */
 async function handleTextEvent(event, baseUrl) {
@@ -1342,10 +1587,9 @@ async function handleTextEvent(event, baseUrl) {
     `💬 LINE บอทได้รับข้อความ: "${userMessage}" จาก UID: ${lineUserId}`,
   );
 
-  // ตรวจสอบสิทธิ์การผ่านการผูกบัญชีล่วงหน้า เพื่อประมวลผลการแสดงผลข้อความอย่างถูกต้อง
   const isBound = !lineBindings.getEmailByLineUserId(lineUserId) ? false : true;
 
-  // --- ส่วนเช็กสถานะบทสนทนาโต้ตอบแบบต่อเนื่อง (FSM Memory Interceptor - แก้ไขจุดอ่อนข้อที่ 2) ---
+  // --- ส่วนเช็กสถานะบทสนทนาโต้ตอบแบบต่อเนื่อง (FSM Memory Interceptor) ---
   if (isBound) {
     const conversationState = userSessionStore.getState(lineUserId);
     if (
@@ -1407,7 +1651,7 @@ async function handleTextEvent(event, baseUrl) {
           },
         ]);
       } finally {
-        userSessionStore.clearState(lineUserId); // รีเซ็ตสถานะสู่ IDLE แน่นอน
+        userSessionStore.clearState(lineUserId);
       }
       return;
     }
@@ -1448,7 +1692,6 @@ async function handleTextEvent(event, baseUrl) {
       return;
     }
 
-    // กำหนดสถานะของผู้ใช้เป็นกำลังรอข้อมูลรายละเอียดของหาย
     userSessionStore.setState(lineUserId, "AWAITING_REPORT_DETAILS");
 
     await replyToLine(replyToken, [
@@ -1495,10 +1738,7 @@ async function handleTextEvent(event, baseUrl) {
     ];
     await replyToLine(replyToken, [
       { type: "text", text: getRandomResponse(greetingResponses) },
-      {
-        type: "text",
-        text: isBound ? welcomeAlreadyBoundMessage : welcomeAndGuideMessage,
-      },
+      buildUserGuideFlexMessage(isBound),
     ]);
     return;
   }
@@ -1526,10 +1766,7 @@ async function handleTextEvent(event, baseUrl) {
     )
   ) {
     await replyToLine(replyToken, [
-      {
-        type: "text",
-        text: isBound ? welcomeAlreadyBoundMessage : welcomeAndGuideMessage,
-      },
+      buildUserGuideFlexMessage(isBound),
     ]);
     return;
   }
@@ -1564,13 +1801,12 @@ async function handleTextEvent(event, baseUrl) {
 
   const parsedBinding = parseBindingMessage(cleanMessage);
   if (parsedBinding) {
-    // หากเคยผูกแล้วด้วยอีเมลตัวเดียวกันนี้ ปฏิเสธการส่ง OTP รันซ้ำทันที
     if (isBound) {
       const currentlyBoundEmail = lineBindings.getEmailByLineUserId(lineUserId);
       if (
         currentlyBoundEmail &&
         currentlyBoundEmail.toLowerCase().trim() ===
-          parsedBinding.email.toLowerCase().trim()
+        parsedBinding.email.toLowerCase().trim()
       ) {
         await replyToLine(replyToken, [
           {
@@ -1582,7 +1818,6 @@ async function handleTextEvent(event, baseUrl) {
       }
     }
 
-    // หากส่งอีเมลมาถูกต้อง สร้างคำขอ OTP รอดำเนินการและส่งเมล
     const otp = otpStore.createPending(lineUserId, parsedBinding);
     await emailService.sendOtpEmail(parsedBinding.email, otp);
     await replyToLine(replyToken, [
@@ -1597,11 +1832,9 @@ async function handleTextEvent(event, baseUrl) {
   if (!isBound) {
     const pendingVerification = otpStore.getPending(lineUserId);
 
-    // หากป้อนรหัส OTP 6 หลัก
     if (/^\d{6}$/.test(userMessage)) {
       if (pendingVerification) {
         if (userMessage === pendingVerification.otp) {
-          // ตรวจพบ OTP ถูกต้อง ดำเนินการบันทึกผูกบัญชี
           const bindingData = {
             role: pendingVerification.role,
             studentId: pendingVerification.studentId,
@@ -1630,7 +1863,6 @@ async function handleTextEvent(event, baseUrl) {
       return;
     }
 
-    // กรณีผู้ใช้ยังไม่ได้ลงทะเบียนผูกบัญชี ส่งข้อความแจ้งเตือนสิทธิ์
     await replyToLine(replyToken, [
       {
         type: "text",
@@ -1642,7 +1874,6 @@ async function handleTextEvent(event, baseUrl) {
 
   // --- ส่วนวิเคราะห์ความตั้งใจของผู้ใช้ (Hybrid NLP Router) ---
   try {
-    // ส่งข้อความแจ้งกำลังประมวลผลด้วย AI ทันที (ป้องกันหน้าจอค้าง)
     await replyToLine(replyToken, [
       {
         type: "text",
@@ -1672,63 +1903,16 @@ async function handleTextEvent(event, baseUrl) {
 
     // เคสที่ 1: สรุปภาพรวมสิ่งของสูญหาย (SUMMARY)
     if (intentData.intent === "SUMMARY") {
-      let lostItems = [];
-      let foundItems = [];
-      try {
-        const { data: lItems, error: lError } = await supabase
-          .from("lost_items")
-          .select("category_id");
-        if (lError) throw lError;
-        lostItems = lItems || [];
-
-        const { data: fItems, error: fError } = await supabase
-          .from("items")
-          .select("category_id");
-        if (fError) throw fError;
-        foundItems = fItems || [];
-      } catch (err) {
-        console.warn(
-          "Supabase offline in SUMMARY case, using local JSON database fallback",
-        );
-        lostItems = localDb.getLocalLostItems();
-        foundItems = localDb.getLocalFoundItems();
-      }
-
-      const allItems = [...lostItems, ...foundItems];
-
-      if (allItems.length === 0) {
-        await sendLineMessage({ lineUserId }, [
-          {
-            type: "text",
-            text: `[รายงานสถานะระบบ]\n\nปัจจุบันยังไม่มีรายงานสิ่งของสูญหายหรือสิ่งของคงค้างภายในระบบ Unifind ครับ`,
-          },
-        ]);
-        return;
-      }
-
-      const countMap = {};
-      allItems.forEach((item) => {
-        const catName = getCategoryName(item.category_id);
-        countMap[catName] = (countMap[catName] || 0) + 1;
-      });
-
-      let summaryReply = `[รายงานสรุปสถิติตัวเลขสิ่งของคงค้างในระบบ Unifind]
-
-พบสิ่งของที่ลงทะเบียนแยกตามหมวดหมู่ในคลังระบบปัจจุบันดังนี้ครับ:`;
-
-      Object.keys(countMap).forEach((categoryName) => {
-        summaryReply += `\nหมวดหมู่: ${categoryName}\nจำนวนสิ่งของ: ${countMap[categoryName]} รายการ\n────────────────`;
-      });
-
-      summaryReply += `\n\nคำแนะนำเพิ่มเติม:\nหากท่านคาดว่ามีสิ่งของของท่านอยู่ กรุณาพิมพ์ระบุรายละเอียด ชื่อของตกหล่น หรือส่งรูปถ่ายเพื่อตรวจสอบเจาะจงได้เลยครับ`;
-
       await sendLineMessage({ lineUserId }, [
-        { type: "text", text: summaryReply },
+        {
+          type: "text",
+          text: `ขออภัยด้วยนะครับ เพื่อความปลอดภัยและความเป็นส่วนตัวของข้อมูลผู้ใช้งาน ระบบ Unifind ไม่สามารถแสดงรายการสิ่งของทั้งหมดในคลัง หรือแสดงจำนวนหมวดหมู่ของหายให้ดูโดยตรงได้ครับ 🔒\n\nหากคุณต้องการตรวจสอบหาของหายของคุณเอง สามารถพิมพ์ค้นหาโดยระบุชื่อสิ่งของหรือลักษณะเฉพาะเจาะจงลงในแชทนี้ได้เลยครับ (เช่น "ตามหาไอแพดสีเทา" หรือ "มีใครเก็บกุญแจรถฮอนด้าได้ไหม") เพื่อให้น้องบอทช่วยค้นหาของชิ้นนั้นให้คุณได้ทันทีครับ! 😊`,
+        },
       ]);
       return;
     }
 
-    // เคสที่ 2: ค้นหาเจาะจงรายช
+    // เคสที่ 2: ค้นหาเจาะจงรายชิ้น (SEARCH)
     if (intentData.intent === "SEARCH") {
       await handleSearchIntent({ lineUserId }, userMessage);
       return;
@@ -1749,7 +1933,6 @@ async function handleTextEvent(event, baseUrl) {
 
       const specificity = await checkSpecificity(userMessage);
       if (!specificity.isSpecific) {
-        // บันทึกสเตตัสเพื่อรอให้พิมพ์คำตอบถัดไปโดยตรง
         userSessionStore.setState(lineUserId, "AWAITING_REPORT_DETAILS");
         await sendLineMessage({ lineUserId }, [
           {
@@ -1783,10 +1966,10 @@ async function handleTextEvent(event, baseUrl) {
     ]);
   }
 }
-/* =========================================================================
- * 🕸️ 7. MAIN WEBHOOK ENDPOINT (จุดเชื่อมรับสัญญาณทราฟฟิกจาก LINE Webhook API)
- * ========================================================================= */
 
+/**
+ * 🕸️ MAIN WEBHOOK ENDPOINT (จุดเชื่อมรับสัญญาณทราฟฟิกจาก LINE Webhook API)
+ */
 router.post("/webhook", async (req, res) => {
   const signature = req.headers["x-line-signature"];
   const channelSecret = process.env.LINE_CHANNEL_SECRET;
@@ -1803,7 +1986,6 @@ router.post("/webhook", async (req, res) => {
       return res.status(401).send("Invalid signature");
     }
   }
-
   // ตอบกลับ Status 200 ทันทีตามมาตรฐานการเชื่อมต่อ LINE เพื่อหลีกเลี่ยงการขึ้น Timeout
   res.sendStatus(200);
 
@@ -1814,7 +1996,6 @@ router.post("/webhook", async (req, res) => {
   const events = req.body.events;
   if (!events || events.length === 0) return;
 
-  // ประมวลผลแต่ละ Event ในคิวแบบแยกอิสระ (Prevent Cascade Crashing)
   for (let event of events) {
     try {
       if (event.type === "follow") {
@@ -1822,7 +2003,6 @@ router.post("/webhook", async (req, res) => {
       } else if (event.type === "message") {
         const lineUserId = event.source.userId;
 
-        // ตรวจสอบระบบป้องกันการยิงสแปมแชท (Rate Limiting)
         if (event.message.type === "image" || event.message.type === "text") {
           if (rateLimiter.isRateLimited(lineUserId)) {
             await replyToLine(event.replyToken, [
@@ -1840,7 +2020,6 @@ router.post("/webhook", async (req, res) => {
         } else if (event.message.type === "text") {
           await handleTextEvent(event, baseUrl);
         } else {
-          // การป้องกัน Scenario 2: ผู้ใช้ส่งข้อความประเภทที่ยังไม่รองรับ เช่น สติกเกอร์, พิกัด, วิดีโอ
           const replyToken = event.replyToken;
           await replyToLine(replyToken, [
             {

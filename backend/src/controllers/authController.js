@@ -1,6 +1,21 @@
+/**
+ * =========================================================================
+ * 🔑 AUTHENTICATION & USER CONTROLLER (ระบบพิสูจน์ตัวตนและจัดการสิทธิ์ผู้ใช้งาน)
+ * =========================================================================
+ * ทำหน้าที่ประมวลผลการเข้าสู่ระบบ (Login), ลงทะเบียน (Register),
+ * จัดการบัญชีผู้ใช้ระบบ (Staff/Admin Accounts) และสิทธิ์การใช้งานระบบ Web Admin
+ *
+ * 🎓 พัฒนาขึ้นสำหรับ: มหาวิทยาลัยหอการค้าไทย (UTCC)
+ * =========================================================================
+ */
+
 const supabase = require("../config/supabase");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
+/* =========================================================================
+ * 🛠️ 1. DATA FORMATTING HELPERS
+ * ========================================================================= */
 
 const formatUser = (user) => {
   if (!user) return null;
@@ -20,6 +35,12 @@ const formatUser = (user) => {
   };
 };
 
+
+/* =========================================================================
+ * 🔐 2. AUTHENTICATION HANDLERS (Login & Self Register)
+ * ========================================================================= */
+
+/** POST /api/auth/register - ยื่นขอลงทะเบียนเจ้าหน้าที่ใหม่ (รอการอนุมัติ) */
 exports.register = async (req, res) => {
   try {
     const { username, email, password, full_name, nickname } = req.body;
@@ -51,6 +72,7 @@ exports.register = async (req, res) => {
       email,
       password_hash: hashedPassword,
       full_name: full_name || username,
+      nickname: nickname || null,
       role: "STAFF",
       status: "Inactive",
     });
@@ -65,6 +87,7 @@ exports.register = async (req, res) => {
   }
 };
 
+/** POST /api/auth/login - เข้าสู่ระบบสำหรับ Admin & Staff */
 exports.login = async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -110,6 +133,12 @@ exports.login = async (req, res) => {
   }
 };
 
+
+/* =========================================================================
+ * 👥 3. USER MANAGEMENT HANDLERS (Admin Actions)
+ * ========================================================================= */
+
+/** GET /api/auth/users - ดึงรายการผู้ใช้ระบบทั้งหมด */
 exports.getUsers = async (req, res) => {
   try {
     const { data: users, error } = await supabase
@@ -126,6 +155,7 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+/** POST /api/auth/users - สร้างบัญชีผู้ใช้ใหม่โดยตรงจากหน้า Admin */
 exports.createUser = async (req, res) => {
   try {
     const {
@@ -133,6 +163,7 @@ exports.createUser = async (req, res) => {
       email,
       password,
       full_name,
+      nickname,
       role = "STAFF",
       status = "Active",
     } = req.body;
@@ -190,6 +221,7 @@ exports.createUser = async (req, res) => {
   }
 };
 
+/** GET /api/auth/users/pending - ดึงรายการผู้ใช้ที่รออนุมัติสิทธิ์ (Inactive) */
 exports.getPendingUsers = async (req, res) => {
   try {
     const { data: pendingUsers, error } = await supabase
@@ -206,6 +238,7 @@ exports.getPendingUsers = async (req, res) => {
   }
 };
 
+/** PUT /api/auth/users/:userId/approve - อนุมัติสิทธิ์เจ้าหน้าที่เข้าใช้งานระบบ */
 exports.approveUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -232,6 +265,7 @@ exports.approveUser = async (req, res) => {
   }
 };
 
+/** DELETE /api/auth/users/:userId/reject - ปฏิเสธและลบคำขอลงทะเบียนบัญชี */
 exports.rejectUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -249,6 +283,7 @@ exports.rejectUser = async (req, res) => {
   }
 };
 
+/** PUT /api/auth/users/:userId/activate - เปิดใช้งานบัญชีผู้ใช้ */
 exports.activateUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -275,6 +310,7 @@ exports.activateUser = async (req, res) => {
   }
 };
 
+/** PUT /api/auth/users/:userId/deactivate - ระงับการใช้งานบัญชีผู้ใช้ชั่วคราว */
 exports.deactivateUser = async (req, res) => {
   try {
     const { userId } = req.params;
@@ -296,57 +332,6 @@ exports.deactivateUser = async (req, res) => {
       message: "Account deactivated successfully",
       user: formatUser(user),
     });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.deleteUser = async (req, res) => {
-  try {
-    const { userId } = req.params;
-
-    const { error } = await supabase
-      .from("users")
-      .delete()
-      .eq("user_id", userId);
-
-    if (error) throw error;
-
-    res.status(200).json({ message: "User deleted permanently" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-exports.bindLine = async (req, res) => {
-  try {
-    const { lineUserId } = req.body;
-    if (!lineUserId) {
-      return res.status(400).json({ message: "lineUserId is required" });
-    }
-
-    const { data: user, error } = await supabase
-      .from("users")
-      .select("email, username")
-      .eq("user_id", req.userId)
-      .single();
-
-    if (error || !user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-
-    const lineBindings = require("../config/lineBindings");
-    const matchingService = require("../services/matchingService");
-
-    lineBindings.bind(user.email, lineUserId);
-
-    const confirmationText = `[ระบบ Unifind] 🎉 ยินดีด้วย! \n\nบัญชีไลน์นี้ได้รับการผูกเชื่อมโยงเข้ากับระบบ Unifind ของเจ้าหน้าที่ "${user.username}" (อีเมล: ${user.email}) เรียบร้อยแล้วครับ!\n\nนับจากนี้ท่านจะได้รับการแจ้งเตือนด่วนทันทีหากระบบตรวจพบคู่ของหายที่ตรงกันครับ`;
-
-    await matchingService.sendPushToLine(lineUserId, confirmationText);
-
-    res
-      .status(200)
-      .json({ message: "LINE account bound successfully", email: user.email });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
