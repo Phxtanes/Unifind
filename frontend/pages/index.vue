@@ -20,7 +20,7 @@
           <p class="office-of">Office of</p>
           <p class="student">Student</p>
           <p class="development">Development</p>
-          <p class="thai-text">{{ $t('สำนักกิจการนักศึกษา มหาวิทยาลัยหอการค้าไทย') }}</p>
+          <p class="thai-text">{{ $t('สำนักพัฒนานักศึกษา มหาวิทยาลัยหอการค้าไทย') }}</p>
         </div>
       </div>
       <div class="contact-info">
@@ -55,16 +55,17 @@
           </span>
         </h2>
         <div v-if="errorMsg" class="error-message mb-4">{{ errorMsg }}</div>
-        <div v-if="successMsg" class="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold text-center">
+        <div v-if="successMsg"
+          class="mb-4 p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold text-center">
           {{ successMsg }}
         </div>
-        
+
         <form v-if="!isRegistering" class="login-form" @submit.prevent="handleLogin">
-          <input v-model="loginData.username" type="text" class="login-input" :placeholder="$t('ชื่อผู้ใช้เจ้าหน้าที่')" required
-            :disabled="loading" />
+          <input v-model="loginData.username" type="text" class="login-input" :placeholder="$t('ชื่อผู้ใช้เจ้าหน้าที่')"
+            required :disabled="loading" />
           <input v-model="loginData.password" type="password" class="login-input" :placeholder="$t('รหัสผ่าน')" required
             :disabled="loading" />
-          
+
           <button type="submit" class="login-button font-semibold mb-2" :disabled="loading" :class="{ loading }">
             {{ loading ? $t('กำลังเข้าสู่ระบบ...') : $t('เข้าสู่ระบบเจ้าหน้าที่') }}
           </button>
@@ -76,31 +77,34 @@
 
           <p class="text-xs text-center text-slate-500 font-semibold mt-2">
             {{ $t('ยังไม่มีบัญชีเจ้าหน้าที่?') }}
-            <button type="button" @click="toggleMode" class="text-indigo-650 hover:text-indigo-850 font-bold ml-1 transition focus:outline-none">
+            <button type="button" @click="toggleMode"
+              class="text-indigo-650 hover:text-indigo-850 font-bold ml-1 transition focus:outline-none">
               {{ $t('สมัครสมาชิกที่นี่') }}
             </button>
           </p>
         </form>
 
         <form v-else class="login-form" @submit.prevent="handleRegister">
-          <input v-model="registerData.username" type="text" class="login-input" :placeholder="$t('ชื่อผู้ใช้งาน (Username) *')" required
-            :disabled="loading" />
-          <input v-model="registerData.nickname" type="text" class="login-input" :placeholder="$t('ชื่อเล่น (Nickname)')"
-            :disabled="loading" />
-          <input v-model="registerData.email" type="email" class="login-input" :placeholder="$t('อีเมลติดต่อ (Email) *')" required
-            :disabled="loading" />
-          <input v-model="registerData.password" type="password" class="login-input" :placeholder="$t('รหัสผ่าน (Password) *')" required
-            :disabled="loading" />
-          <input v-model="registerData.confirmPassword" type="password" class="login-input" :placeholder="$t('ยืนยันรหัสผ่าน *')" required
-            :disabled="loading" />
-          
-          <button type="submit" class="login-button font-semibold mb-4 bg-emerald-600 hover:bg-emerald-700" :disabled="loading">
+          <input v-model="registerData.username" type="text" class="login-input"
+            :placeholder="$t('ชื่อผู้ใช้งาน (Username) *')" required :disabled="loading" />
+          <input v-model="registerData.nickname" type="text" class="login-input"
+            :placeholder="$t('ชื่อเล่น (Nickname)')" :disabled="loading" />
+          <input v-model="registerData.email" type="email" class="login-input"
+            :placeholder="$t('อีเมลติดต่อ (Email) *')" required :disabled="loading" />
+          <input v-model="registerData.password" type="password" class="login-input"
+            :placeholder="$t('รหัสผ่าน (Password) *')" required :disabled="loading" />
+          <input v-model="registerData.confirmPassword" type="password" class="login-input"
+            :placeholder="$t('ยืนยันรหัสผ่าน *')" required :disabled="loading" />
+
+          <button type="submit" class="login-button font-semibold mb-4 bg-emerald-600 hover:bg-emerald-700"
+            :disabled="loading">
             {{ loading ? $t('กำลังสมัครสมาชิก...') : $t('ส่งคำขอสมัครสมาชิก') }}
           </button>
 
           <p class="text-xs text-center text-slate-500 font-semibold mt-2">
             {{ $t('มีบัญชีเจ้าหน้าที่อยู่แล้ว?') }}
-            <button type="button" @click="toggleMode" class="text-indigo-650 hover:text-indigo-850 font-bold ml-1 transition focus:outline-none">
+            <button type="button" @click="toggleMode"
+              class="text-indigo-650 hover:text-indigo-850 font-bold ml-1 transition focus:outline-none">
               {{ $t('เข้าสู่ระบบที่นี่') }}
             </button>
           </p>
@@ -177,7 +181,7 @@ const handleBypass = () => {
 const handleRegister = async () => {
   errorMsg.value = ''
   successMsg.value = ''
-  
+
   if (registerData.password !== registerData.confirmPassword) {
     errorMsg.value = 'รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน'
     return

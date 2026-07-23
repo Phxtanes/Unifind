@@ -221,8 +221,7 @@
 
         <!-- Cards List -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 flex-1 lg:min-h-0">
-          <div v-for="item in latestItems" :key="item.id"
-            @click="openItemDetail(item)"
+          <div v-for="item in latestItems" :key="item.id" @click="openItemDetail(item)"
             class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col p-2.5 hover:shadow-md hover:border-indigo-200 transition group relative overflow-hidden lg:h-full lg:min-h-0 justify-between cursor-pointer">
 
             <!-- Image Area -->
@@ -325,38 +324,19 @@
     </section>
 
     <!-- Item Detail Modal Component -->
-    <ItemDetailModal 
-      :show="showDetailModal" 
-      :item="selectedItem" 
-      @close="closeItemDetail" 
-      @edit="handleEditClick"
-    />
+    <ItemDetailModal :show="showDetailModal" :item="selectedItem" @close="closeItemDetail" @edit="handleEditClick" />
 
     <!-- Edit Found Item Modal -->
-    <CreateItemModal 
-      :show="showEditFoundModal" 
-      :is-submitting="isSubmitting" 
-      :edit-item="editingItem"
-      @close="closeEditFoundModal" 
-      @submit="handleEditFoundSubmit" 
-    />
+    <CreateItemModal :show="showEditFoundModal" :is-submitting="isSubmitting" :edit-item="editingItem"
+      @close="closeEditFoundModal" @submit="handleEditFoundSubmit" />
 
     <!-- Edit Lost Item Modal -->
-    <ReportLostItemModal 
-      :show="showEditLostModal" 
-      :is-submitting="isSubmitting" 
-      :edit-item="editingItem"
-      @close="closeEditLostModal" 
-      @submit="handleEditLostSubmit" 
-    />
+    <ReportLostItemModal :show="showEditLostModal" :is-submitting="isSubmitting" :edit-item="editingItem"
+      @close="closeEditLostModal" @submit="handleEditLostSubmit" />
 
     <!-- Success Modal -->
-    <SuccessModal 
-      :show="showSuccessModal" 
-      :title="successModalTitle" 
-      :message="successModalMessage" 
-      @close="showSuccessModal = false" 
-    />
+    <SuccessModal :show="showSuccessModal" :title="successModalTitle" :message="successModalMessage"
+      @close="showSuccessModal = false" />
 
   </div>
 </template>

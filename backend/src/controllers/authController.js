@@ -284,6 +284,24 @@ exports.rejectUser = async (req, res) => {
   }
 };
 
+/** DELETE /api/auth/user/:userId - ลบบัญชีผู้ใช้งานออกจากระบบถาวร */
+exports.deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    const { error } = await supabase
+      .from("users")
+      .delete()
+      .eq("user_id", userId);
+
+    if (error) throw error;
+
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 /** PUT /api/auth/users/:userId/activate - เปิดใช้งานบัญชีผู้ใช้ */
 exports.activateUser = async (req, res) => {
   try {
