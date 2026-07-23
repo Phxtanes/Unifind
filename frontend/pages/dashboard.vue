@@ -2,7 +2,8 @@
   <div class="lg:h-full lg:flex lg:flex-col lg:gap-4 lg:overflow-hidden space-y-4 lg:space-y-0">
 
     <!-- Header Area -->
-    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3.5 pb-2 border-b border-slate-100 flex-shrink-0">
+    <div
+      class="flex flex-col md:flex-row md:items-center md:justify-between gap-3.5 pb-2 border-b border-slate-100 flex-shrink-0">
       <div>
         <h1 class="text-xl font-bold text-slate-800">{{ $t('ภาพรวมระบบ Lost & Found') }}</h1>
         <p class="text-xs text-slate-500 mt-0.5">{{ $t('ภาพรวมสถานะและสถิติของระบบ') }}</p>
@@ -13,14 +14,16 @@
           <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs pointer-events-none">
             <font-awesome :icon="['fas', 'calendar-days']" />
           </span>
-          <select v-model="selectedPeriod" class="appearance-none bg-white border border-slate-200 rounded-xl pl-8 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
+          <select v-model="selectedPeriod"
+            class="appearance-none bg-white border border-slate-200 rounded-xl pl-8 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
             <option value="all">{{ $t('ช่วงเวลา: ทั้งหมด') }}</option>
             <option value="30">{{ $t('ช่วงเวลา: 30 วันล่าสุด') }}</option>
             <option value="90">{{ $t('ช่วงเวลา: 90 วันล่าสุด') }}</option>
             <option value="180">{{ $t('ช่วงเวลา: 180 วันล่าสุด') }}</option>
             <option value="365">{{ $t('ช่วงเวลา: 1 ปีล่าสุด') }}</option>
           </select>
-          <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400 text-[10px]">
+          <div
+            class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400 text-[10px]">
             <font-awesome :icon="['fas', 'chevron-down']" />
           </div>
         </div>
@@ -30,13 +33,15 @@
           <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs pointer-events-none">
             <font-awesome :icon="['fas', 'tag']" />
           </span>
-          <select v-model="selectedCategory" class="appearance-none bg-white border border-slate-200 rounded-xl pl-8 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
+          <select v-model="selectedCategory"
+            class="appearance-none bg-white border border-slate-200 rounded-xl pl-8 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
             <option value="all">{{ $t('หมวดหมู่: ทั้งหมด') }}</option>
             <option v-for="cat in itemsStore.categories" :key="cat.category_id" :value="cat.category_id">
               {{ cat.category_name }}
             </option>
           </select>
-          <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400 text-[10px]">
+          <div
+            class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400 text-[10px]">
             <font-awesome :icon="['fas', 'chevron-down']" />
           </div>
         </div>
@@ -46,13 +51,15 @@
           <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs pointer-events-none">
             <font-awesome :icon="['fas', 'location-dot']" />
           </span>
-          <select v-model="selectedLocation" class="appearance-none bg-white border border-slate-200 rounded-xl pl-8 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
+          <select v-model="selectedLocation"
+            class="appearance-none bg-white border border-slate-200 rounded-xl pl-8 pr-8 py-2 text-xs font-semibold text-slate-600 focus:outline-none focus:border-indigo-500 cursor-pointer shadow-sm">
             <option value="all">{{ $t('สถานที่: ทั้งหมด') }}</option>
             <option v-for="loc in itemsStore.locations" :key="loc.location_id" :value="loc.location_id">
               {{ loc.location_name }}
             </option>
           </select>
-          <div class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400 text-[10px]">
+          <div
+            class="absolute inset-y-0 right-0 flex items-center pr-2.5 pointer-events-none text-slate-400 text-[10px]">
             <font-awesome :icon="['fas', 'chevron-down']" />
           </div>
         </div>
@@ -62,45 +69,61 @@
     <!-- Horizontal Statistics Cards -->
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-shrink-0">
       <!-- All Items Stat Card -->
-      <NuxtLink to="/items" class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+      <NuxtLink to="/items"
+        class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
         <div class="space-y-1.5">
           <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{{ $t('รายการทั้งหมด') }}</p>
-          <p class="text-3xl font-extrabold text-slate-800 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredAllCount }}</p>
+          <p
+            class="text-3xl font-extrabold text-slate-800 group-hover:scale-102 transition-transform duration-150 inline-block">
+            {{ filteredAllCount }}</p>
         </div>
-        <div class="w-12 h-12 rounded-2xl bg-indigo-50/50 flex items-center justify-center text-xl text-indigo-600 border border-indigo-100/50 shadow-sm">
+        <div
+          class="w-12 h-12 rounded-2xl bg-indigo-50/50 flex items-center justify-center text-xl text-indigo-600 border border-indigo-100/50 shadow-sm">
           <font-awesome :icon="['fas', 'boxes-stacked']" />
         </div>
       </NuxtLink>
 
       <!-- Lost Items Stat Card -->
-      <NuxtLink to="/lost" class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+      <NuxtLink to="/lost"
+        class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
         <div class="space-y-1.5">
           <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{{ $t('ของหาย (Lost)') }}</p>
-          <p class="text-3xl font-extrabold text-rose-650 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredLostCount }}</p>
+          <p
+            class="text-3xl font-extrabold text-rose-650 group-hover:scale-102 transition-transform duration-150 inline-block">
+            {{ filteredLostCount }}</p>
         </div>
-        <div class="w-12 h-12 rounded-2xl bg-rose-50/50 flex items-center justify-center text-xl text-rose-650 border border-rose-100/50 shadow-sm">
+        <div
+          class="w-12 h-12 rounded-2xl bg-rose-50/50 flex items-center justify-center text-xl text-rose-650 border border-rose-100/50 shadow-sm">
           <font-awesome :icon="['fas', 'briefcase']" />
         </div>
       </NuxtLink>
-      
+
       <!-- Stored Items Stat Card -->
-      <NuxtLink to="/found" class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+      <NuxtLink to="/found"
+        class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
         <div class="space-y-1.5">
           <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{{ $t('ของพบ / ยังไม่เคลม') }}</p>
-          <p class="text-3xl font-extrabold text-amber-500 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredFoundCount }}</p>
+          <p
+            class="text-3xl font-extrabold text-amber-500 group-hover:scale-102 transition-transform duration-150 inline-block">
+            {{ filteredFoundCount }}</p>
         </div>
-        <div class="w-12 h-12 rounded-2xl bg-amber-50/50 flex items-center justify-center text-xl text-amber-600 border border-amber-100/50 shadow-sm">
+        <div
+          class="w-12 h-12 rounded-2xl bg-amber-50/50 flex items-center justify-center text-xl text-amber-600 border border-amber-100/50 shadow-sm">
           <font-awesome :icon="['fas', 'box-archive']" />
         </div>
       </NuxtLink>
-      
+
       <!-- Claimed Items Stat Card -->
-      <NuxtLink to="/claimed" class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
+      <NuxtLink to="/claimed"
+        class="bg-white p-4 lg:py-3.5 lg:px-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md hover:border-slate-300/80 transition duration-300 group">
         <div class="space-y-1.5">
           <p class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">{{ $t('ส่งคืนแล้ว (Claimed)') }}</p>
-          <p class="text-3xl font-extrabold text-emerald-650 group-hover:scale-102 transition-transform duration-150 inline-block">{{ filteredClaimedCount }}</p>
+          <p
+            class="text-3xl font-extrabold text-emerald-650 group-hover:scale-102 transition-transform duration-150 inline-block">
+            {{ filteredClaimedCount }}</p>
         </div>
-        <div class="w-12 h-12 rounded-2xl bg-emerald-50/50 flex items-center justify-center text-xl text-emerald-650 border border-emerald-100/50 shadow-sm">
+        <div
+          class="w-12 h-12 rounded-2xl bg-emerald-50/50 flex items-center justify-center text-xl text-emerald-650 border border-emerald-100/50 shadow-sm">
           <font-awesome :icon="['fas', 'circle-check']" />
         </div>
       </NuxtLink>
@@ -108,15 +131,18 @@
 
     <!-- Middle Layout Section: Status Overview & Trend Chart -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:flex-1 lg:min-h-0">
-      
+
       <!-- Status Donut Chart Overview -->
-      <div class="col-span-12 lg:col-span-5 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between lg:h-full lg:min-h-0">
+      <div
+        class="col-span-12 lg:col-span-5 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between lg:h-full lg:min-h-0">
         <div class="flex justify-between items-center mb-3">
           <div>
-            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">{{ $t('สถานะรายการ') }}</h3>
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              {{ $t('สถานะรายการ (แสดงสัดส่วนหมวดหมู่ของที่หายบ่อย)') }}
+            </h3>
           </div>
         </div>
-        
+
         <div class="flex flex-col sm:flex-row items-center gap-6 lg:gap-8 flex-1 py-1 lg:py-0 min-h-0">
           <!-- Chart Left -->
           <div class="relative flex items-center justify-center shrink-0 w-32 h-32 lg:w-28 lg:h-28">
@@ -127,10 +153,11 @@
               <span class="text-[10px] text-slate-400 font-bold leading-none">{{ $t('ทั้งหมด') }}</span>
             </div>
           </div>
-          
+
           <!-- Legends Right -->
           <div class="flex-1 space-y-3 w-full">
-            <div v-for="seg in chartSegments" :key="seg.label" class="flex items-center justify-between text-xs border-b border-slate-50 pb-1.5">
+            <div v-for="seg in chartSegments" :key="seg.label"
+              class="flex items-center justify-between text-xs border-b border-slate-50 pb-1.5">
               <div class="flex items-center gap-2">
                 <span class="w-2.5 h-2.5 rounded-full shrink-0" :style="{ backgroundColor: seg.color }"></span>
                 <span class="font-semibold text-slate-600 text-xs">{{ $t(seg.label) }}</span>
@@ -143,68 +170,90 @@
           </div>
         </div>
       </div>
-      
+
       <!-- Monthly Statistics Chart -->
-      <div class="col-span-12 lg:col-span-7 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between relative animate-fade-in lg:h-full lg:min-h-0">
+      <div
+        class="col-span-12 lg:col-span-7 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between relative animate-fade-in lg:h-full lg:min-h-0">
         <div class="flex justify-between items-center mb-1 flex-shrink-0">
           <div>
-            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">{{ $t('สถิติรายเดือน') }}</h3>
+            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+              {{ $t('สถิติรายเดือน (แสดงแนวโน้มสถิติย้อนหลัง)') }}
+            </h3>
           </div>
         </div>
-        
+
         <div class="flex-1 w-full pt-1 relative min-h-0">
           <canvas ref="lineChartCanvas"></canvas>
         </div>
-        
-        <div class="flex justify-start gap-4 items-center text-[9px] text-slate-500 mt-2 border-t border-slate-50 pt-2 font-sans flex-shrink-0">
-          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#EF4444] shadow-sm shadow-red-200"></span> {{ $t('ของหาย (Lost)') }}</span>
-          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#3B82F6] shadow-sm shadow-blue-200"></span> {{ $t('ของพบ / ยังไม่เคลม') }}</span>
-          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#10B981] shadow-sm shadow-green-200"></span> {{ $t('ส่งคืนแล้ว (Claimed)') }}</span>
+
+        <div
+          class="flex justify-start gap-4 items-center text-[9px] text-slate-500 mt-2 border-t border-slate-50 pt-2 font-sans flex-shrink-0">
+          <span class="flex items-center gap-1.5"><span
+              class="w-2.5 h-2.5 rounded-full bg-[#EF4444] shadow-sm shadow-red-200"></span> {{ $t('ของหาย (Lost)')
+              }}</span>
+          <span class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#3B82F6] shadow-sm shadow-blue-200">
+            </span> {{ $t('ของพบ /ยังไม่เคลม') }}
+          </span>
+          <span class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-[#10B981] shadow-sm shadow-green-200">
+            </span> {{ $t('ส่งคืนแล้ว(Claimed)') }}
+          </span>
         </div>
       </div>
     </section>
 
     <!-- Bottom Layout Section: Recent Items & Recent Activity -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:flex-1 lg:min-h-0">
-      
+
       <!-- Latest Items Card Grid -->
-      <div class="col-span-12 lg:col-span-8 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col lg:h-full lg:min-h-0">
+      <div
+        class="col-span-12 lg:col-span-8 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col lg:h-full lg:min-h-0">
         <div class="flex justify-between items-center mb-3 flex-shrink-0">
           <div>
             <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">{{ $t('รายการล่าสุด') }}</h3>
             <p class="text-[10px] text-slate-400 mt-0.5">{{ $t('รายการของหายและของพบล่าสุด') }}</p>
           </div>
-          <NuxtLink to="/items" class="text-xs font-semibold text-indigo-650 hover:text-indigo-700 hover:underline font-sans">{{ $t('ดูทั้งหมด') }}</NuxtLink>
+          <NuxtLink to="/items"
+            class="text-xs font-semibold text-indigo-650 hover:text-indigo-700 hover:underline font-sans">{{
+              $t('ดูทั้งหมด') }}</NuxtLink>
         </div>
-        
+
         <!-- Cards List -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 flex-1 lg:min-h-0">
-          <div v-for="item in latestItems" :key="item.id" class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col p-2.5 hover:shadow-md transition group relative overflow-hidden lg:h-full lg:min-h-0 justify-between">
-            
+          <div v-for="item in latestItems" :key="item.id"
+            class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col p-2.5 hover:shadow-md transition group relative overflow-hidden lg:h-full lg:min-h-0 justify-between">
+
             <!-- Image Area -->
-            <div class="relative w-full h-20 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center border border-slate-100">
+            <div
+              class="relative w-full h-20 rounded-xl overflow-hidden bg-slate-50 flex-shrink-0 flex items-center justify-center border border-slate-100">
               <!-- Type Badge -->
-              <span class="absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 text-[8px] font-semibold rounded text-white shadow-sm" :class="item.type === 'lost' ? 'bg-[#EF4444]' : 'bg-[#8B5CF6]'">
+              <span
+                class="absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 text-[8px] font-semibold rounded text-white shadow-sm"
+                :class="item.type === 'lost' ? 'bg-[#EF4444]' : 'bg-[#8B5CF6]'">
                 {{ item.type === 'lost' ? $t('ของหาย') : $t('พบของ') }}
               </span>
-              <img v-if="item.image_url || getItemImageSrc(item)" :src="item.image_url || getItemImageSrc(item)" class="w-full h-full object-cover" />
-              <font-awesome v-else :icon="item.status === 'lost' ? ['fas', 'briefcase'] : ['fas', 'puzzle-piece']" class="text-xl text-slate-300" />
+              <img v-if="item.image_url || getItemImageSrc(item)" :src="item.image_url || getItemImageSrc(item)"
+                class="w-full h-full object-cover" />
+              <font-awesome v-else :icon="item.status === 'lost' ? ['fas', 'briefcase'] : ['fas', 'puzzle-piece']"
+                class="text-xl text-slate-300" />
             </div>
 
             <!-- Content Area -->
             <div class="mt-2.5 flex-1 flex flex-col justify-between space-y-1.5 font-sans">
               <div class="space-y-0.5">
                 <!-- Item Name -->
-                <h4 class="text-xs font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-650 transition" :title="item.name">
+                <h4 class="text-xs font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-650 transition"
+                  :title="item.name">
                   {{ item.name }}
                 </h4>
-                
+
                 <!-- Location with pin icon -->
                 <div class="flex items-center gap-1 text-[9px] text-slate-500 font-medium">
                   <font-awesome :icon="['fas', 'location-dot']" class="text-slate-400" />
                   <span class="truncate max-w-[100px]">{{ item.place }}</span>
                 </div>
-                
+
                 <!-- Date/Time -->
                 <div class="text-[8px] text-slate-400 font-normal flex items-center gap-1">
                   <font-awesome :icon="['fas', 'calendar-days']" class="text-slate-350" />
@@ -214,16 +263,20 @@
 
               <!-- Bottom Status Badge -->
               <div class="pt-0.5">
-                <span :class="(item.status === 'claimed' || item.status === 'returned') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'" class="inline-block px-1.5 py-0.5 text-[8px] font-bold rounded border uppercase tracking-wider">
-                  {{ (item.status === 'claimed' || item.status === 'returned') ? $t('ส่งคืนแล้ว (Claimed)') : $t('รอดำเนินการ') }}
+                <span
+                  :class="(item.status === 'claimed' || item.status === 'returned') ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'"
+                  class="inline-block px-1.5 py-0.5 text-[8px] font-bold rounded border uppercase tracking-wider">
+                  {{ (item.status === 'claimed' || item.status === 'returned') ? $t('ส่งคืนแล้ว (Claimed)') :
+                    $t('รอดำเนินการ') }}
                 </span>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div v-if="latestItems.length === 0" class="py-8 text-center text-slate-400 font-sans">
-          <div class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-lg mx-auto shadow-sm">
+          <div
+            class="w-9 h-9 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-lg mx-auto shadow-sm">
             <font-awesome :icon="['fas', 'magnifying-glass']" />
           </div>
           <p class="text-xs mt-2 font-semibold text-slate-700">{{ $t('ไม่มีรายการสิ่งของล่าสุด') }}</p>
@@ -231,20 +284,25 @@
       </div>
 
       <!-- Latest Activity Timeline Card -->
-      <div class="col-span-12 lg:col-span-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col lg:h-full lg:min-h-0 justify-between">
+      <div
+        class="col-span-12 lg:col-span-4 bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col lg:h-full lg:min-h-0 justify-between">
         <div class="flex flex-col lg:h-full lg:min-h-0">
           <div class="flex justify-between items-center mb-3 flex-shrink-0">
             <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">{{ $t('กิจกรรมล่าสุด') }}</h3>
-            <NuxtLink to="/items" class="text-xs font-semibold text-indigo-650 hover:text-indigo-755 hover:underline font-sans">{{ $t('ดูทั้งหมด') }}</NuxtLink>
+            <NuxtLink to="/items"
+              class="text-xs font-semibold text-indigo-650 hover:text-indigo-755 hover:underline font-sans">{{
+                $t('ดูทั้งหมด') }}</NuxtLink>
           </div>
-          
-          <div class="relative pl-6 space-y-4 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 flex-1 lg:min-h-0 lg:overflow-y-auto pr-1">
+
+          <div
+            class="relative pl-6 space-y-4 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-100 flex-1 lg:min-h-0 lg:overflow-y-auto pr-1">
             <div v-for="act in latestActivities" :key="act.id" class="relative flex items-start gap-3">
               <!-- Timeline circle/icon -->
-              <div :class="act.colorClass" class="absolute -left-[21px] w-5 h-5 rounded-full flex items-center justify-center text-[9px] shadow-sm z-10">
+              <div :class="act.colorClass"
+                class="absolute -left-[21px] w-5 h-5 rounded-full flex items-center justify-center text-[9px] shadow-sm z-10">
                 <font-awesome :icon="['fas', act.icon]" />
               </div>
-              
+
               <!-- Content -->
               <div class="flex-1 flex justify-between items-start gap-2 pl-3">
                 <div>
@@ -269,6 +327,9 @@
 </template>
 
 <script setup lang="ts">
+// ==========================================
+// 1. IMPORTS & DEPENDENCIES
+// ==========================================
 import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
@@ -276,6 +337,8 @@ import { useAuthStore } from '~/stores/auth'
 import { useRuntimeConfig } from '#app'
 import axios from 'axios'
 import dayjs from 'dayjs'
+
+// นำเข้า Chart.js และ Controllers/Plugins ที่จำเป็นสำหรับ Donut และ Line Chart
 import {
   Chart,
   DoughnutController,
@@ -290,6 +353,7 @@ import {
   Legend
 } from 'chart.js'
 
+// ลงทะเบียน Controllers และ Components ของ Chart.js
 Chart.register(
   DoughnutController,
   ArcElement,
@@ -303,8 +367,12 @@ Chart.register(
   Legend
 )
 
+// กำหนด Meta ของหน้า Dashboard (Layout, Title, Icon)
 definePageMeta({ layout: 'dashboard', title: 'แดชบอร์ดระบบ', icon: 'house' })
 
+// ==========================================
+// 2. STATE MANAGEMENT & STORES
+// ==========================================
 const itemsStore = useItemsStore()
 const { formatDate, getItemImageSrc } = useItemHelpers()
 
@@ -315,6 +383,11 @@ const selectedLocation = ref('all')
 const lastUpdated = ref(new Date())
 const lastUpdatedText = ref('เมื่อสักครู่')
 
+// ==========================================
+// 3. HELPER FUNCTIONS & FORMATTERS
+// ==========================================
+
+// คำนวณระยะเวลาอัปเดตข้อมูลล่าสุด (เช่น "เมื่อสักครู่", "5 นาทีที่แล้ว")
 const updateLastUpdatedText = () => {
   const diffMs = new Date().getTime() - lastUpdated.value.getTime()
   const diffMins = Math.floor(diffMs / 60000)
@@ -328,40 +401,46 @@ const updateLastUpdatedText = () => {
 const authStore = useAuthStore()
 const config = useRuntimeConfig()
 
-// Format Thai Date and Time like "24 มิ.ย. 68 | 14:10 น."
+// ฟอร์แมตวันที่และเวลาเป็นภาษาไทย เช่น "24 มิ.ย. 68 | 14:10 น."
 const formatThaiDateTime = (dateStr: any) => {
   if (!dateStr) return 'ไม่ระบุ'
   const d = dayjs(dateStr)
   const shortMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
   const day = d.date()
   const month = shortMonths[d.month()]
-  // Show Buddhist Era Year in 2 digits (e.g. 2025 is 2568 -> 68, 2026 is 2569 -> 69)
   const yearBE = (d.year() + 543) % 100
   const time = d.format('HH:mm')
   return `${day} ${month} ${yearBE} | ${time} น.`
 }
 
+// Canvas Refs สำหรับกราฟ Donut และ Line Chart
 const donutChartCanvas = ref<HTMLCanvasElement | null>(null)
 const lineChartCanvas = ref<HTMLCanvasElement | null>(null)
 
+// ตัวแปรเก็บ Instance กราฟ
 let donutChartInstance: Chart | null = null
 let lineChartInstance: Chart | null = null
 
+// เปิด Modal แจ้งของหาย/ของพบใหม่
 const triggerCreateModal = () => {
   window.dispatchEvent(new CustomEvent('open-create-modal'))
 }
 
-// Filtered items based on Category and Location (useful for monthly stats where we want historical data of that category/location)
+// ==========================================
+// 4. COMPUTED FILTERS & STATS
+// ==========================================
+
+// กรองรายการตามหมวดหมู่และสถานที่ (ไม่รวมฟิลเตอร์ช่วงเวลา สำหรับใช้คำนวณสถิติย้อนหลัง)
 const filteredItemsExcludingPeriod = computed(() => {
   let list = itemsStore.items
 
-  // Filter by Category
+  // กรองตามหมวดหมู่ (Category)
   if (selectedCategory.value !== 'all') {
     const catId = parseInt(selectedCategory.value, 10)
     list = list.filter(item => item.category_id === catId || String(item.category_id) === selectedCategory.value)
   }
 
-  // Filter by Location
+  // กรองตามสถานที่ (Location)
   if (selectedLocation.value !== 'all') {
     const locId = parseInt(selectedLocation.value, 10)
     list = list.filter(item => item.location_id === locId || String(item.location_id) === selectedLocation.value)
@@ -370,11 +449,11 @@ const filteredItemsExcludingPeriod = computed(() => {
   return list
 })
 
-// Fully filtered items (including Period)
+// กรองรายการทั้งหมดแบบสมบูรณ์ (หมวดหมู่ + สถานที่ + ช่วงเวลา)
 const filteredItems = computed(() => {
   let list = filteredItemsExcludingPeriod.value
 
-  // Filter by Period
+  // กรองตามช่วงเวลา (Period)
   if (selectedPeriod.value !== 'all') {
     const days = parseInt(selectedPeriod.value, 10)
     if (!isNaN(days)) {
@@ -389,34 +468,19 @@ const filteredItems = computed(() => {
   return list
 })
 
+// คำนวณจำนวนตามสถานะต่างๆ
 const filteredAllCount = computed(() => filteredItems.value.length)
 const filteredLostCount = computed(() => filteredItems.value.filter(i => i.status === 'lost').length)
 const filteredFoundCount = computed(() => filteredItems.value.filter(i => i.status === 'found' || i.status === 'stored').length)
 const filteredClaimedCount = computed(() => filteredItems.value.filter(i => i.status === 'claimed' || i.status === 'returned').length)
 
-// Calculate the number of items created in the last 30 days
-const getTrend = (type: string) => {
-  const thirtyDaysAgo = dayjs().subtract(30, 'day')
-  let list = filteredItems.value
-  if (type === 'all') {
-    return list.filter(item => dayjs(item.created_at || item.date).isAfter(thirtyDaysAgo)).length
-  } else if (type === 'lost') {
-    return list.filter(item => item.status === 'lost' && dayjs(item.created_at || item.date).isAfter(thirtyDaysAgo)).length
-  } else if (type === 'found') {
-    return list.filter(item => (item.status === 'found' || item.status === 'stored') && dayjs(item.created_at || item.date).isAfter(thirtyDaysAgo)).length
-  } else if (type === 'claimed') {
-    return list.filter(item => (item.status === 'claimed' || item.status === 'returned') && dayjs(item.created_at || item.date).isAfter(thirtyDaysAgo)).length
-  }
-  return 0
-}
-
 onMounted(async () => {
+  // 1. ตรวจสอบว่าใน Pinia Store มีข้อมูลหรือยัง ถ้ายังไม่มีให้ยิง API ดึงข้อมูล
   if (itemsStore.items.length === 0) {
     await itemsStore.fetchItems()
   }
   lastUpdated.value = itemsStore.lastUpdated || new Date()
   updateLastUpdatedText()
-
   initCharts()
 
   // ตรวจสอบและเชื่อมโยงบัญชี LINE หากมี pendingLineUserId
@@ -434,6 +498,7 @@ onMounted(async () => {
   }
 })
 
+// คำนวณข้อมูลสัดส่วนสถานะรายการเพื่อนำไปแสดงผลในกราฟ (คำนวณใหม่อัตโนมัติเมื่อ Filter เปลี่ยน)
 const chartSegments = computed(() => {
   const lost = filteredLostCount.value
   const foundStored = filteredFoundCount.value
@@ -446,8 +511,11 @@ const chartSegments = computed(() => {
     { label: 'ของพบ / ยังไม่เคลม', count: foundStored, color: '#8B5CF6' },
     { label: 'ส่งคืนแล้ว (Claimed)', count: claimed, color: '#10B981' }
   ]
-  
+
+  // วนลูปคำนวณเปอร์เซ็นต์ (%) ของแต่ละสถานะเทียบกับผลรวมทั้งหมด
+  // `cat` ย่อมาจาก category คือ ข้อมูลของแต่ละหมวดหมู่ในอาร์เรย์ categories ที่กำลังวนลูปอยู่
   return categories.map(cat => {
+    // ป้องกันการหารด้วย 0 (ถ้า total เป็น 0 ให้ percent เป็น 0)
     const percent = total > 0 ? Math.round((cat.count / total) * 100) : 0
     return {
       ...cat,
@@ -456,7 +524,11 @@ const chartSegments = computed(() => {
   })
 })
 
+// คำนวณหาจำนวนรวมทั้งหมดของรายการในกราฟ
 const totalChartCount = computed(() => {
+  // ใช้ reduce ในการวนลูปบวกรวมค่า count ของทุกสถานะเข้าด้วยกัน
+  // `acc` (Accumulator) คือ ตัวแปรสะสมผลรวม (เริ่มต้นที่ 0)
+  // `cur` (Current) คือ ออบเจกต์สถานะปัจจุบันในแต่ละรอบของการวนลูป
   return chartSegments.value.reduce((acc, cur) => acc + cur.count, 0)
 })
 
@@ -533,12 +605,12 @@ const monthlyStats = computed(() => {
   const shortMonths = ['พ.ย.', 'ธ.ค.', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.']
   const data = []
   const now = dayjs()
-  
+
   for (let i = 5; i >= 0; i--) {
     const targetMonth = now.subtract(i, 'month')
     const monthIndex = targetMonth.month()
     const monthName = shortMonths[monthIndex] || shortMonths[0]
-    
+
     // Filter items belonging to this month/year from filteredItemsExcludingPeriod
     const itemsInMonth = filteredItemsExcludingPeriod.value.filter(item => {
       const d = dayjs(item.date || item.created_at)
@@ -588,14 +660,20 @@ const monthlyStats = computed(() => {
   }
 })
 
+// ==========================================
+// 5. CHART INITIALIZATION & RENDERING
+// ==========================================
+
+// สร้างและวาดภาพกราฟทั้ง Donut Chart และ Line Chart
 const initCharts = () => {
+  // ทำลาย Instance เดิมก่อนสร้างใหม่เพื่อป้องกัน Canvas ร้อน/ทับซ้อน
   if (donutChartInstance) donutChartInstance.destroy()
   if (lineChartInstance) lineChartInstance.destroy()
 
   const segments = chartSegments.value
   const total = totalChartCount.value
 
-  // Initialize Donut Chart
+  // วาดกราฟโดนัท (Donut Chart - สัดส่วนสถานะ)
   if (donutChartCanvas.value) {
     donutChartInstance = new Chart(donutChartCanvas.value, {
       type: 'doughnut',
@@ -630,7 +708,7 @@ const initCharts = () => {
     })
   }
 
-  // Initialize Line Chart
+  // วาดกราฟเส้น (Line Chart - สถิติรายเดือน)
   if (lineChartCanvas.value) {
     const stats = monthlyStats.value
     const ctx = lineChartCanvas.value.getContext('2d')
@@ -638,6 +716,7 @@ const initCharts = () => {
     let foundGradient: CanvasGradient | string = '#3B82F6'
     let claimedGradient: CanvasGradient | string = '#10B981'
 
+    // ทำสี Gradient ไล่เฉดใต้เส้นกราฟ
     if (ctx) {
       lostGradient = ctx.createLinearGradient(0, 0, 0, 150)
       lostGradient.addColorStop(0, 'rgba(239, 68, 68, 0.15)')
@@ -734,10 +813,16 @@ const initCharts = () => {
   }
 }
 
+// ==========================================
+// 6. WATCHERS & LIFECYCLE HOOKS
+// ==========================================
+
+// รีโหลดกราฟใหม่เมื่อข้อมูลที่ผ่านการฟิลเตอร์เปลี่ยนแปลง
 watch(filteredItems, () => {
   initCharts()
 }, { deep: true })
 
+// ทำความสะอาด instance ของกราฟเมื่อย้ายหน้า เพื่อป้องกัน memory leak
 onBeforeUnmount(() => {
   if (donutChartInstance) donutChartInstance.destroy()
   if (lineChartInstance) lineChartInstance.destroy()

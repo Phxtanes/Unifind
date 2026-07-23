@@ -10,22 +10,24 @@
       :class="isSidebarCollapsed ? 'rotate-180' : ''">
       <font-awesome :icon="['fas', 'chevron-left']" class="text-[10px]" />
     </button>
- 
+
     <!-- Logo Header -->
     <div class="h-16 px-5 flex items-center border-b border-slate-100 shrink-0 overflow-hidden justify-start">
       <div class="flex items-center cursor-pointer min-h-[36px]" @click="isSidebarCollapsed && toggleSidebar()">
         <!-- Glowing Symbol -->
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 flex items-center justify-center shadow-md shadow-brand-500/20 shrink-0 transition-transform duration-300 hover:scale-105">
+        <div
+          class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-500 flex items-center justify-center shadow-md shadow-brand-500/20 shrink-0 transition-transform duration-300 hover:scale-105">
           <font-awesome :icon="['fas', 'shield-halved']" class="text-white text-sm" />
         </div>
         <!-- Logo Text -->
-        <span class="font-extrabold text-sm tracking-tight text-slate-800 truncate transition-all duration-300 origin-left overflow-hidden ml-3"
+        <span
+          class="font-extrabold text-sm tracking-tight text-slate-800 truncate transition-all duration-300 origin-left overflow-hidden ml-3"
           :class="isSidebarCollapsed ? 'opacity-0 w-0 scale-x-0 ml-0' : 'opacity-100 w-auto scale-x-100'">
           UTCC Unifind
         </span>
       </div>
     </div>
- 
+
     <!-- Navigation Menu List -->
     <div class="px-3 py-6 flex-1 flex flex-col min-h-0 overflow-y-auto scrollbar-thin">
       <nav class="flex flex-col space-y-1.5 flex-1">
@@ -36,8 +38,9 @@
               ? 'text-brand-600 bg-brand-50/50 font-bold before:absolute before:left-0 before:top-2.5 before:bottom-2.5 before:w-[3px] before:bg-brand-600 before:rounded-r-md'
               : ''
           ]" :title="isSidebarCollapsed ? item.title : ''">
-          <font-awesome :icon="['fas', item.icon]" class="text-sm w-5 text-center flex-shrink-0 transition-colors duration-300"
-             :class="currentPath === item.path ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-700'" />
+          <font-awesome :icon="['fas', item.icon]"
+            class="text-sm w-5 text-center flex-shrink-0 transition-colors duration-300"
+            :class="currentPath === item.path ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-700'" />
           <span class="truncate whitespace-nowrap transition-all duration-300 origin-left"
             :class="isSidebarCollapsed ? 'opacity-0 w-0 scale-x-0' : 'opacity-100 w-auto scale-x-100'">
             {{ item.title }}
@@ -67,7 +70,8 @@
   </aside>
 
   <!-- Mobile Topbar -->
-  <div class="lg:hidden w-full bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sticky top-0 z-[45] shrink-0 select-none">
+  <div
+    class="lg:hidden w-full bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sticky top-0 z-[45] shrink-0 select-none">
     <!-- Logo Header (Mobile) -->
     <NuxtLink to="/dashboard" @click="isMobileOpen = false" class="flex items-center cursor-pointer min-h-[36px]">
       <div class="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center shadow-md shrink-0">
@@ -93,7 +97,8 @@
     <div class="fixed inset-0 bg-black/60 transition-opacity duration-300" @click="isMobileOpen = false"></div>
 
     <!-- Drawer Content -->
-    <aside class="relative flex flex-col w-[280px] h-full bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out z-10 select-none text-slate-650">
+    <aside
+      class="relative flex flex-col w-[280px] h-full bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out z-10 select-none text-slate-650">
       <!-- Header inside mobile drawer -->
       <div class="h-16 px-4 flex items-center justify-between border-b border-slate-100 shrink-0">
         <NuxtLink to="/dashboard" @click="isMobileOpen = false" class="flex items-center">
@@ -121,8 +126,9 @@
                 ? 'text-brand-600 bg-brand-50/50 font-bold before:absolute before:left-0 before:top-2.5 before:bottom-2.5 before:w-[3px] before:bg-brand-600 before:rounded-r-md'
                 : ''
             ]">
-            <font-awesome :icon="['fas', item.icon]" class="text-sm w-5 text-center flex-shrink-0 transition-colors duration-300"
-               :class="currentPath === item.path ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-700'" />
+            <font-awesome :icon="['fas', item.icon]"
+              class="text-sm w-5 text-center flex-shrink-0 transition-colors duration-300"
+              :class="currentPath === item.path ? 'text-brand-600' : 'text-slate-400 group-hover:text-slate-700'" />
             <span class="truncate">
               {{ item.title }}
             </span>
@@ -232,14 +238,14 @@ const menuItems = computed(() => {
     });
   }
 
-  const userEmail = authStore.user?.email || authStore.user?.username || '';
+  /* const userEmail = authStore.user?.email || authStore.user?.username || '';
   if (userEmail === '2210511101002@utcc.ac.th' || authStore.token === 'mock-token' || authStore.token === 'bypass-token-12345') {
     items.push({
       title: langStore.t('การตั้งค่าระบบ'),
       path: '/settings',
       icon: 'gear'
     });
-  }
+  } */
 
   return items;
 });

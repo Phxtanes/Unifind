@@ -38,6 +38,8 @@ router.put(
   isAdmin,
   controller.deactivateUser,
 );
+router.put("/user/:userId", verifyToken, isAdmin, controller.updateUser);
 router.delete("/user/:userId", verifyToken, isAdmin, controller.deleteUser);
 
 module.exports = router;
+

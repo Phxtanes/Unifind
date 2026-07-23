@@ -114,7 +114,7 @@ exports.getUsers = async (req, res) => {
   try {
     const { data: users, error } = await supabase
       .from("users")
-      .select("user_id, username, email, full_name, role, status")
+      .select("user_id, username, nickname, email, full_name, role, status")
       .in("role", ["ADMIN", "STAFF"])
       .in("status", ["Active", "Suspended"]);
 
@@ -126,16 +126,19 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+
 exports.createUser = async (req, res) => {
   try {
     const {
       username,
+      nickname,
       email,
       password,
       full_name,
       role = "STAFF",
       status = "Active",
     } = req.body;
+
 
     if (!username || !email || !password) {
       return res
@@ -351,3 +354,37 @@ exports.bindLine = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { username, nickname, email, role, status, password } = req.body;
+
+    if (password && String(req.userId) !== String(userId)) {
+      return res.status(403).json({ message: "สามารถเปลี่ยนรหัสผ่านได้เฉพาะบัญชีของตนเองเท่านั้น" });
+    }
+
+    const updates = {};
+    if (username !== undefined) updates.username = username;
+    if (nickname !== undefined) updates.nickname = nickname;
+    if (email !== undefined) updates.email = email;
+    if (role !== undefined) updates.role = role;
+    if (status !== undefined) updates.status = status;
+
+    if (password) {
+      updates.password_hash = await bcrypt.hash(password, 8);
+    }
+
+    const { error } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("user_id", userId);
+
+    if (error) throw error;
+
+    res.status(200).json({ message: "User updated successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+

@@ -224,6 +224,8 @@ export const useLangStore = defineStore('lang', {
         'หรือไม่?': '?',
 
         // Floating Action Buttons (FABs) & Success Alerts
+        'แจ้งของหาย': 'Report Lost Item',
+        'แจ้งพบของ': 'Report Found Item',
         'แจ้งบันทึกของหาย (Lost Item)': 'Report Lost Item',
         'แจ้งพบของส่งเข้าคลัง (Found Item)': 'Report Found Item',
         'สแกน QR Code ติดตามของ': 'Scan QR Code',
@@ -242,6 +244,8 @@ export const useLangStore = defineStore('lang', {
         'วันที่: {date}': 'Date: {date}',
         'ระบบได้ส่งข้อความแจ้งเตือนด่วนผ่าน LINE Bot ไปยังคู่กรณีเรียบร้อยแล้ว แนะนำให้ตรวจสอบหลักฐานความเป็นเจ้าของก่อนรับของคืน': 'The system has dispatched an alert to the owner via LINE Bot. Please verify proof of ownership before returning.',
         'ตกลงและรับทราบ': 'OK & Acknowledge',
+        'บันทึกสำเร็จ!': 'Saved Successfully!',
+        'คำแนะนำ:': 'Recommendation:',
         'แจ้งเรื่องของหายสำเร็จ!': 'Lost Item Reported Successfully!',
         'แจ้งเรื่องของหายสำเร็จ': 'Lost Item Reported Successfully',
         'บันทึกข้อมูลแจ้งพบของส่งเข้าคลังเรียบร้อยแล้ว': 'Successfully recorded found item entry in storage.',
@@ -446,9 +450,6 @@ export const useLangStore = defineStore('lang', {
         'อนุมัติสิทธิ์': 'Approve',
         'ปฏิเสธ': 'Reject',
         'ไม่มีคำขอที่รอการอนุมัติสิทธิ์เข้าใช้งาน': 'No pending registration requests found.',
-        'ชื่อผู้ใช้งาน (Username) *': 'Username *',
-        'อีเมลติดต่อ (Email) *': 'Email *',
-        'รหัสผ่าน (Password) *': 'Password *',
         'กรอกชื่อผู้ใช้งาน...': 'Enter username...',
         'กรอกรหัสผ่านเริ่มต้น...': 'Enter initial password...',
         'ระดับสิทธิ์ (Role) *': 'Role *',
