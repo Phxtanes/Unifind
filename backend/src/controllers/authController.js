@@ -164,7 +164,6 @@ exports.createUser = async (req, res) => {
       email,
       password,
       full_name,
-      nickname,
       role = "STAFF",
       status = "Active",
     } = req.body;
