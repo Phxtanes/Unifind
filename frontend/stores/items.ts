@@ -105,19 +105,20 @@ export interface UnifiedItem {
 // ─── Store ────────────────────────────────────────────────────────────────────
 
 export const useItemsStore = defineStore('items', {
+  // 📦 STATE: ตัวแปรสำหรับเก็บข้อมูลดิบที่ดึงมาจาก API (รวมถึง categories และ locations ที่หน้า Dashboard เรียกใช้)
   state: () => ({
-    lostItems:  [] as any[],
-    foundItems: [] as any[],   // items from /api/items (found items)
-    categories: [] as any[],
-    locations:  [] as any[],
-    buildings:  [] as any[],
-    loading: false,
-    lastUpdated: null as Date | null,
+    lostItems:  [] as any[],   // เก็บรายการของหายที่ดึงจาก GET /api/lost-items
+    foundItems: [] as any[],   // เก็บรายการของพบที่ดึงจาก GET /api/items
+    categories: [] as any[],   // เก็บหมวดหมู่สิ่งของ ดึงจาก GET /api/master/categories
+    locations:  [] as any[],   // เก็บสถานที่ ดึงจาก GET /api/master/locations
+    buildings:  [] as any[],   // เก็บอาคารสถานที่ ดึงจาก GET /api/master/buildings
+    loading: false,            // สถานะกำลังโหลดข้อมูล
+    lastUpdated: null as Date | null, // เวลาที่มีการอัปเดตดึงข้อมูลล่าสุด
   }),
 
   actions: {
     // ── Master data ──────────────────────────────────────────────────────────
-
+    // 🌐 1. ดึงข้อมูล Master (หมวดหมู่, สถานที่, อาคาร) จาก Backend API
     async fetchMasterData() {
       const config    = useRuntimeConfig()
       const authStore = useAuthStore()
@@ -142,7 +143,7 @@ export const useItemsStore = defineStore('items', {
     },
 
     // ── Found items (items table) ─────────────────────────────────────────────
-
+    // 🌐 2. ดึงรายการของพบจาก Backend API (/api/items)
     async fetchFoundItems() {
       const config    = useRuntimeConfig()
       const authStore = useAuthStore()
@@ -159,7 +160,7 @@ export const useItemsStore = defineStore('items', {
     },
 
     // ── Lost items ────────────────────────────────────────────────────────────
-
+    // 🌐 3. ดึงรายการของหายจาก Backend API (/api/lost-items)
     async fetchLostItems() {
       const config    = useRuntimeConfig()
       const authStore = useAuthStore()
@@ -175,6 +176,7 @@ export const useItemsStore = defineStore('items', {
       }
     },
 
+    // 🚀 4. ฟังก์ชันหลักสำหรับดึงข้อมูลทั้งหมดพร้อมกัน (ใช้ Promise.all เพื่อความเร็ว)
     async fetchItems() {
       this.loading = true
       try {
@@ -392,8 +394,9 @@ export const useItemsStore = defineStore('items', {
     },
   },
 
+  // 🧮 GETTERS: แปรรูปข้อมูลดิบจาก state ให้พร้อมใช้งานในคอมโพเนนต์
   getters: {
-    // Unified item list used by dashboard/found/lost pages
+    // 🌟 items: รวมข้อมูล "ของพบ" (foundItems) และ "ของหาย" (lostItems) เป็นชุดเดียวกัน (UnifiedItem)
     items: (state): UnifiedItem[] => {
       const mappedFound = state.foundItems.map((item: any): UnifiedItem => ({
         id:         item.item_id || item.id,

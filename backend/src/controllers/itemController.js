@@ -210,7 +210,7 @@ exports.createItem = async (req, res) => {
         locker_id: locker_id || null,
         image_url: imageUrl,
         finder_id: finder_id ? parseInt(finder_id) : null,
-        created_by: validCreatedBy,
+        created_by: (typeof req.userId === 'string' && req.userId.length > 10) ? req.userId : null,
       })
       .select(SELECT_FIELDS)
       .single();

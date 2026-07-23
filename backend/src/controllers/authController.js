@@ -143,7 +143,7 @@ exports.getUsers = async (req, res) => {
   try {
     const { data: users, error } = await supabase
       .from("users")
-      .select("user_id, username, email, full_name, role, status")
+      .select("user_id, username, nickname, email, full_name, role, status")
       .in("role", ["ADMIN", "STAFF"])
       .in("status", ["Active", "Suspended"]);
 
@@ -160,6 +160,7 @@ exports.createUser = async (req, res) => {
   try {
     const {
       username,
+      nickname,
       email,
       password,
       full_name,
@@ -167,6 +168,7 @@ exports.createUser = async (req, res) => {
       role = "STAFF",
       status = "Active",
     } = req.body;
+
 
     if (!username || !email || !password) {
       return res

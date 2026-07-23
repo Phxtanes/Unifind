@@ -18,20 +18,20 @@
     <!-- Floating Action Buttons (FABs) on the bottom-right corner -->
     <div class="fixed bottom-6 right-6 flex flex-col gap-3 z-40 select-none">
       <!-- FAB 1: Red - แจ้งของหาย -->
-      <button @click="openLostModal" :title="langStore.t('layout.lostReportTooltip')"
+      <button @click="openLostModal" :title="langStore.t('แจ้งของหาย')"
         class="w-14 h-14 bg-rose-500 hover:bg-rose-600 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1 relative group">
         <font-awesome :icon="['fas', 'magnifying-glass']" class="text-lg" />
         <span class="absolute right-16 bg-slate-900 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition whitespace-nowrap shadow-md">
-          {{ langStore.t('layout.lostReportTitle') }}
+          {{ langStore.t('แจ้งของหาย') }}
         </span>
       </button>
       
       <!-- FAB 2: Green - แจ้งพบของ -->
-      <button @click="openCreateModal" :title="langStore.t('layout.foundReportTooltip')"
+      <button @click="openCreateModal" :title="langStore.t('แจ้งพบของ')"
         class="w-14 h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1 relative group">
         <font-awesome :icon="['fas', 'box-archive']" class="text-lg" />
         <span class="absolute right-16 bg-slate-900 text-white text-[10px] font-bold py-1.5 px-3 rounded-lg opacity-0 pointer-events-none group-hover:opacity-100 transition whitespace-nowrap shadow-md">
-          {{ langStore.t('layout.foundReportTitle') }}
+          {{ langStore.t('แจ้งพบของ') }}
         </span>
       </button>
     </div>
@@ -59,7 +59,7 @@
       <div class="bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden max-w-md w-full">
         <div class="bg-slate-900 px-6 py-4 flex justify-between items-center text-white border-b border-slate-800">
           <h2 class="text-sm font-bold tracking-tight flex items-center gap-2">
-            <font-awesome :icon="['fas', 'camera']" class="text-slate-400" /> {{ langStore.t('layout.qrScannerTitle') }}
+            <font-awesome :icon="['fas', 'camera']" class="text-slate-400" /> {{ langStore.t('กล้องสแกนติดตามสิ่งของ (QR Code Scanner)') }}
           </h2>
           <button @click="showQRModal = false" class="text-slate-400 hover:text-white text-xl font-semibold outline-none">&times;</button>
         </div>
@@ -71,16 +71,16 @@
             <div class="absolute inset-x-0 h-0.5 bg-red-500 shadow-[0_0_8px_#EF4444] animate-scanline"></div>
             <!-- Grid targeting overlay -->
             <div class="w-48 h-48 border-2 border-dashed border-white/30 rounded-xl flex items-center justify-center">
-              <span class="text-xs text-white/40 select-none">{{ langStore.t('layout.qrScannerPlaceholder') }}</span>
+              <span class="text-xs text-white/40 select-none">{{ langStore.t('จัดวาง QR Code ในกรอบ') }}</span>
             </div>
           </div>
           
           <p class="text-xs text-slate-500 font-semibold text-center leading-relaxed">
-            {{ langStore.t('layout.qrScannerDesc') }}
+            {{ langStore.t('ระบบจะเปิดใช้งานเว็บแคมเพื่อสแกน QR Code สำหรับสืบค้นรหัสสิ่งของสูญหาย') }}
           </p>
           
           <button @click="showQRModal = false" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-xl transition shadow-md">
-            {{ langStore.t('layout.qrCloseBtn') }}
+            {{ langStore.t('ปิดระบบกล้อง') }}
           </button>
         </div>
       </div>
@@ -96,8 +96,8 @@
               <font-awesome :icon="['fas', 'robot']" />
             </div>
             <div>
-              <h2 class="text-sm font-bold tracking-wide">{{ langStore.t('layout.aiMatchTitle') }}</h2>
-              <p class="text-[10px] text-indigo-100 font-medium">{{ langStore.t('layout.aiMatchSubtitle') }}</p>
+              <h2 class="text-sm font-bold tracking-wide">{{ langStore.t('AI ตรวจพบสิ่งของใกล้เคียงในระบบ!') }}</h2>
+              <p class="text-[10px] text-indigo-100 font-medium">{{ langStore.t('ตรวจวิเคราะห์อัตโนมัติด้วยระบบ Gemini AI') }}</p>
             </div>
           </div>
           <button @click="showMatchModal = false" class="text-white/80 hover:text-white text-xl font-bold outline-none">&times;</button>
@@ -113,7 +113,7 @@
               </div>
             </div>
             <div>
-              <h3 class="text-xs font-bold text-slate-800">{{ langStore.t('layout.aiConfidence') }}</h3>
+              <h3 class="text-xs font-bold text-slate-800">{{ langStore.t('เปอร์เซ็นต์ความคล้ายคลึงของข้อมูล') }}</h3>
               <p class="text-[11px] text-slate-500 font-medium mt-1 leading-relaxed">
                 {{ matchDetails.reason }}
               </p>
@@ -126,14 +126,14 @@
             <div class="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex flex-col justify-between">
               <div>
                 <span class="bg-indigo-100 text-indigo-700 text-[9px] font-bold px-2 py-0.5 rounded-full border border-indigo-200 uppercase tracking-wider">
-                  {{ langStore.t('layout.newRecordTitle') }}
+                  {{ langStore.t('รายการที่คุณบันทึกใหม่') }}
                 </span>
                 <h4 class="font-extrabold text-slate-900 text-xs mt-3">{{ newItemDetails?.name }}</h4>
                 <p class="text-[10px] text-slate-500 mt-1 font-medium italic">
-                  {{ langStore.t('layout.categoryLabel', { cat: newItemDetails?.category }) }}
+                  {{ langStore.t('หมวดหมู่: {cat}', { cat: newItemDetails?.category }) }}
                 </p>
                 <p class="text-[10px] text-slate-660 mt-2 leading-relaxed">
-                  {{ newItemDetails?.description || langStore.t('layout.noDescriptionText') }}
+                  {{ newItemDetails?.description || langStore.t('ไม่มีรายละเอียดคำอธิบายของ') }}
                 </p>
               </div>
             </div>
@@ -142,20 +142,20 @@
             <div class="bg-emerald-50/50 border border-emerald-250 rounded-2xl p-4 flex flex-col justify-between">
               <div>
                 <span class="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
-                  {{ langStore.t('layout.matchedRecordTitle') }}
+                  {{ langStore.t('พบข้อมูลที่ตรงกันในระบบ') }}
                 </span>
                 <h4 class="font-extrabold text-slate-900 text-xs mt-3">{{ matchDetails.matchedItem?.name }}</h4>
                 <p class="text-[10px] text-slate-500 mt-1 font-medium italic">
-                  {{ langStore.t('layout.reporterLabel', { reporter: matchDetails.matchedItem?.reporter || matchDetails.matchedItem?.founder || 'N/A' }) }}
+                  {{ langStore.t('ผู้แจ้ง: {reporter}', { reporter: matchDetails.matchedItem?.reporter || matchDetails.matchedItem?.founder || 'N/A' }) }}
                 </p>
                 <p class="text-[10px] text-slate-650 mt-2 leading-relaxed">
-                  {{ matchDetails.matchedItem?.description || langStore.t('layout.noDescriptionText') }}
+                  {{ matchDetails.matchedItem?.description || langStore.t('ไม่มีรายละเอียดคำอธิบายของ') }}
                 </p>
               </div>
               <div class="mt-4 pt-3 border-t border-emerald-100/80 text-[9px] text-slate-400 font-medium font-mono flex justify-between">
-                <span>{{ langStore.t('layout.idLabel', { id: matchDetails.matchedItem?.id }) }}</span>
+                <span>{{ langStore.t('ID: {id}', { id: matchDetails.matchedItem?.id }) }}</span>
                 <span>
-                  {{ langStore.t('layout.dateLabel', { date: matchDetails.matchedItem?.date ? (langStore.locale === 'th' ? new Date(matchDetails.matchedItem.date).toLocaleDateString('th-TH') : new Date(matchDetails.matchedItem.date).toLocaleDateString('en-US')) : '-' }) }}
+                  {{ langStore.t('วันที่: {date}', { date: matchDetails.matchedItem?.date ? (langStore.locale === 'th' ? new Date(matchDetails.matchedItem.date).toLocaleDateString('th-TH') : new Date(matchDetails.matchedItem.date).toLocaleDateString('en-US')) : '-' }) }}
                 </span>
               </div>
             </div>
@@ -164,7 +164,7 @@
           <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 flex gap-2.5 text-amber-800">
             <font-awesome :icon="['fas', 'circle-info']" class="text-xs mt-0.5 shrink-0" />
             <p class="text-[10px] font-medium leading-normal">
-              <strong>{{ langStore.t('layout.aiNoteTitle') }}</strong> {{ langStore.t('layout.aiNoteDesc') }}
+              <strong>{{ langStore.t('คำแนะนำ:') }}</strong> {{ langStore.t('ระบบได้ส่งข้อความแจ้งเตือนด่วนผ่าน LINE Bot ไปยังคู่กรณีเรียบร้อยแล้ว แนะนำให้ตรวจสอบหลักฐานความเป็นเจ้าของก่อนรับของคืน') }}
             </p>
           </div>
         </div>
@@ -172,7 +172,7 @@
         <!-- Footer -->
         <div class="px-6 py-4 bg-slate-50 border-t border-slate-200/80 flex justify-end gap-2">
           <button @click="showMatchModal = false" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition duration-150 shadow-md">
-            {{ langStore.t('layout.aiConfirmBtn') }}
+            {{ langStore.t('ตกลงและรับทราบ') }}
           </button>
         </div>
       </div>
@@ -300,42 +300,42 @@ const handleCreateSubmit = async (data: any, imageFile: any) => {
   isSubmitting.value = true
   try {
     const result = await itemsStore.createFoundItem(data.itemData, data.finderData, imageFile)
-    showCreateModal.value = false
-    if (result && result.aiMatch && result.aiMatch.matched) {
-      matchDetails.value = result.aiMatch
-      newItemDetails.value = {
-        name: data.itemData.item_name,
-        category: itemsStore.categories.find(c => Number(c.category_id) === Number(data.itemData.category_id))?.category_name || 'อื่นๆ',
-        description: data.itemData.description
+      showCreateModal.value = false
+      if (result && result.aiMatch && result.aiMatch.matched) {
+        matchDetails.value = result.aiMatch
+        newItemDetails.value = {
+          name: data.itemData.item_name,
+          category: itemsStore.categories.find(c => Number(c.category_id) === Number(data.itemData.category_id))?.category_name || 'อื่นๆ',
+          description: data.itemData.description
+        }
+        showMatchModal.value = true
+      } else {
+        triggerSuccess(langStore.t('บันทึกสำเร็จ!'), langStore.t('บันทึกข้อมูลแจ้งพบของส่งเข้าคลังเรียบร้อยแล้ว'))
       }
-      showMatchModal.value = true
-    } else {
-      triggerSuccess(langStore.t('layout.successTitle'), langStore.t('layout.foundSuccessMessage'))
+    } catch (error) {
+      console.error('Error submitting found item:', error)
+      alert(langStore.locale === 'th' ? 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' : 'Error saving data')
+    } finally {
+      isSubmitting.value = false
     }
-  } catch (error) {
-    console.error('Error submitting found item:', error)
-    alert(langStore.locale === 'th' ? 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' : 'Error saving data')
-  } finally {
-    isSubmitting.value = false
   }
-}
-
-const handleLostSubmit = async (data: any, imageFile: any) => {
-  isSubmitting.value = true
-  try {
-    const result = await itemsStore.createLostItem(data.itemData, data.reporterData, imageFile)
-    showLostModal.value = false
-    if (result && result.aiMatch && result.aiMatch.matched) {
-      matchDetails.value = result.aiMatch
-      newItemDetails.value = {
-        name: data.itemData.item_name,
-        category: itemsStore.categories.find(c => Number(c.category_id) === Number(data.itemData.category_id))?.category_name || 'อื่นๆ',
-        description: data.itemData.description
+  
+  const handleLostSubmit = async (data: any, imageFile: any) => {
+    isSubmitting.value = true
+    try {
+      const result = await itemsStore.createLostItem(data.itemData, data.reporterData, imageFile)
+      showLostModal.value = false
+      if (result && result.aiMatch && result.aiMatch.matched) {
+        matchDetails.value = result.aiMatch
+        newItemDetails.value = {
+          name: data.itemData.item_name,
+          category: itemsStore.categories.find(c => Number(c.category_id) === Number(data.itemData.category_id))?.category_name || 'อื่นๆ',
+          description: data.itemData.description
+        }
+        showMatchModal.value = true
+      } else {
+        triggerSuccess(langStore.t('บันทึกสำเร็จ!'), langStore.t('ได้จัดทำข้อมูลแจ้งเรื่องของหายเข้าสู่ระบบเรียบร้อยแล้ว'))
       }
-      showMatchModal.value = true
-    } else {
-      triggerSuccess(langStore.t('layout.successTitle'), langStore.t('layout.lostSuccessMessage'))
-    }
   } catch (error) {
     console.error('Error submitting lost item:', error)
     alert(langStore.locale === 'th' ? 'เกิดข้อผิดพลาดในการบันทึกข้อมูล' : 'Error saving data')

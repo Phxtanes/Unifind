@@ -26,3 +26,4 @@ router.put("/user/:userId/activate", verifyToken, isAdmin, controller.activateUs
 router.put("/user/:userId/deactivate", verifyToken, isAdmin, controller.deactivateUser);
 
 module.exports = router;
+

@@ -224,8 +224,10 @@
 
           <!-- Phone Number -->
           <div>
-            <label class="block text-[10px] font-bold text-slate-550 uppercase tracking-wider mb-1">{{ $t('เบอร์โทรศัพท์ติดต่อ') }} <span style="color: red;">*</span></label>
-            <input type="text" v-model="returnForm.phone" required placeholder="เช่น 089xxxxxxx" maxlength="10" class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition" />
+            <label class="block text-[10px] font-bold text-slate-555 uppercase tracking-wider mb-1">{{ $t('เบอร์โทรศัพท์ติดต่อ') }} <span style="color: red;">*</span></label>
+            <input type="text" v-model="returnForm.phone" required placeholder="เช่น 0891234567" maxlength="10"
+              @input="returnForm.phone = returnForm.phone.replace(/\D/g, '')"
+              class="w-full bg-slate-50/50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 focus:bg-white transition" />
           </div>
 
           <!-- Email -->
@@ -266,7 +268,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useItemsStore } from '~/stores/items'
 import { useItemHelpers } from '~/composables/useItemHelpers'
 import { useLangStore } from '~/stores/lang'
@@ -276,6 +279,7 @@ import CreateItemModal from '~/components/CreateItemModal.vue'
 
 definePageMeta({ layout: 'dashboard', title: 'พบของ (Found Items)', icon: 'box-open' })
 
+const route = useRoute()
 const itemsStore = useItemsStore()
 const langStore = useLangStore()
 const { translateCategory, getMockCode, getItemImageSrc, formatDateShort, formatFullDate, changeStatus, deleteItem } = useItemHelpers()
@@ -461,5 +465,28 @@ const paginationRange = computed(() => {
     range.push(totalPages.value)
   }
   return range
+})
+
+onMounted(async () => {
+  if (itemsStore.items.length === 0) {
+    await itemsStore.fetchItems()
+  }
+  const returnItemId = route.query.returnItemId
+  if (returnItemId) {
+    const item = itemsStore.items.find(i => String(i.id) === String(returnItemId))
+    if (item) {
+      openReturnModal(item)
+    }
+  }
+})
+
+watch(() => itemsStore.items, (newItems) => {
+  const returnItemId = route.query.returnItemId
+  if (returnItemId && newItems.length > 0 && !showReturnModal.value) {
+    const item = newItems.find(i => String(i.id) === String(returnItemId))
+    if (item) {
+      openReturnModal(item)
+    }
+  }
 })
 </script>

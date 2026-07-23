@@ -174,7 +174,8 @@
               <div>
                 <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('เบอร์โทรศัพท์ติดต่อ') }} <span class="text-red-500">*</span></label>
                 <div class="relative">
-                  <input v-model="form.reporter_phoneNumber" type="tel" required :placeholder="$t('เช่น 081-234-5678')" maxlength="10"
+                  <input v-model="form.reporter_phoneNumber" type="tel" required :placeholder="$t('เช่น 0812345678')" maxlength="10"
+                    @input="form.reporter_phoneNumber = form.reporter_phoneNumber.replace(/\D/g, '')"
                     class="w-full pl-4 pr-10 py-2.5 bg-slate-50/50 hover:bg-slate-50/85 focus:bg-white border border-rose-500 focus:border-rose-500 focus:ring-1 focus:ring-rose-100 rounded-xl outline-none text-xs text-slate-700 font-semibold transition" />
                   <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-400">
                     <font-awesome :icon="['fas', 'phone']" class="text-xs" />

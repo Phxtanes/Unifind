@@ -389,13 +389,27 @@
           </div>
 
           <div>
-            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ $t('รหัสผ่านใหม่ (Password) (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)') }}</label>
-            <input 
-              type="password" 
-              v-model="editUserForm.password" 
-              :placeholder="$t('กรอกรหัสผ่านใหม่...')"
-              class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-            />
+            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">{{ $t('รหัสผ่านใหม่ (Password)') }}</label>
+            <div v-if="isEditingSelf">
+              <input 
+                type="password" 
+                v-model="editUserForm.password" 
+                :placeholder="$t('กรอกรหัสผ่านใหม่... (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)')"
+                class="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+              />
+            </div>
+            <div v-else class="space-y-1">
+              <input 
+                type="password" 
+                disabled
+                :placeholder="$t('ไม่อนุญาตให้เปลี่ยนรหัสผ่านของผู้อื่น')"
+                class="w-full px-3.5 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-medium text-slate-400 cursor-not-allowed select-none"
+              />
+              <p class="text-[11px] text-amber-600 font-medium flex items-center gap-1.5 pt-0.5">
+                <font-awesome :icon="['fas', 'lock']" />
+                {{ $t('สามารถเปลี่ยนรหัสผ่านได้เฉพาะบัญชีของตนเองเท่านั้น') }}
+              </p>
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
@@ -460,6 +474,16 @@ const router = useRouter()
 // Check Authorization role
 const isAdminUser = computed(() => {
   return authStore.user?.role?.toLowerCase() === 'admin'
+})
+
+// Check if currently editing own profile
+const isEditingSelf = computed(() => {
+  if (!editUserId.value || !authStore.user) return false
+  return (
+    String(authStore.user.id) === String(editUserId.value) ||
+    String((authStore.user as any).user_id) === String(editUserId.value) ||
+    authStore.user.username === editUserForm.value.username
+  )
 })
 
 // Active components state
@@ -592,7 +616,7 @@ const updateUserAccount = async () => {
       role: editUserForm.value.role,
       status: editUserForm.value.status
     }
-    if (editUserForm.value.password) {
+    if (editUserForm.value.password && isEditingSelf.value) {
       payload.password = editUserForm.value.password
     }
     
