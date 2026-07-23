@@ -1,5 +1,16 @@
+/**
+ * =========================================================================
+ * 🏢 BUILDING CONTROLLER (ตัวจัดการข้อมูลอาคาร/ตึกเรียน)
+ * =========================================================================
+ * ทำหน้าที่ประมวลผลคำขอจัดการข้อมูลมาสเตอร์ตารางอาคาร (Buildings)
+ *
+ * 🎓 พัฒนาขึ้นสำหรับ: มหาวิทยาลัยหอการค้าไทย (UTCC)
+ * =========================================================================
+ */
+
 const supabase = require("../config/supabase");
 
+/** GET /api/buildings - ดึงรายการอาคารเรียนทั้งหมด */
 exports.getBuildings = async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -14,6 +25,7 @@ exports.getBuildings = async (req, res) => {
   }
 };
 
+/** POST /api/buildings - เพิ่มอาคารใหม่เข้าสู่ระบบ */
 exports.createBuilding = async (req, res) => {
   try {
     const { building_name, description } = req.body;
@@ -30,6 +42,7 @@ exports.createBuilding = async (req, res) => {
   }
 };
 
+/** PUT /api/buildings/:id - แก้ไขอัปเดตข้อมูลอาคาร */
 exports.updateBuilding = async (req, res) => {
   try {
     const { id } = req.params;
@@ -48,6 +61,7 @@ exports.updateBuilding = async (req, res) => {
   }
 };
 
+/** DELETE /api/buildings/:id - ลบข้อมูลอาคารออกจากระบบ */
 exports.deleteBuilding = async (req, res) => {
   try {
     const { id } = req.params;

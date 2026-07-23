@@ -5,13 +5,16 @@
  * ทำหน้าที่ประมวลผลคำขอเกี่ยวกับสิ่งของพบเจอ (Found Items) ทั้งการดึงข้อมูล,
  * การลงทะเบียนสิ่งของใหม่โดยเจ้าหน้าที่, การรับของคืน (Claim), 
  * รวมถึงการเชื่อมต่อระบบวิเคราะห์คู่แมตช์อัตโนมัติ (AI Matching Process)
+ *
+ * 🎓 พัฒนาขึ้นสำหรับ: มหาวิทยาลัยหอการค้าไทย (UTCC)
+ * =========================================================================
  */
 
 const supabase = require('../config/supabase');
 
-// ──────────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────────
+/* =========================================================================
+ * 🛠️ 1. DATA FORMATTING & HELPER FUNCTIONS
+ * ========================================================================= */
 
 /** Map status_code string → status_id from found_item_statuses */
 const getStatusId = async (statusCode) => {
@@ -28,11 +31,8 @@ const getStatusId = async (statusCode) => {
 const formatItem = (item) => {
   if (!item) return null;
   return {
-    // canonical id
     item_id: item.item_id,
     id: item.item_id,
-
-    // item info
     item_name: item.item_name,
     name: item.item_name,
     description: item.description,
@@ -42,8 +42,6 @@ const formatItem = (item) => {
     found_date: item.found_date,
     date: item.found_date,
     remark: item.remark || null,
-
-    // relations (IDs)
     category_id: item.category_id,
     location_id: item.location_id,
     status_id: item.status_id,
@@ -51,34 +49,25 @@ const formatItem = (item) => {
     claimer_id: item.claimer_id,
     claim_date: item.claim_date || null,
     created_by: item.created_by,
-
-    // joined display names
     categoryName: item.categories?.category_name || null,
     locationName: item.locations
       ? item.locations.location_name + (item.locations.floor ? ` ชั้น ${item.locations.floor}` : '')
       : null,
     status: item.found_item_statuses?.status_code || null,
     statusName: item.found_item_statuses?.status_name_th || null,
-
-    // finder info
     finderName: item.finder?.full_name || null,
     finderPhone: item.finder?.phone || null,
     finderType: item.finder?.person_type || null,
     finderStudentId: item.finder?.student_id || null,
     finderEmail: item.finder?.email || null,
     Person: item.finder || null,
-
     claimerName: item.claimer?.full_name || null,
     claimerPhone: item.claimer?.phone || null,
     claimerStudentId: item.claimer?.student_id || null,
     claimerEmail: item.claimer?.email || null,
     claimerType: item.claimer?.person_type || null,
-
-    // staff
     staffName: item.staff?.nickname || item.staff?.username || null,
     namereport: item.staff?.nickname || item.staff?.username || null,
-
-    // timestamps
     created_at: item.created_at,
     updated_at: item.updated_at,
   };
@@ -94,15 +83,18 @@ const SELECT_FIELDS = `
   staff:users!items_created_by_fkey(username, nickname)
 `.trim();
 
-// ──────────────────────────────────────────────────
-// GET /api/items
-// ──────────────────────────────────────────────────
+
+/* =========================================================================
+ * 📥 2. ITEM QUERY & DISCOVERY HANDLERS (การดึงข้อมูลสิ่งของ)
+ * ========================================================================= */
+
+/** GET /api/items - ดึงรายการสิ่งของพบเจอทั้งหมดแบบ Pagination */
 exports.getItems = async (req, res) => {
   try {
     const page  = parseInt(req.query.page)  || 1;
     const limit = parseInt(req.query.limit) || 20;
     const offset = (page - 1) * limit;
-    const statusCode = req.query.status; // e.g. FOUND, STORED, CLAIMED
+    const statusCode = req.query.status;
 
     let query = supabase
       .from('items')
@@ -111,7 +103,6 @@ exports.getItems = async (req, res) => {
       .range(offset, offset + limit - 1);
 
     if (statusCode) {
-      // join to filter by status code
       const statusId = await getStatusId(statusCode);
       if (statusId) query = query.eq('status_id', statusId);
     }
@@ -130,9 +121,7 @@ exports.getItems = async (req, res) => {
   }
 };
 
-// ──────────────────────────────────────────────────
-// GET /api/items/:id
-// ──────────────────────────────────────────────────
+/** GET /api/items/:id - ดึงข้อมูลสิ่งของพบเจอตาม ID */
 exports.getItemById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -153,9 +142,12 @@ exports.getItemById = async (req, res) => {
   }
 };
 
-// ──────────────────────────────────────────────────
-// POST /api/items
-// ──────────────────────────────────────────────────
+
+/* =========================================================================
+ * 📝 3. ITEM MUTATION HANDLERS (การเพิ่ม แก้ไข ลบสิ่งของ)
+ * ========================================================================= */
+
+/** POST /api/items - บันทึกสร้างสิ่งของพบเจอใหม่เข้าสู่ระบบ */
 exports.createItem = async (req, res) => {
   try {
     const {
@@ -164,14 +156,13 @@ exports.createItem = async (req, res) => {
       location_id,
       found_date,
       description,
-      status,       // status_code string e.g. 'FOUND'
-      locker_id,    // VARCHAR now, not FK
+      status,
+      locker_id,
       finder_id,
     } = req.body;
 
     const statusId = await getStatusId(status || 'FOUND');
 
-    // Handle image upload to Supabase Storage
     let imageUrl = null;
     if (req.file) {
       const file = req.file;
@@ -187,6 +178,23 @@ exports.createItem = async (req, res) => {
         imageUrl = urlData.publicUrl;
       } else {
         console.error('Storage upload error:', uploadError.message);
+      }
+    }
+
+    let validCreatedBy = req.userId || null;
+    if (validCreatedBy) {
+      const { data: userExists } = await supabase
+        .from("users")
+        .select("user_id")
+        .eq("user_id", validCreatedBy)
+        .maybeSingle();
+      if (!userExists) {
+        const { data: firstUser } = await supabase
+          .from("users")
+          .select("user_id")
+          .limit(1)
+          .maybeSingle();
+        validCreatedBy = firstUser ? firstUser.user_id : null;
       }
     }
 
@@ -209,7 +217,6 @@ exports.createItem = async (req, res) => {
 
     if (error) throw error;
 
-    // Trigger AI matching
     try {
       const matchingService = require('../services/matchingService');
       const aiMatch = await matchingService.checkFoundItemMatch(data);
@@ -225,9 +232,7 @@ exports.createItem = async (req, res) => {
   }
 };
 
-// ──────────────────────────────────────────────────
-// PUT /api/items/:id
-// ──────────────────────────────────────────────────
+/** PUT /api/items/:id - แก้ไขอัปเดตรายละเอียดสิ่งของพบเจอ */
 exports.updateItem = async (req, res) => {
   try {
     const { id } = req.params;
@@ -261,7 +266,6 @@ exports.updateItem = async (req, res) => {
       if (statusId) updateData.status_id = statusId;
     }
 
-    // Handle new image
     if (req.file) {
       const file = req.file;
       const fileExt = file.originalname.split('.').pop();
@@ -293,9 +297,30 @@ exports.updateItem = async (req, res) => {
   }
 };
 
-// ──────────────────────────────────────────────────
-// POST /api/items/:id/claim  (บันทึกการรับคืนสิ่งของ)
-// ──────────────────────────────────────────────────
+/** DELETE /api/items/:id - ลบสิ่งของออกจากระบบ */
+exports.deleteItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { error } = await supabase
+      .from('items')
+      .delete()
+      .eq('item_id', id);
+
+    if (error) throw error;
+
+    res.status(200).json({ message: 'Item deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+/* =========================================================================
+ * 🤝 4. ITEM STATUS ACTIONS & AI MATCHING HANDLERS
+ * ========================================================================= */
+
+/** POST /api/items/:id/claim - บันทึกการรับคืนสิ่งของโดยผู้เป็นเจ้าของ */
 exports.claimItem = async (req, res) => {
   try {
     const { id } = req.params;
@@ -305,7 +330,6 @@ exports.claimItem = async (req, res) => {
       return res.status(400).json({ message: 'claimer_id is required' });
     }
 
-    // Verify item exists and is claimable
     const { data: existing, error: findError } = await supabase
       .from('items')
       .select('item_id, status_id, found_item_statuses(status_code)')
@@ -344,29 +368,7 @@ exports.claimItem = async (req, res) => {
   }
 };
 
-// ──────────────────────────────────────────────────
-// DELETE /api/items/:id
-// ──────────────────────────────────────────────────
-exports.deleteItem = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const { error } = await supabase
-      .from('items')
-      .delete()
-      .eq('item_id', id);
-
-    if (error) throw error;
-
-    res.status(200).json({ message: 'Item deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// ──────────────────────────────────────────────────
-// POST /api/items/analyze-match
-// ──────────────────────────────────────────────────
+/** POST /api/items/analyze-match - วิเคราะห์เปรียบเทียบความคล้ายคลึงระหว่างของหายและของพบ */
 exports.analyzeItemsMatch = async (req, res) => {
   try {
     const { lost_item_id, item_id } = req.body;

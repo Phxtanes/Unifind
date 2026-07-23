@@ -1,3 +1,19 @@
+/**
+ * =========================================================================
+ * 📌 Unifind - Matching Service (ระบบจับคู่ของหายและแจ้งเตือนอัจฉริยะ)
+ * =========================================================================
+ * 🛠️ ลำดับขั้นตอนการทำงานของระบบ Matching
+ *
+ * 🟢 STEP 1: HELPER & FALLBACK UTILITIES (ฟังก์ชันช่วยเหลือและระบบสำรอง)
+ * 🔵 STEP 2: FLEX MESSAGE BUILDER (สร้างการ์ดแจ้งเตือน Flex Message ธีมสีน้ำเงินเข้ม)
+ * 🟣 STEP 3: LINE PUSH API SENDER (ยิงข้อความ Push Notification ตรงเข้าแชท LINE OA)
+ * 🟡 STEP 4: CHECK FOUND ITEM MATCH ENGINE (ตรวจสอบเมื่อเจ้าหน้าที่กรอกพบของใหม่ ➔ แมตช์หาเจ้าของ)
+ * 🔴 STEP 5: CHECK LOST ITEM MATCH ENGINE (ตรวจสอบเมื่อนักศึกษาแจ้งของหายใหม่ ➔ แมตช์หาของในคลัง)
+ *
+ * 🎓 พัฒนาขึ้นสำหรับ: มหาวิทยาลัยหอการค้าไทย (UTCC)
+ * =========================================================================
+ */
+
 const axios = require("axios");
 const { GoogleGenAI } = require("@google/genai");
 const supabase = require("../config/supabase");
@@ -6,7 +22,17 @@ const fs = require("fs");
 const path = require("path");
 
 const localDbPath = path.resolve(__dirname, "../../uploads/local_db.json");
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+
+/* =========================================================================
+ * 🟢 STEP 1: HELPER FUNCTIONS & FALLBACK UTILITIES (ตัวช่วยและระบบสำรอง)
+ * ========================================================================= */
+
+/**
+ * โหลดฐานข้อมูล JSON สำรองภายในเครื่องในกรณีที่การเชื่อมต่อ Supabase ล้มเหลว (Offline Fallback)
+ * @returns {object} ข้อมูล Lost Items และ Found Items ที่ดึงมาจากไฟล์ uploads/local_db.json
+ */
 function loadLocalDb() {
   try {
     if (fs.existsSync(localDbPath)) {
@@ -19,8 +45,12 @@ function loadLocalDb() {
   return { lost_items: [], items: [] };
 }
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
+/**
+ * เรียกใช้ Gemini API โดยทำการสลับโมเดลอัตโนมัติ (Fallback) หากโมเดลหลักมีปัญหาเรื่องโควต้า (Rate Limit) หรือหมดอายุการใช้งาน
+ * @param {GoogleGenAI} aiClient - อินสแตนซ์ของ Google GenAI Client
+ * @param {object} options - อ็อพชันสำหรับการประมวลผลโมเดล (เช่น prompt, config)
+ * @returns {Promise<object>} ผลลัพธ์การประมวลผลข้อความจากโมเดล AI ที่ทำสำเร็จ
+ */
 async function generateContentWithFallback(aiClient, options) {
   const models = [
     "gemini-3.1-flash-lite",
@@ -48,33 +78,238 @@ async function generateContentWithFallback(aiClient, options) {
   throw lastError;
 }
 
+/**
+ * แกะรายละเอียดของหายจาก JSON String ที่เก็บในฟิลด์ description
+ * @param {string} desc - คำอธิบายสิ่งของ (รองรับทั้งข้อความธรรมดา และ JSON string)
+ * @returns {string} ข้อความรายละเอียดที่แท้จริง
+ */
 function parseDescriptionText(desc) {
   try {
     const parsed = JSON.parse(desc);
     if (parsed && typeof parsed === "object" && "textDescription" in parsed) {
       return parsed.textDescription || "ไม่มีระบุ";
     }
-  } catch (e) {}
+  } catch (e) { }
   return desc || "ไม่มีระบุ";
 }
 
+/**
+ * แกะอีเมลผู้พบของจาก JSON String ที่เก็บในฟิลด์ description
+ * @param {string} desc - คำอธิบายสิ่งของที่เก็บในฟิลด์ description
+ * @returns {string|null} อีเมลผู้พบของ หรือ null หากไม่พบข้อมูล
+ */
 function parseDescriptionEmail(desc) {
   try {
     const parsed = JSON.parse(desc);
     if (parsed && typeof parsed === "object" && parsed.finder_universityEmail) {
       return parsed.finder_universityEmail;
     }
-  } catch (e) {}
+  } catch (e) { }
   return null;
 }
 
-async function sendPushToLine(lineUserId, text) {
+
+/* =========================================================================
+ * 🔵 STEP 2 & 🟣 STEP 3: FLEX MESSAGE BUILDER & LINE PUSH API SENDER
+ * ========================================================================= */
+
+/**
+ * สร้าง LINE Flex Message สำหรับแจ้งเตือนการแมตช์ของหาย (STEP 2)
+ * @param {string} lostItemName - ชื่อของที่แจ้งหาย
+ * @param {string} foundItemName - ชื่อของที่ค้นพบ
+ * @param {string} descriptionText - รายละเอียดสิ่งของ
+ * @param {string} matchReason - เหตุผลที่สองสิ่งนี้แมตช์กัน
+ * @returns {object} โครงสร้าง Flex Message JSON สำหรับ LINE
+ */
+function buildMatchNotificationFlexMessage(lostItemName, foundItemName, descriptionText, matchReason) {
+  return {
+    type: "flex",
+    altText: `🔍 ตรวจพบของที่ตรงกับที่คุณแจ้งหาย: ${lostItemName}`,
+    contents: {
+      type: "bubble",
+      size: "mega",
+      header: {
+        type: "box",
+        layout: "vertical",
+        backgroundColor: "#1e3a8a",
+        paddingAll: "20px",
+        contents: [
+          {
+            type: "text",
+            text: "แจ้งเตือนการพบของหาย 🔔",
+            weight: "bold",
+            color: "#ffffff",
+            size: "md",
+            align: "center"
+          },
+          {
+            type: "text",
+            text: "ระบบตรวจพบคู่แมตช์ในคลังสิ่งของ",
+            color: "#bfdbfe",
+            size: "xs",
+            align: "center",
+            margin: "xs"
+          }
+        ]
+      },
+      body: {
+        type: "box",
+        layout: "vertical",
+        spacing: "md",
+        contents: [
+          {
+            type: "text",
+            text: "ยินดีด้วยครับ! ระบบ Unifind ตรวจพบลักษณะของหายที่คุณแจ้งเข้าระบบ ตรงกับของที่มีคนเก็บมาส่งมอบในคลังกลางครับ 🎉",
+            wrap: true,
+            color: "#4b5563",
+            size: "xs",
+            lineSpacing: "4px"
+          },
+          {
+            type: "separator"
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            spacing: "xs",
+            contents: [
+              {
+                type: "box",
+                layout: "horizontal",
+                contents: [
+                  {
+                    type: "text",
+                    text: "📌 ของที่แจ้งหาย:",
+                    color: "#888888",
+                    size: "xs",
+                    flex: 4
+                  },
+                  {
+                    type: "text",
+                    text: lostItemName,
+                    color: "#1f2937",
+                    weight: "bold",
+                    size: "xs",
+                    wrap: true,
+                    flex: 6
+                  }
+                ]
+              },
+              {
+                type: "box",
+                layout: "horizontal",
+                contents: [
+                  {
+                    type: "text",
+                    text: "📍 ของที่พบคืน:",
+                    color: "#888888",
+                    size: "xs",
+                    flex: 4
+                  },
+                  {
+                    type: "text",
+                    text: foundItemName,
+                    color: "#1e3a8a",
+                    weight: "bold",
+                    size: "xs",
+                    wrap: true,
+                    flex: 6
+                  }
+                ]
+              },
+              {
+                type: "box",
+                layout: "horizontal",
+                contents: [
+                  {
+                    type: "text",
+                    text: "📝 รายละเอียด:",
+                    color: "#888888",
+                    size: "xs",
+                    flex: 4
+                  },
+                  {
+                    type: "text",
+                    text: descriptionText || "-",
+                    color: "#4b5563",
+                    size: "xs",
+                    wrap: true,
+                    flex: 6
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            type: "separator"
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            backgroundColor: "#eff6ff",
+            paddingAll: "10px",
+            cornerRadius: "md",
+            spacing: "xs",
+            contents: [
+              {
+                type: "text",
+                text: "✨ จุดที่แมตช์สอดคล้องกัน (AI วิเคราะห์):",
+                color: "#1e3a8a",
+                weight: "bold",
+                size: "xs"
+              },
+              {
+                type: "text",
+                text: matchReason,
+                color: "#1e40af",
+                size: "xs",
+                wrap: true,
+                lineSpacing: "4px"
+              }
+            ]
+          },
+          {
+            type: "box",
+            layout: "vertical",
+            backgroundColor: "#f9fafb",
+            paddingAll: "10px",
+            cornerRadius: "sm",
+            contents: [
+              {
+                type: "text",
+                text: "👉 แนะนำให้ท่านเตรียมหลักฐานยืนยันความเป็นเจ้าของ และติดต่อขอรับของคืน ณ ตึกบริการของมหาวิทยาลัยได้เลยครับ!",
+                size: "xs",
+                color: "#6b7280",
+                wrap: true,
+                lineSpacing: "4px"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  };
+}
+
+/**
+ * ส่งข้อความแจ้งเตือนผลลัพธ์การแมตช์ของหายผ่าน LINE Push Message API (STEP 3)
+ * @param {string} lineUserId - ไอดีผู้รับในระบบ LINE
+ * @param {string|object|Array} messagePayload - ข้อความแจ้งเตือนด่วน หรือ Flex Message หรืออาร์เรย์ข้อความ
+ * @returns {Promise<void>}
+ */
+async function sendPushToLine(lineUserId, messagePayload) {
   try {
+    const messages = Array.isArray(messagePayload)
+      ? messagePayload
+      : typeof messagePayload === "object"
+        ? [messagePayload]
+        : [{ type: "text", text: messagePayload }];
+
     await axios.post(
       "https://api.line.me/v2/bot/message/push",
       {
         to: lineUserId,
-        messages: [{ type: "text", text: text }],
+        messages: messages,
       },
       {
         headers: {
@@ -92,9 +327,19 @@ async function sendPushToLine(lineUserId, text) {
   }
 }
 
-exports.sendPushToLine = sendPushToLine;
 
-exports.checkFoundItemMatch = async (foundItem) => {
+/* =========================================================================
+ * 🟡 STEP 4: CHECK FOUND ITEM MATCH ENGINE (เจ้าหน้าที่พบของใหม่ ➔ แมตช์หาเจ้าของ)
+ * ========================================================================= */
+
+/**
+ * [ตรวจสอบของหายอัตโนมัติ] เมื่อเจ้าหน้าที่พบของใหม่ในคลังระบบ
+ * จะทำการเปรียบเทียบกับรายการสิ่งของที่ผู้ใช้แจ้งหายไว้ในประเภทเดียวกันผ่าน Gemini AI
+ * และส่ง LINE Push Message แจ้งเตือนไปยังนักศึกษาเจ้าของสิ่งของทันทีหากตรงกัน
+ * @param {object} foundItem - ข้อมูลสิ่งของที่พบเจอชิ้นใหม่
+ * @returns {Promise<object>} ผลลัพธ์การเปรียบเทียบ { matched, confidence, reason, matchedItem }
+ */
+async function checkFoundItemMatch(foundItem) {
   try {
     console.log(
       `🔍 Checking matches for Found Item: "${foundItem.item_name}" (ID: ${foundItem.item_id})`,
@@ -135,7 +380,6 @@ exports.checkFoundItemMatch = async (foundItem) => {
       return;
     }
 
-    // Get found item location string
     let foundLocation = "ไม่ระบุ";
     if (foundItem.locations) {
       foundLocation = foundItem.locations.location_name + (foundItem.locations.floor ? ` ชั้น ${foundItem.locations.floor}` : "");
@@ -216,19 +460,14 @@ ${JSON.stringify(candidates, null, 2)}
           const lineUserId = lineBindings.getLineUserId(ownerEmail);
           if (lineUserId) {
             const foundDesc = parseDescriptionText(foundItem.description);
-            const notificationMessage = `[แจ้งเตือนด่วนจากระบบ Unifind] 🔍
+            const flexMsg = buildMatchNotificationFlexMessage(
+              matchedLost.item_name,
+              foundItem.item_name,
+              foundDesc,
+              matchResult.reason
+            );
 
-มีผู้พบสิ่งของต้องสงสัยที่มีลักษณะใกล้เคียงกับของรักที่คุณแจ้งหายไว้!
-
-📌 สิ่งของที่คุณแจ้งหาย: "${matchedLost.item_name}"
-📍 สิ่งของที่พบใหม่: "${foundItem.item_name}"
-📝 รายละเอียดที่พบ: ${foundDesc}
-
-✨ รายละเอียดที่ตรงกัน: ${matchResult.reason}
-
-👉 แนะนำให้ท่านเตรียมหลักฐานยืนยันความเป็นเจ้าของ และแสดงตัวต่อเจ้าหน้าที่ ณ ตึกบริการของมหาวิทยาลัยเพื่อรับสิ่งของคืนครับ!`;
-
-            await sendPushToLine(lineUserId, notificationMessage);
+            await sendPushToLine(lineUserId, flexMsg);
           } else {
             console.log(
               `ℹ️ Matched owner email ${ownerEmail} has no bound LINE Account.`,
@@ -242,14 +481,14 @@ ${JSON.stringify(candidates, null, 2)}
         reason: matchResult.reason || "",
         matchedItem: matchedLost
           ? {
-              id: matchedLost.lost_item_id,
-              name: matchedLost.item_name,
-              description: matchedLost.description || "",
-              date: matchedLost.lost_datetime,
-              reporter: matchedLost.reporter
-                ? matchedLost.reporter.full_name
-                : "ไม่ได้ระบุ",
-            }
+            id: matchedLost.lost_item_id,
+            name: matchedLost.item_name,
+            description: matchedLost.description || "",
+            date: matchedLost.lost_datetime,
+            reporter: matchedLost.reporter
+              ? matchedLost.reporter.full_name
+              : "ไม่ได้ระบุ",
+          }
           : null,
       };
     }
@@ -268,9 +507,20 @@ ${JSON.stringify(candidates, null, 2)}
       error: err.message,
     };
   }
-};
+}
 
-exports.checkLostItemMatch = async (lostItem) => {
+/* =========================================================================
+ * 🔴 STEP 5: CHECK LOST ITEM MATCH ENGINE (นักศึกษาแจ้งของหายใหม่ ➔ แมตช์หาของในคลัง)
+ * ========================================================================= */
+
+/**
+ * [ตรวจสอบสิ่งของค้างคลัง] เมื่อนักศึกษาเพิ่งทำรายการแจ้งของหายในระบบบอท
+ * ระบบจะดึงข้อมูลสิ่งของที่พบเจอที่อยู่ในคลังของ Unifind ทั้งหมดในหมวดหมู่เดียวกันมาเปรียบเทียบผ่าน Gemini AI
+ * และส่ง LINE Push Message แจ้งเตือนไปยังนักศึกษาทันทีหากตรวจพบความสอดคล้อง
+ * @param {object} lostItem - ข้อมูลสิ่งของที่ผู้ใช้เพิ่งทำการแจ้งหาย
+ * @returns {Promise<object>} ผลลัพธ์การเปรียบเทียบ { matched, confidence, reason, matchedItem }
+ */
+async function checkLostItemMatch(lostItem) {
   try {
     console.log(
       `🔍 Checking matches for LostItem: "${lostItem.item_name}" (ID: ${lostItem.lost_item_id})`,
@@ -311,7 +561,6 @@ exports.checkLostItemMatch = async (lostItem) => {
       return;
     }
 
-    // Get lost item location string
     let lostLocation = "ไม่ระบุ";
     if (lostItem.locations) {
       lostLocation = lostItem.locations.location_name + (lostItem.locations.floor ? ` ชั้น ${lostItem.locations.floor}` : "");
@@ -375,6 +624,16 @@ ${JSON.stringify(candidates, null, 2)}
     console.log("🤖 AI Matching Result for LostItem:", matchResult);
 
     if (matchResult.matched && matchResult.matchId) {
+      let targetMatchId = matchResult.matchId;
+      if (Array.isArray(targetMatchId)) {
+        targetMatchId = targetMatchId[0];
+      }
+      const parsedMatchId = Number(targetMatchId);
+
+      const matchedFound = foundItems.find(
+        (item) => Number(item.item_id) === parsedMatchId,
+      );
+
       let ownerEmail = parseDescriptionEmail(lostItem.description);
 
       if (!ownerEmail) {
@@ -406,29 +665,15 @@ ${JSON.stringify(candidates, null, 2)}
       if (ownerEmail) {
         const lineUserId = lineBindings.getLineUserId(ownerEmail);
         if (lineUserId) {
-          let targetMatchId = matchResult.matchId;
-          if (Array.isArray(targetMatchId)) {
-            targetMatchId = targetMatchId[0];
-          }
-          const parsedMatchId = Number(targetMatchId);
-
-          const matchedFound = foundItems.find(
-            (item) => Number(item.item_id) === parsedMatchId,
-          );
           if (matchedFound) {
-            const notificationMessage = `[แจ้งเตือนด่วนจากระบบ Unifind] 🔍
+            const flexMsg = buildMatchNotificationFlexMessage(
+              lostItem.item_name,
+              matchedFound.item_name,
+              matchedFound.description || "",
+              matchResult.reason
+            );
 
-ระบบตรวจพบลักษณะของหายที่คุณเพิ่งแจ้งเข้าระบบ ตรงกับสิ่งของที่อยู่ในห้องคลังกลางครับ!
-
-📌 ของที่คุณแจ้งหาย: "${lostItem.item_name}"
-📍 ของที่มีผู้เก็บได้ในคลัง: "${matchedFound.item_name}"
-📝 รายละเอียดที่พบ: ${matchedFound.description || ""}
-
-✨ รายละเอียดที่ตรงกัน: ${matchResult.reason}
-
-👉 แนะนำให้ท่านเตรียมหลักฐานยืนยันความเป็นเจ้าของ และติดต่อขอรับของคืน ณ ตึกบริการของมหาวิทยาลัยได้เลยครับ!`;
-
-            await sendPushToLine(lineUserId, notificationMessage);
+            await sendPushToLine(lineUserId, flexMsg);
           }
         } else {
           console.log(
@@ -442,14 +687,14 @@ ${JSON.stringify(candidates, null, 2)}
         reason: matchResult.reason || "",
         matchedItem: matchedFound
           ? {
-              id: matchedFound.item_id,
-              name: matchedFound.item_name,
-              description: matchedFound.description || "",
-              date: matchedFound.found_date,
-              founder: matchedFound.finder
-                ? matchedFound.finder.full_name
-                : "ไม่ได้ระบุ",
-            }
+            id: matchedFound.item_id,
+            name: matchedFound.item_name,
+            description: matchedFound.description || "",
+            date: matchedFound.found_date,
+            founder: matchedFound.finder
+              ? matchedFound.finder.full_name
+              : "ไม่ได้ระบุ",
+          }
           : null,
       };
     }
@@ -468,9 +713,16 @@ ${JSON.stringify(candidates, null, 2)}
       error: err.message,
     };
   }
-};
+}
 
-exports.analyzeMatchBetweenItems = async (lostItem, foundItem) => {
+/**
+ * [เปรียบเทียบคู่แบบเจาะจง] วิเคราะห์ความสอดคล้องและความเหมือนกันระหว่างสองสิ่งของ (หนึ่งชิ้นหาย และหนึ่งชิ้นพบ)
+ * ฟังก์ชันนี้รองรับการคลิกวิเคราะห์จากหน้าจอพนักงานเพื่อเปรียบเทียบแบบรายกรณีผ่าน Gemini AI
+ * @param {object} lostItem - ข้อมูลของที่แจ้งหาย
+ * @param {object} foundItem - ข้อมูลของที่พบเจอในคลัง
+ * @returns {Promise<object>} ผลการแมตช์ { matched, confidence, reason }
+ */
+async function analyzeMatchBetweenItems(lostItem, foundItem) {
   try {
     const lostDesc = parseDescriptionText(lostItem.description);
     const foundDesc = parseDescriptionText(foundItem.description);
@@ -488,7 +740,7 @@ exports.analyzeMatchBetweenItems = async (lostItem, foundItem) => {
         if (locData) {
           lostLocation = locData.location_name + (locData.floor ? ` ชั้น ${locData.floor}` : "");
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     let foundLocation = "ไม่ระบุ";
@@ -504,7 +756,7 @@ exports.analyzeMatchBetweenItems = async (lostItem, foundItem) => {
         if (locData) {
           foundLocation = locData.location_name + (locData.floor ? ` ชั้น ${locData.floor}` : "");
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const prompt = `คุณคือระบบวิเคราะห์สิ่งของสูญหายอัจฉริยะ (AI Lost & Found Matcher) ของ Unifind ประจำมหาวิทยาลัยหอการค้าไทย (UTCC)
@@ -555,4 +807,16 @@ exports.analyzeMatchBetweenItems = async (lostItem, foundItem) => {
       reason: "เกิดข้อผิดพลาดในการวิเคราะห์ด้วย AI: " + err.message,
     };
   }
+}
+
+
+/* =========================================================================
+ * 📤 4. MODULE EXPORTS (ส่งออกฟังก์ชันสำหรับเรียกใช้งาน)
+ * ========================================================================= */
+
+module.exports = {
+  sendPushToLine,
+  checkFoundItemMatch,
+  checkLostItemMatch,
+  analyzeMatchBetweenItems,
 };

@@ -101,7 +101,10 @@ const imageSrc = computed(() => {
   const path = props.item.picture || props.item.image_url
   if (!path) return ''
   if (path.startsWith('http')) return path
-  return `http://localhost:9001${path}`
+  const config = useRuntimeConfig()
+  const apiBase = config.public.apiBaseUrl || 'http://localhost:9001/api'
+  const origin = apiBase.replace(/\/api\/?$/, '')
+  return `${origin}${path}`
 })
 </script>
 

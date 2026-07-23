@@ -5,13 +5,16 @@
  * ทำหน้าที่ควบคุมและประมวลผลการแจ้งเรื่องของหาย (Lost Items) 
  * ทั้งการบันทึกจากฝั่งเจ้าหน้าที่บนเว็บไซต์ และการบันทึกที่ส่งสัญญาณมาจาก LINE OA บอท
  * รวมถึงทำการประสานงานกับ AI Matching เพื่อจับคู่สิ่งของกับคลังแบบ Real-time
+ *
+ * 🎓 พัฒนาขึ้นสำหรับ: มหาวิทยาลัยหอการค้าไทย (UTCC)
+ * =========================================================================
  */
 
 const supabase = require('../config/supabase');
 
-// ──────────────────────────────────────────────────
-// Helpers
-// ──────────────────────────────────────────────────
+/* =========================================================================
+ * 🛠️ 1. DATA FORMATTING & HELPER FUNCTIONS
+ * ========================================================================= */
 
 /** Map status_code string → status_id from lost_item_statuses */
 const getLostStatusId = async (statusCode) => {
@@ -31,11 +34,8 @@ const formatLostItem = (item) => {
     : 'ไม่ระบุสถานที่';
 
   return {
-    // canonical id
     lost_item_id: item.lost_item_id,
     id: item.lost_item_id,
-
-    // item info
     item_name: item.item_name,
     name: item.item_name,
     description: item.description,
@@ -43,33 +43,23 @@ const formatLostItem = (item) => {
     picture: item.image_url || null,
     lost_datetime: item.lost_datetime,
     date: item.lost_datetime,
-
-    // relations (IDs)
     category_id: item.category_id,
     location_id: item.location_id,
     status_id: item.status_id,
     reporter_id: item.reporter_id,
-
-    // joined display names
     categoryName: item.categories?.category_name || null,
     category: item.categories?.category_name || null,
     locationName,
     place: locationName,
     status: item.lost_item_statuses?.status_code || 'LOST',
     statusName: item.lost_item_statuses?.status_name_th || null,
-
-    // reporter info
     reporterName: item.reporter?.full_name || null,
     reporterPhone: item.reporter?.phone || null,
     reporterType: item.reporter?.person_type || null,
     reporterStudentId: item.reporter?.student_id || null,
     reporterEmail: item.reporter?.email || null,
     Person: item.reporter || null,
-
-    // type flag for frontend
     type: 'lost',
-
-    // timestamps
     created_at: item.created_at,
     updated_at: item.updated_at,
   };
@@ -83,9 +73,12 @@ const SELECT_FIELDS = `
   reporter:persons!lost_items_reporter_id_fkey(full_name, phone, student_id, email, person_type)
 `.trim();
 
-// ──────────────────────────────────────────────────
-// GET /api/lost-items
-// ──────────────────────────────────────────────────
+
+/* =========================================================================
+ * 📥 2. LOST ITEM QUERY HANDLERS (การดึงข้อมูลสิ่งของสูญหาย)
+ * ========================================================================= */
+
+/** GET /api/lost-items - ดึงรายการแจ้งของหายทั้งหมดแบบ Pagination */
 exports.getLostItems = async (req, res) => {
   try {
     const page  = parseInt(req.query.page)  || 1;
@@ -118,9 +111,7 @@ exports.getLostItems = async (req, res) => {
   }
 };
 
-// ──────────────────────────────────────────────────
-// GET /api/lost-items/:id
-// ──────────────────────────────────────────────────
+/** GET /api/lost-items/:id - ดึงข้อมูลแจ้งของหายตาม ID */
 exports.getLostItemById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -141,9 +132,12 @@ exports.getLostItemById = async (req, res) => {
   }
 };
 
-// ──────────────────────────────────────────────────
-// POST /api/lost-items
-// ──────────────────────────────────────────────────
+
+/* =========================================================================
+ * 📝 3. LOST ITEM MUTATION HANDLERS (การสร้าง แก้ไข ลบรายการของหาย)
+ * ========================================================================= */
+
+/** POST /api/lost-items - บันทึกการแจ้งของหายใหม่เข้าสู่ระบบ */
 exports.createLostItem = async (req, res) => {
   try {
     const {
@@ -152,13 +146,12 @@ exports.createLostItem = async (req, res) => {
       location_id,
       lost_datetime,
       description,
-      status,       // status_code string e.g. 'LOST'
+      status,
       reporter_id,
     } = req.body;
 
     const statusId = await getLostStatusId(status || 'LOST');
 
-    // Handle image upload to Supabase Storage
     let imageUrl = null;
     if (req.file) {
       const file = req.file;
@@ -192,7 +185,6 @@ exports.createLostItem = async (req, res) => {
 
     if (error) throw error;
 
-    // Trigger AI matching
     try {
       const matchingService = require('../services/matchingService');
       const aiMatch = await matchingService.checkLostItemMatch(data);
@@ -207,9 +199,7 @@ exports.createLostItem = async (req, res) => {
   }
 };
 
-// ──────────────────────────────────────────────────
-// PUT /api/lost-items/:id
-// ──────────────────────────────────────────────────
+/** PUT /api/lost-items/:id - อัปเดตแก้ไขข้อมูลรายการแจ้งของหาย */
 exports.updateLostItem = async (req, res) => {
   try {
     const { id } = req.params;
@@ -240,7 +230,6 @@ exports.updateLostItem = async (req, res) => {
       if (statusId) updateData.status_id = statusId;
     }
 
-    // Handle new image
     if (req.file) {
       const file = req.file;
       const fileExt = file.originalname.split('.').pop();
@@ -272,9 +261,7 @@ exports.updateLostItem = async (req, res) => {
   }
 };
 
-// ──────────────────────────────────────────────────
-// DELETE /api/lost-items/:id
-// ──────────────────────────────────────────────────
+/** DELETE /api/lost-items/:id - ลบรายการแจ้งของหายออกจากระบบ */
 exports.deleteLostItem = async (req, res) => {
   try {
     const { id } = req.params;
