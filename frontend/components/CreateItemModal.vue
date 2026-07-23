@@ -253,7 +253,7 @@
                 <!-- รูปภาพสิ่งของ -->
                 <div>
                   <label class="block text-xs font-bold text-slate-650 mb-1.5">{{ $t('รูปภาพสิ่งของ') }} <span
-                      class="text-red-500">*</span></label>
+                      class="text-slate-400 font-normal">({{ $t('ถ้ามี') }})</span></label>
 
                   <!-- Drag and Drop Zone -->
                   <div
@@ -588,11 +588,6 @@ const removeImage = () => {
 }
 
 const submitForm = async () => {
-  if (!props.editItem && !imageFile.value) {
-    alert('กรุณาอัปโหลดรูปภาพสิ่งของ')
-    return
-  }
-
   let finalLocationId = form.value.location_id
   if (finalLocationId === 'custom') {
     if (!customLocationName.value.trim()) {

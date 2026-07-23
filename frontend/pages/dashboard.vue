@@ -222,7 +222,8 @@
         <!-- Cards List -->
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 flex-1 lg:min-h-0">
           <div v-for="item in latestItems" :key="item.id"
-            class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col p-2.5 hover:shadow-md transition group relative overflow-hidden lg:h-full lg:min-h-0 justify-between">
+            @click="openItemDetail(item)"
+            class="bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col p-2.5 hover:shadow-md hover:border-indigo-200 transition group relative overflow-hidden lg:h-full lg:min-h-0 justify-between cursor-pointer">
 
             <!-- Image Area -->
             <div
@@ -323,6 +324,40 @@
       </div>
     </section>
 
+    <!-- Item Detail Modal Component -->
+    <ItemDetailModal 
+      :show="showDetailModal" 
+      :item="selectedItem" 
+      @close="closeItemDetail" 
+      @edit="handleEditClick"
+    />
+
+    <!-- Edit Found Item Modal -->
+    <CreateItemModal 
+      :show="showEditFoundModal" 
+      :is-submitting="isSubmitting" 
+      :edit-item="editingItem"
+      @close="closeEditFoundModal" 
+      @submit="handleEditFoundSubmit" 
+    />
+
+    <!-- Edit Lost Item Modal -->
+    <ReportLostItemModal 
+      :show="showEditLostModal" 
+      :is-submitting="isSubmitting" 
+      :edit-item="editingItem"
+      @close="closeEditLostModal" 
+      @submit="handleEditLostSubmit" 
+    />
+
+    <!-- Success Modal -->
+    <SuccessModal 
+      :show="showSuccessModal" 
+      :title="successModalTitle" 
+      :message="successModalMessage" 
+      @close="showSuccessModal = false" 
+    />
+
   </div>
 </template>
 
@@ -337,6 +372,11 @@ import { useAuthStore } from '~/stores/auth'
 import { useRuntimeConfig } from '#app'
 import axios from 'axios'
 import dayjs from 'dayjs'
+
+import ItemDetailModal from '~/components/ItemDetailModal.vue'
+import CreateItemModal from '~/components/CreateItemModal.vue'
+import ReportLostItemModal from '~/components/ReportLostItemModal.vue'
+import SuccessModal from '~/components/SuccessModal.vue'
 
 // นำเข้า Chart.js และ Controllers/Plugins ที่จำเป็นสำหรับ Donut และ Line Chart
 import {
@@ -375,6 +415,89 @@ definePageMeta({ layout: 'dashboard', title: 'แดชบอร์ดระบ�
 // ==========================================
 const itemsStore = useItemsStore()
 const { formatDate, getItemImageSrc } = useItemHelpers()
+
+// Detail Modal state
+const showDetailModal = ref(false)
+const selectedItem = ref<any>(null)
+
+const showEditFoundModal = ref(false)
+const showEditLostModal = ref(false)
+const editingItem = ref<any>(null)
+const isSubmitting = ref(false)
+
+const showSuccessModal = ref(false)
+const successModalTitle = ref('บันทึกสำเร็จ!')
+const successModalMessage = ref('')
+
+const triggerSuccess = (title: string, message: string) => {
+  successModalTitle.value = title
+  successModalMessage.value = message
+  showSuccessModal.value = true
+}
+
+const openItemDetail = (item: any) => {
+  selectedItem.value = item
+  showDetailModal.value = true
+}
+
+const closeItemDetail = () => {
+  showDetailModal.value = false
+  setTimeout(() => { selectedItem.value = null }, 300)
+}
+
+const handleEditClick = (item: any) => {
+  closeItemDetail()
+  editingItem.value = item
+  if (item.type === 'lost' || item.status === 'lost') {
+    showEditLostModal.value = true
+  } else {
+    showEditFoundModal.value = true
+  }
+}
+
+const closeEditFoundModal = () => {
+  showEditFoundModal.value = false
+  setTimeout(() => { editingItem.value = null }, 300)
+}
+
+const closeEditLostModal = () => {
+  showEditLostModal.value = false
+  setTimeout(() => { editingItem.value = null }, 300)
+}
+
+const handleEditFoundSubmit = async (data: any, imageFile: any) => {
+  isSubmitting.value = true
+  try {
+    if (editingItem.value) {
+      await itemsStore.updateFoundItem(editingItem.value.id, data.itemData, data.finderData, imageFile)
+      showEditFoundModal.value = false
+      triggerSuccess('แก้ไขข้อมูลสำเร็จ!', 'บันทึกการแก้ไขข้อมูลสิ่งของพบเจอเรียบร้อยแล้ว!')
+    }
+  } catch (error) {
+    console.error('Error updating found item:', error)
+    alert('เกิดข้อผิดพลาดในการบันทึกการแก้ไข')
+  } finally {
+    isSubmitting.value = false
+    editingItem.value = null
+  }
+}
+
+const handleEditLostSubmit = async (data: any, imageFile: any) => {
+  isSubmitting.value = true
+  try {
+    if (editingItem.value) {
+      await itemsStore.updateLostItem(editingItem.value.id, data.itemData, data.reporterData, imageFile)
+      showEditLostModal.value = false
+      triggerSuccess('แก้ไขข้อมูลสำเร็จ!', 'บันทึกการแก้ไขข้อมูลของหายเรียบร้อยแล้ว!')
+    }
+  } catch (error) {
+    console.error('Error updating lost item:', error)
+    alert('เกิดข้อผิดพลาดในการบันทึกการแก้ไข')
+  } finally {
+    isSubmitting.value = false
+    editingItem.value = null
+  }
+}
 
 const selectedPeriod = ref('180')
 const selectedCategory = ref('all')

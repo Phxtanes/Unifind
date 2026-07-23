@@ -337,3 +337,41 @@ exports.deactivateUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+/** PUT /api/auth/user/:userId - แก้ไขข้อมูลผู้ใช้ (เช่น Nickname, Role, Status) */
+exports.updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { username, nickname, email, role, status, password } = req.body;
+
+    const updates = {};
+    if (username !== undefined) updates.username = username;
+    if (nickname !== undefined) updates.nickname = nickname;
+    if (email !== undefined) updates.email = email;
+    if (role !== undefined && req.userRole?.toLowerCase() === "admin") updates.role = role.toUpperCase();
+    if (status !== undefined && req.userRole?.toLowerCase() === "admin") updates.status = status;
+    if (password) {
+      updates.password_hash = await bcrypt.hash(password, 10);
+    }
+
+    const { data: user, error } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("user_id", userId)
+      .select()
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116")
+        return res.status(404).json({ message: "User not found" });
+      throw error;
+    }
+
+    res.status(200).json({
+      message: "User updated successfully",
+      user: formatUser(user),
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
